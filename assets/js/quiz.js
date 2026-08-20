@@ -306,6 +306,16 @@
 
     if (QUIZ.key === 'guan_who') {
       renderWho();
+    } else if (QUIZ.key === 'guan_energy_map') {
+      renderEnergyMap();
+    } else if (QUIZ.key === 'guan_relation_map') {
+      renderRelationMap();
+    } else if (QUIZ.key === 'guan_talent') {
+      renderTalent();
+    } else if (QUIZ.key === 'guan_pressure') {
+      renderPressure();
+    } else if (QUIZ.key === 'guan_life_want') {
+      renderLifeWant();
     } else if (QUIZ.isBigFive) {
       renderBigFive();
     } else if (QUIZ.isStandard) {
@@ -316,6 +326,237 @@
       renderStandard();
     }
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderEnergyMap() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你的能量处方', '五维能量地图', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的能量地图</h4>' +
+      '<p><strong style="color:var(--gold-bright)">能量漏在哪：</strong>' + ENERGY_TEXT.leak[m.leak] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">此刻状态：</strong>' + ENERGY_TEXT.state[m.state] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">需要的疗愈：</strong>' + ENERGY_TEXT.heal[m.heal] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">你如何对待自己：</strong>' + ENERGY_TEXT.care[m.care] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">深夜的信号：</strong>' + ENERGY_TEXT.night[m.night] + '</p></div>';
+    html += '<div class="result-block wide"><h4>一份温柔的能量处方</h4><p>' +
+      '你的能量地图是：' + m.state + ' + ' + m.leak + ' + ' + m.heal + '。' +
+      '这意味着：你的电量目前' + (m.state === '疲惫' ? '偏低，最需要的是「先停后走」' : m.state === '饱满' ? '充足，适合把力气投向想做的事' : m.state === '萌芽' ? '在生长，适合给新念头留空间' : '平稳，适合按节奏深耕') + '；' +
+      '而你最需要留意的，是不要让「' + (m.leak === '反刍耗' ? '反复回想' : m.leak === '比较耗' ? '比较' : m.leak === '标准耗' ? '过高的标准' : '过度照顾别人') + '」继续悄悄拿走你的能量。' +
+      '</p></div>';
+    html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
+      ENERGY_TEXT.heal[m.heal].replace('你现在需要的疗愈，是', '') + ' ' +
+      ENERGY_TEXT.night[m.night].replace('你的深夜', '今晚') + ' 试着从一件很小的事开始，把能量慢慢找回来。</p></div>';
+    html += '</div>';
+    html += actionsHTML('energy_map', m.state + ' · ' + m.heal, '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, m.state + ' · ' + m.heal);
+    bindResultActions(shareText(QUIZ.title, m.state + ' · ' + m.heal, '我的能量处方'));
+  }
+
+  var RELATION_TEXT = {
+    attach: {
+      '依安全': '你靠近人的方式比较安心——信任，也能给彼此空间。',
+      '依焦虑': '你靠近人的方式带着一些不安——怕失去，所以反复确认。',
+      '依回避': '你靠近人的方式带着一点距离——习惯自己扛，不太依赖。',
+      '依混乱': '你靠近人的方式有些拉扯——既想靠近，又怕受伤。'
+    },
+    please: {
+      '讨习惯': '你习惯先照顾别人——付出是你的语言，但别让它变成单行道。',
+      '讨怕冲': '你怕冲突，习惯让步——试着把小小的不舒服说出来，关系会更真实。',
+      '讨求认': '你有点依赖认可——你的价值不需要别人打分来证明。',
+      '讨低值': '你有时觉得自己不配——请记得，你值得被好好对待。'
+    },
+    bound: {
+      '边模糊': '你的边界有些模糊——试着从最小的「不」开始练习。',
+      '边僵硬': '你的边界比较硬——试着给值得的人留一扇门。',
+      '边健康': '你的边界比较健康——既保护自己，也能靠近他人。',
+      '边成长': '你的边界正在形成——会反复，但方向是对的。'
+    },
+    conflict: {
+      '冲靠近': '冲突后你想尽快靠近——先伸手很珍贵，记得之后也把问题谈完。',
+      '冲冷静': '冲突后你需要冷静——冷静前告诉对方，别让冷静变成冷战。',
+      '冲回避': '冲突后你倾向回避——试着从小小一句「我想和好」开始。',
+      '冲内省': '冲突后你会想很多——想六成就开始谈，让对话帮你理清。'
+    },
+    goodbye: {
+      '告反刍': '告别后你还在反复回想——把「为什么」换成「我学到了什么」。',
+      '告麻木': '告别后你感到麻木——那是心在保护你，先照顾好身体。',
+      '告波动': '告别后你情绪起伏——哀伤是海浪，会一波波变小。',
+      '告愈合': '告别后你在慢慢恢复——你已经走过了最难的部分。'
+    }
+  };
+
+  function renderRelationMap() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你在关系里的位置', '五维关系姿态', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的关系姿态</h4>' +
+      '<p><strong style="color:var(--gold-bright)">靠近：</strong>' + RELATION_TEXT.attach[m.attach] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">付出：</strong>' + RELATION_TEXT.please[m.please] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">边界：</strong>' + RELATION_TEXT.bound[m.bound] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">冲突后：</strong>' + RELATION_TEXT.conflict[m.conflict] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">告别后：</strong>' + RELATION_TEXT.goodbye[m.goodbye] + '</p></div>';
+    html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
+      '你在关系里的位置，可以这样理解：你靠近人的方式是「' + m.attach + '」，付出的方式是「' + m.please + '」，边界是「' + m.bound + '」，冲突后你倾向「' + m.conflict + '」，告别后你「' + m.goodbye + '」。' +
+      '这五个维度不是你的判决书，而是你在关系里反复出现的姿态——看清它们，你才有机会选择新的姿态。</p></div>';
+    html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
+      RELATION_TEXT.attach[m.attach] + ' ' + RELATION_TEXT.please[m.please] + ' 从一件很小的事开始，试着换一种方式靠近。</p></div>';
+    html += '</div>';
+    html += actionsHTML('relation_map', m.attach + ' · ' + m.bound, '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, m.attach + ' · ' + m.bound);
+    bindResultActions(shareText(QUIZ.title, m.attach + ' · ' + m.bound, '我的关系姿态'));
+  }
+
+  var TALENT_TEXT = {
+    flow: {
+      '心匠人': '匠人之心', '心解题': '解题之思', '心创造': '创造之魂', '心联结': '联结之暖'
+    },
+    trait: {
+      '性开放': '开放的头脑', '性尽责': '可靠的双手', '性外向': '热情的引力', '性宜人': '温柔的桥梁', '性稳定': '沉静的锚'
+    },
+    learn: {
+      '学直觉': '直觉式学习', '学逻辑': '结构式学习', '学实践': '动手式学习', '学交流': '对话式学习'
+    },
+    conf: {
+      '信经验': '经验中扎根', '信专长': '专长中发光', '信自我': '自我中站稳', '信方法': '方法中前行'
+    }
+  };
+
+  function renderTalent() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你的天赋信号', '四维天赋地图', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的天赋地图</h4>' +
+      '<p><strong style="color:var(--gold-bright)">心流入口：</strong>' + TALENT_TEXT.flow[m.flow] + '——那是你最容易忘记时间的地方。</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">性格底色：</strong>' + TALENT_TEXT.trait[m.trait] + '——这是你与世界打交道的方式。</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">学习通道：</strong>' + TALENT_TEXT.learn[m.learn] + '——这是你吸收世界的方式。</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">自信来源：</strong>' + TALENT_TEXT.conf[m.conf] + '——这是你站立的根基。</p></div>';
+    html += '<div class="result-block wide"><h4>把它们组合起来</h4><p>' +
+      '你的天赋组合是：<strong>' + TALENT_TEXT.flow[m.flow] + '</strong> + <strong>' + TALENT_TEXT.trait[m.trait] + '</strong> + <strong>' + TALENT_TEXT.learn[m.learn] + '</strong>。' +
+      '这意味着，你最容易发光的地方，是你用' + TALENT_TEXT.flow[m.flow].replace('-', '的') + '去' +
+      (m.trait === '性开放' ? '探索' : m.trait === '性尽责' ? '坚持' : m.trait === '性外向' ? '连接' : m.trait === '性宜人' ? '照顾' : '沉淀') +
+      '，同时用' + TALENT_TEXT.learn[m.learn].replace('-', '的') + '去吸收、用' + TALENT_TEXT.conf[m.conf].replace('-', '的') + '去站稳。' +
+      '</p></div>';
+    html += '<div class="result-block wide"><h4>一个你可以试试的方向</h4><p>' +
+      '试着把「' + TALENT_TEXT.flow[m.flow].replace('-', '的') + '」和「' + TALENT_TEXT.trait[m.trait].replace('-', '的') + '」放进同一天：' +
+      (m.flow === '心匠人' ? '亲手做一件实在的东西' : m.flow === '心解题' ? '解决一个让你着迷的问题' : m.flow === '心创造' ? '完成一个小创作' : '好好帮助一个具体的人') +
+      '——然后看看，是不是比「什么都做一点」更接近你。</p></div>';
+    html += '</div>';
+    html += actionsHTML('talent', m.flow + ' · ' + m.trait, '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, TALENT_TEXT.flow[m.flow] + ' · ' + TALENT_TEXT.trait[m.trait]);
+    bindResultActions(shareText(QUIZ.title, TALENT_TEXT.flow[m.flow] + ' · ' + TALENT_TEXT.trait[m.trait], '我的天赋信号'));
+  }
+
+  var PRESSURE_TEXT = {
+    burn: {
+      '倦耗竭': '你正在被「透支」压着——身体和心都在喊停，最需要的是真的休息。',
+      '倦疏离': '你正在被「麻木」压着——对人和事提不起感觉，那是心在节能。',
+      '倦无义': '你正在被「无意义」压着——做得再多也感觉不到价值，这是最重的消耗。',
+      '倦觉醒': '你正在被「想改变却未动」压着——你已经知道旧路不对，只是还没迈出那一步。'
+    },
+    anxiety: {
+      '焦低': '焦虑暂时不是你的主要压力源——你更多是被别的东西压着。',
+      '焦中低': '你有一定焦虑——偶尔担心、难以放松，但还没占据生活。',
+      '焦中高': '焦虑在你的生活里占了不小空间——需要留意它是否在影响睡眠和专注。',
+      '焦高': '焦虑明显压着你——几乎每天担心、难以放松。请认真照顾自己，必要时寻求专业帮助。'
+    },
+    gap: {
+      '空探索': '你还处在「方向未定」的停滞感里——它不是空白，是方向正在成形。',
+      '空重整': '你还在「整理旧物」的阶段——有些旧东西没收拾完，新的还没安放。',
+      '空积累': '你在「积累但发闷」——努力在持续，但意义感暂时掉队了。',
+      '空转型': '你在「酝酿却不敢动」——想变的心很真实，只差一个开始。'
+    },
+    meaning: {
+      '义充足': '你心里有明确的意义感——这是你最有力的支撑。',
+      '义偶失': '你偶尔会怀疑意义——这很正常，是你在认真对待生活。',
+      '义常失': '你常常觉得「做了又怎样」——意义感正在流失，需要被重新连接。',
+      '义迷失': '你正在经历意义迷失——这不是消极，是你在追问更深的东西。'
+    }
+  };
+
+  function renderPressure() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你正被什么压着', '四维压力画像', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的压力画像</h4>' +
+      '<p><strong style="color:var(--gold-bright)">倦怠：</strong>' + PRESSURE_TEXT.burn[m.burn] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">焦虑：</strong>' + PRESSURE_TEXT.anxiety[m.anxiety] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">停滞：</strong>' + PRESSURE_TEXT.gap[m.gap] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">意义：</strong>' + PRESSURE_TEXT.meaning[m.meaning] + '</p></div>';
+    html += '<div class="result-block wide"><h4>哪一样最重</h4><p>' +
+      '综合来看，此刻最压着你的，是「' + m.burn + '」这一块，而它的底色是「' + m.meaning + '」。' +
+      (m.burn === '倦耗竭' ? '所以你现在最需要的不是「想开点」，是先让自己真的歇下来。' :
+       m.burn === '倦疏离' ? '所以你最需要的不是「恢复热情」，是先让感觉慢慢回来。' :
+       m.burn === '倦无义' ? '所以你最需要的不是「更努力」，是先重新找到这件事的意义。' :
+       '所以你最需要的不是「再等等」，是先迈出很小的一步。') +
+      '</p></div>';
+    html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
+      '你扛着的东西是真的，你的累也是真的。请别急着「解决」它——先承认它压着你，然后从最小的一件照顾自己的事开始。' +
+      (m.anxiety === '焦高' || m.anxiety === '焦中高' ? ' 你的焦虑水平不低，如果它持续影响你，请考虑寻求专业帮助。' : '') +
+      '</p></div>';
+    html += '</div>';
+    html += actionsHTML('pressure', m.burn + ' · ' + m.meaning, '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, m.burn + ' · ' + m.meaning);
+    bindResultActions(shareText(QUIZ.title, m.burn + ' · ' + m.meaning, '我的压力画像'));
+  }
+
+  var LIFEWANT_TEXT = {
+    work: {
+      '工成长': '你把工作当作学校——你最在乎的是成长与可能。',
+      '工稳定': '你把工作当作港湾——你最在乎的是安稳与可预期。',
+      '工成就': '你把工作当作舞台——你最在乎的是成果与突破。',
+      '工归属': '你把工作当作家园——你最在乎的是人与温度。'
+    },
+    sat: {
+      '满低': '你对自己生活的满意度偏低——有些重要的需要还没被满足。',
+      '满中': '你对自己生活的满意度中等——既谈不上满意，也谈不上不满。',
+      '满高': '你对自己生活的满意度较高——大多数方面都在靠近你想要的。'
+    },
+    desire: {
+      '欲自由': '你心里最深的渴望是「自由」——不被定义、有选择的余地。',
+      '欲创造': '你心里最深的渴望是「创造」——留下点什么，让世界多出一点东西。',
+      '欲真实': '你心里最深的渴望是「真实」——和真实的自己在一起，内心安宁。',
+      '欲安定': '你心里最深的渴望是「安定」——稳稳的幸福，可预期的日子。'
+    },
+    next: {
+      '向自由': '你下一步最需要做的，是给自己多一点自由和空间。',
+      '向创造': '你下一步最需要做的，是开始做那件一直想做的事。',
+      '向真实': '你下一步最需要做的，是先和自己和解、安顿内心。',
+      '向安定': '你下一步最需要做的，是把生活变得更稳。'
+    }
+  };
+
+  function renderLifeWant() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你真正想要的生活', '四维生活坐标', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的生活坐标</h4>' +
+      '<p><strong style="color:var(--gold-bright)">工作：</strong>' + LIFEWANT_TEXT.work[m.work] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">满意度：</strong>' + LIFEWANT_TEXT.sat[m.sat] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">渴望：</strong>' + LIFEWANT_TEXT.desire[m.desire] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">下一步：</strong>' + LIFEWANT_TEXT.next[m.next] + '</p></div>';
+    html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
+      '你现在的生活坐标是：工作对你像「' + m.work + '」，你对自己生活的满意度' + (m.sat === '满低' ? '偏低' : m.sat === '满中' ? '中等' : '较高') +
+      '，而心里最深的渴望是「' + m.desire + '」。' +
+      (m.sat === '满低' ? '满意度偏低，往往不是因为生活本身不好，而是「你真正渴望的」还没被认真对待。' :
+       m.sat === '满中' ? '满意度中等，往往是因为生活「还行」但缺少一点「渴望」的注入。' :
+       '满意度较高，是很好的基础——现在可以更有底气地走向渴望。') +
+      '</p></div>';
+    html += '<div class="result-block wide"><h4>给你的第一句话</h4><p>' +
+      LIFEWANT_TEXT.desire[m.desire] + ' ' + LIFEWANT_TEXT.next[m.next] + ' 从很小的一步开始，把生活往你渴望的方向，挪一点点。</p></div>';
+    html += '</div>';
+    html += actionsHTML('life_want', m.desire + ' · ' + m.next, '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, m.desire + ' · ' + m.next);
+    bindResultActions(shareText(QUIZ.title, m.desire + ' · ' + m.next, '我的生活坐标'));
   }
 
   var WHO_TEXT = {
@@ -343,6 +584,72 @@
       '角色身份': '关于「你是谁」，你较多通过角色定义自己——角色给了你位置，也别忘了角色之外的你。',
       '流动身份': '关于「你是谁」，你比较流动——你的丰富让你在不同场景都鲜活，试着找一个核心感受当锚。',
       '整合身份': '关于「你是谁」，你已经比较整合——你清楚自己要什么，这是长期探索的果实。'
+    }
+  };
+
+  var ENERGY_TEXT = {
+    leak: {
+      '反刍耗': '你的能量主要漏在「反复回想」——白天的事在夜里重演，心已经走了很远。',
+      '比较耗': '你的能量主要漏在「和别人比」——别人的进度像一面镜子，照得你心累。',
+      '标准耗': '你的能量主要漏在「对自己要求太高」——总觉得还不够好，于是永远在追赶。',
+      '讨好耗': '你的能量主要漏在「照顾别人」——你把太多力气给了他人，忘了留给自己。'
+    },
+    state: {
+      '饱满': '你现在能量比较饱满，适合去做一直想做但没开始的事。',
+      '平静': '你现在处于平稳蓄能期——不急着冲刺，按自己的节奏走就好。',
+      '疲惫': '你现在电量偏低——这不是懒，是你真的需要修复。',
+      '萌芽': '你正处在能量萌芽期——旧的还没散尽，新的正在生长。'
+    },
+    heal: {
+      '疗愈释放': '你现在需要的疗愈，是「释放」——给自己一个出口，让能量流动起来。',
+      '疗愈安顿': '你现在需要的疗愈，是「安顿」——慢下来，回到自己的节奏里。',
+      '疗愈修复': '你现在需要的疗愈，是「修复」——停下来，让透支的自己重新蓄电。',
+      '疗愈萌芽': '你现在需要的疗愈，是「萌芽」——给新的念头一点空间，让它长大。'
+    },
+    care: {
+      '苛责': '你对自己有些苛刻——试着把说给朋友的温柔，也说给自己。',
+      '关怀': '你对自己挺温柔——这份自我关怀，是你最稳的能量来源。',
+      '忽视': '你有点忽略自己——试着每天给自己一分钟，听听自己的声音。',
+      '回避': '你习惯回避自己的感受——试着偶尔停下来，和情绪待一会儿。'
+    },
+    night: {
+      '夜反刍': '你的深夜常被过去占据——试着睡前把今天「存档」，让脑子下班。',
+      '夜焦虑': '你的深夜常被担忧占据——试着把担心写下来，明天再处理。',
+      '夜孤独': '你的深夜常被孤独触碰——你渴望联结，试着主动联系一个人。',
+      '夜灵感': '你的深夜常被灵感点亮——这是你的天赋，床头放支笔接住它。'
+    }
+  };
+
+  var RELATION_TEXT = {
+    attach: {
+      '依安全': '你靠近人的方式比较安心——信任，也能给彼此空间。',
+      '依焦虑': '你靠近人的方式带着一些不安——怕失去，所以反复确认。',
+      '依回避': '你靠近人的方式带着一点距离——习惯自己扛，不太依赖。',
+      '依混乱': '你靠近人的方式有些拉扯——既想靠近，又怕受伤。'
+    },
+    please: {
+      '讨习惯': '你习惯先照顾别人——付出是你的语言，但别让它变成单行道。',
+      '讨怕冲': '你怕冲突，习惯让步——试着把小小的不舒服说出来，关系会更真实。',
+      '讨求认': '你有点依赖认可——你的价值不需要别人打分来证明。',
+      '讨低值': '你有时觉得自己不配——请记得，你值得被好好对待。'
+    },
+    bound: {
+      '边模糊': '你的边界有些模糊——试着从最小的「不」开始练习。',
+      '边僵硬': '你的边界比较硬——试着给值得的人留一扇门。',
+      '边健康': '你的边界比较健康——既保护自己，也能靠近他人。',
+      '边成长': '你的边界正在形成——会反复，但方向是对的。'
+    },
+    conflict: {
+      '冲靠近': '冲突后你想尽快靠近——先伸手很珍贵，记得之后也把问题谈完。',
+      '冲冷静': '冲突后你需要冷静——冷静前告诉对方，别让冷静变成冷战。',
+      '冲回避': '冲突后你倾向回避——试着从小小一句「我想和好」开始。',
+      '冲内省': '冲突后你会想很多——想六成就开始谈，让对话帮你理清。'
+    },
+    goodbye: {
+      '告反刍': '告别后你还在反复回想——把「为什么」换成「我学到了什么」。',
+      '告麻木': '告别后你感到麻木——那是心在保护你，先照顾好身体。',
+      '告波动': '告别后你情绪起伏——哀伤是海浪，会一波波变小。',
+      '告愈合': '告别后你在慢慢恢复——你已经走过了最难的部分。'
     }
   };
 
