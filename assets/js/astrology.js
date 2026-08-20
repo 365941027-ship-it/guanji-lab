@@ -152,8 +152,21 @@
   }
 
   function zodiacOfBirth(y, m, d) {
-    var bounds = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 23, 22];
-    return d < bounds[m - 1] ? ZODIACS[m - 1] : ZODIACS[m % 12];
+    // 每个月的星座分界日：该月哪一天开始进入下一个星座
+    // 月份从 1 月（摩羯座开始）起
+    var bounds = [20, 19, 21, 20, 21, 21, 22, 23, 23, 23, 22, 21];
+    // 每月对应的星座（该月大部分时间所在的星座）
+    var monthSign = [
+      '摩羯座', '水瓶座', '双鱼座', '白羊座', '金牛座', '双子座',
+      '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座'
+    ];
+    // 下一个星座（分界日之后）
+    var nextSign = [
+      '水瓶座', '双鱼座', '白羊座', '金牛座', '双子座', '巨蟹座',
+      '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座'
+    ];
+    var boundary = bounds[m - 1];
+    return d < boundary ? monthSign[m - 1] : nextSign[m - 1];
   }
 
   function rad(deg) { return deg * Math.PI / 180; }
