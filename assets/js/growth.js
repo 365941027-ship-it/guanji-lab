@@ -378,4 +378,10 @@
   });
 
   render();
+  if (window.guanCalendar) {
+    window.guanCalendar({
+      mount: 'calendarBox',
+      getRecords: function () { return load(); }
+    });
+  }
 })();

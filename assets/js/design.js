@@ -3,12 +3,18 @@
 
   var painEl = document.getElementById('painInput');
   var wishEl = document.getElementById('wishInput');
-  var resEl = document.getElementById('resourceInput');
+  var timeEl = document.getElementById('timeInput');
+  var moneyEl = document.getElementById('moneyInput');
+  var assetEl = document.getElementById('assetInput');
+  var blockEl = document.getElementById('blockInput');
+  var goalEl = document.getElementById('goalInput');
   var output = document.getElementById('designOutput');
   var routesEl = document.getElementById('designRoutes');
   var principlesEl = document.getElementById('designPrinciples');
   var introEl = document.getElementById('designIntro');
   var simBlockEl = document.getElementById('designSimBlock');
+  var becomingEl = document.getElementById('designBecoming');
+  var plan30El = document.getElementById('designPlan30');
 
   var lastPlan = null;
 
@@ -393,6 +399,104 @@
     return out;
   }
 
+  // 根据测试结果判断用户需要的语气：敏感/不自信 -> 更多情绪价值；行动派 -> 更落地
+  function buildVoice() {
+    var drain = localStorage.getItem('guan_drain') || '';
+    var selfworth = localStorage.getItem('guan_selfworth') || '';
+    var energy = localStorage.getItem('guan_energy') || '';
+    var drive = localStorage.getItem('guan_drive') || '';
+    var voice = {
+      warm: 0,
+      concrete: 0
+    };
+    if (drain.indexOf('反刍') > -1 || drain.indexOf('比较') > -1 || drain.indexOf('完美') > -1) voice.warm += 1;
+    if (selfworth.indexOf('低价值') > -1) voice.warm += 2;
+    if (energy.indexOf('疲惫') > -1) voice.warm += 1;
+    if (drive.indexOf('成就') > -1 || drive.indexOf('行动') > -1) voice.concrete += 1;
+    if (drain.indexOf('讨好') > -1) voice.warm += 1;
+
+    if (voice.warm >= 2) {
+      return {
+        kind: 'warm',
+        tone: '你最近对自己可能有些苛刻，所以这份方案里，我想先对你说：你已经很努力了。接下来的每一步，都不需要证明给谁看。',
+        closing: '慢慢来。你不需要在三十天里变成另一个人——你只需要，比今天更靠近自己一点。'
+      };
+    }
+    if (voice.concrete >= 1) {
+      return {
+        kind: 'concrete',
+        tone: '你是一个习惯行动的人，所以我尽量把方向说得具体：什么时候做、做什么、做到什么程度。你不需要听完就全做，只需要挑一件，先开始。',
+        closing: '你这样的人，最需要的是「开始」而不是「犹豫」。挑一件，今天就动起来。'
+      };
+    }
+    return {
+      kind: 'balanced',
+      tone: '这份方案不是任务清单，它只是几条可以慢慢走的路。你可以挑一条最不费力的，先走一小步。',
+      closing: '无论你今天走不走，愿意停下来看看自己，已经是很重要的一步了。'
+    };
+  }
+
+  // 「或许可以成为」：从方案主题映射可能的身份方向，并联动人生模拟
+  function buildBecoming(theme, wish, plan) {
+    var map = {
+      work: [
+        { role: '一个把热爱做成事业的人', desc: '在旧路上长出新方向的人——你不必辞职，也能一点点靠近想做的事。', scene: 'career' },
+        { role: '一个敢为方向做决定的人', desc: '不是等想清楚才行动，而是在行动里越来越清楚。', scene: 'career' },
+        { role: '一个平衡现实与理想的人', desc: '既保住生活，也喂养梦想——双轨不是慢，是稳。', scene: 'career' }
+      ],
+      create: [
+        { role: '一个每天都在创作的人', desc: '灵感不再是等来的客人，而是每天都会回家的老友。', scene: 'career' },
+        { role: '一个作品被看见的人', desc: '把你的表达放到世界上，让真实反馈带你走下一步。', scene: 'career' },
+        { role: '一个用热爱帮助别人的人', desc: '你的天赋开始为别人带来价值——那是热爱最踏实的形态。', scene: 'career' }
+      ],
+      relation: [
+        { role: '一个敢于说出需要的人', desc: '不再把话咽回去，关系因此开始真实流动。', scene: 'relation' },
+        { role: '一个温柔而有边界的人', desc: '既照顾好自己，也不把别人推开。', scene: 'relation' },
+        { role: '一个懂得「在场」的人', desc: '不急着解决问题，先让人被看见、被陪伴。', scene: 'relation' }
+      ],
+      default: [
+        { role: '一个拥有自己节奏的人', desc: '不被别人的进度带跑，按自己的方式慢慢走。', scene: 'self' },
+        { role: '一个敢于探索的人', desc: '用一次次小实验，画出属于自己的地图。', scene: 'self' },
+        { role: '一个能为自己留出空间的人', desc: '无论生活多忙，心里都有一块属于你的地方。', scene: 'self' }
+      ]
+    };
+    var list = map[theme] || map.default;
+    // 保存方案供模拟器读取
+    window.guanSet('guan_plan', JSON.stringify({ theme: theme, wish: wish, roles: list }));
+    return list;
+  }
+
+  // 30 天成长计划（免费），3-6 个月 / 1-3 年为深化版
+  function buildPlan30(inputs, voice) {
+    var time = inputs.time || '每周一些时间';
+    var money = inputs.money || '你愿意投入的预算';
+    var goal = inputs.goal || '看到一点真实的变化';
+    var timeUnit = time.indexOf('每周') > -1 ? time.split('每周')[1] : time;
+    return [
+      { week: '第一周 · 看见', plan: '把「' + goal + '」写下来，贴在看得见的地方。这周只做一件事：每天从你的 ' + timeUnit + ' 里抽一小块时间，熟悉你的方向，不要求产出。' },
+      { week: '第二周 · 尝试', plan: '用 ' + money + ' 做一次最小尝试：买一本书、约一次内行聊、参加一次体验。完成它，记录你的真实感受。' },
+      { week: '第三周 · 调整', plan: '回看前两周：什么让你有能量，什么在消耗你？砍掉消耗的部分，把时间留给有能量的事。' },
+      { week: '第四周 · 回望', plan: '写下这一月的发现：你更了解自己什么？下一步想往哪走？带着这份答案，去做一次专属自察，或再来一次设计。' }
+    ];
+  }
+
+  // 综合解读：把用户输入、档案、排盘、测试结果融在一起（不拆成模式化板块）
+  function buildIntegrated(inputs, p, voice) {
+    var paras = [];
+    paras.push(voice.tone);
+    if (inputs.pain) paras.push('你说，你现在卡在「' + inputs.pain + '」。这句话本身很重要——能说清楚卡在哪里，就已经是开始。');
+    if (inputs.wish) paras.push('你希望自己「' + inputs.wish + '」。这份渴望不是空想，它是你心里的方向感，值得被认真对待。');
+    if (inputs.time) paras.push('你愿意每周投入 ' + inputs.time + '——这意味着你有诚意，也有现实感。下面方案里的每一周，都会围绕这个时间量来安排。');
+    if (inputs.money) paras.push('你提到每月大约有 ' + inputs.money + ' 的预算。钱不多不少，但「有多少用多少」本身就是一种清醒——方案里所有尝试都会控制在这个范围。');
+    if (inputs.asset) paras.push('你手里已经有「' + inputs.asset + '」。很多人看不见自己已有的资源，而你看见了——这些会成为你起步的台阶。');
+    if (inputs.block) paras.push('你担心「' + inputs.block + '」。这份担心不是软弱，它说明你已经想过困难——方案里，我们会给这份担心留一个位置，而不是假装它不存在。');
+    if (inputs.goal) paras.push('你希望三十天后「' + inputs.goal + '」。那就把它当作这条路的第一个路标。');
+    if (p.nickname) paras.push(p.nickname + '，以上这些，都不是从模板里套出来的——它们来自你刚刚说出口的每一句话。');
+    if (p.bazi) paras.push('你的八字近似排盘是「' + p.bazi + '」。我不是要给你算命，只想说：你在生命里走到今天，带着自己的时区与季节。方案会顺着你此刻的季节来，而不是催你越过它。');
+    if (p.moon) paras.push('你的月亮星座（近似）落在' + p.moon + '——月亮更多代表你内在的柔软处。方案里也会照顾到它：不只要「做到」，也要让你在过程里不丢下自己的感受。');
+    return paras;
+  }
+
   function render() {
     // Remove blocks appended on previous renders so repeated generation
     // doesn't stack duplicate talent/analysis/risk sections.
@@ -401,15 +505,26 @@
     });
     var pain = painEl.value.trim();
     var wish = wishEl.value.trim();
-    var resource = resEl.value.trim();
+    var inputs = {
+      pain: pain,
+      wish: wish,
+      time: timeEl.value.trim(),
+      money: moneyEl.value.trim(),
+      asset: assetEl.value.trim(),
+      block: blockEl.value.trim(),
+      goal: goalEl.value.trim()
+    };
     if (!pain || !wish) {
-      window.guanToast('至少写下「卡在哪里」和「想去哪里」，设计才能开始');
+      window.guanToast('至少写下「卡在哪里」和「想去哪里」，我们才能慢慢聊');
       return;
     }
     var theme = pickTheme(pain, wish);
-    var routes = buildRoutes(theme, wish, resource);
+    var routes = buildRoutes(theme, wish, inputs.time);
     var principles = buildPrinciples();
-    introEl.textContent = '基于你描述的处境、渴望与档案信息，我们为你写了三条思路。它们不是任务清单，而是三个可以慢慢走的方向——你不需要打卡，不需要赶进度，只需要在愿意的时候，朝其中一个方向看一看。';
+    var voice = buildVoice();
+    var p = profile();
+    var integrated = buildIntegrated(inputs, p, voice);
+    introEl.textContent = voice.tone;
 
     var talents = buildTalents();
     routesEl.innerHTML = '';
@@ -437,6 +552,13 @@
       '<p style="font-size:13px;color:var(--gold-bright);margin-top:12px;line-height:1.9">这些不是要求你去完成的任务，而是你本来就带着的礼物。它们会在你放松做自己的时候，自然发光。</p>';
     principlesEl.parentNode.appendChild(tDiv);
 
+    // 综合解读（提到用户输入，融在一起）
+    var iDiv = document.createElement('div');
+    iDiv.className = 'design-principles design-dynamic integrated-block';
+    iDiv.innerHTML = '<h4>关于你，我们想说的</h4>' +
+      integrated.map(function (p2) { return '<p style="margin-bottom:10px">' + p2 + '</p>'; }).join('');
+    principlesEl.parentNode.insertBefore(iDiv, tDiv);
+
     principlesEl.innerHTML = '<h4>你的设计原则</h4><ul>' +
       principles.map(function (p) { return '<li>' + p + '</li>'; }).join('') +
       '</ul>';
@@ -461,6 +583,35 @@
       '</ul>';
     principlesEl.parentNode.appendChild(rDiv);
 
+    // 或许可以成为 + 联动模拟
+    var roles = buildBecoming(theme, wish, {});
+    if (becomingEl) {
+      becomingEl.innerHTML = '<h4>如果你在这条路上走下去，你或许可以成为……</h4>' +
+        '<div class="becoming-grid">' +
+        roles.map(function (r, i) {
+          return '<div class="becoming-card"><div class="bc-num">原型 ' + ['A', 'B', 'C'][i] + '</div>' +
+            '<b>' + r.role + '</b><p>' + r.desc + '</p></div>';
+        }).join('') +
+        '</div>' +
+        '<p style="font-size:13px;color:var(--gold-bright);margin-top:12px;line-height:1.9">想先看看这样的你会经历什么吗？去人生模拟里，替自己走一段：</p>' +
+        '<a class="btn btn-gold btn-sm" href="simulator.html">去人生模拟，预见可能的自己</a>';
+      becomingEl.classList.add('show');
+    }
+
+    // 30 天计划
+    var plan30 = buildPlan30(inputs, voice);
+    if (plan30El) {
+      plan30El.innerHTML = '<h4>你的三十天成长计划 · 免费版</h4>' +
+        '<div class="plan30-list">' +
+        plan30.map(function (w) {
+          return '<div class="plan30-item"><b>' + w.week + '</b><p>' + w.plan + '</p></div>';
+        }).join('') +
+        '</div>' +
+        '<p style="font-size:13px;color:var(--muted-2);margin-top:12px;line-height:1.9">三个月、一年、三年的深化规划正在路上——那会是陪你走更远的版本。</p>' +
+        '<a class="btn btn-sm" href="journey.html" style="margin-top:8px">去三十天陪伴，开始第一周</a>';
+      plan30El.classList.add('show');
+    }
+
     var sim = simResult();
     if (sim && simBlockEl) {
       simBlockEl.classList.add('show');
@@ -474,12 +625,14 @@
     lastPlan = {
       pain: pain,
       wish: wish,
-      resource: resource,
       routes: routes,
       principles: principles,
       analysis: analysis,
       risks: risks,
-      talents: talents
+      talents: talents,
+      inputs: inputs,
+      integrated: integrated,
+      plan30: plan30
     };
     output.classList.add('show');
     output.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -487,7 +640,11 @@
 
   function copyPlan() {
     if (!lastPlan) return;
-    var text = '【我的人生设计方案 · 观己实验室】\n\n卡点：' + lastPlan.pain + '\n渴望：' + lastPlan.wish + '\n投入：' + (lastPlan.resource || '未填写') + '\n\n';
+    var it = lastPlan.inputs || {};
+    var text = '【我的人生设计方案 · 观己实验室】\n\n卡点：' + lastPlan.pain + '\n渴望：' + lastPlan.wish +
+      '\n每周时间：' + (it.time || '未填写') + '\n每月预算：' + (it.money || '未填写') +
+      '\n已有资源：' + (it.asset || '未填写') + '\n担心的事：' + (it.block || '未填写') +
+      '\n三十天愿望：' + (it.goal || '未填写') + '\n\n';
     lastPlan.routes.forEach(function (r, i) {
       text += (i + 1) + '. ' + r.title + '\n   ' + r.body + '\n';
     });
@@ -500,6 +657,9 @@
     }
     if (lastPlan.talents && lastPlan.talents.length) {
       text += '\n\n我的个性天赋点：\n' + lastPlan.talents.map(function (t) { return '· ' + t.name + '——' + t.desc; }).join('\n');
+    }
+    if (lastPlan.plan30 && lastPlan.plan30.length) {
+      text += '\n\n三十天成长计划：\n' + lastPlan.plan30.map(function (w) { return '· ' + w.week + '：' + w.plan; }).join('\n');
     }
     text += '\n\n—— 观己实验室 · 理解自己，设计人生';
     window.guanCopy(text, function (ok) {

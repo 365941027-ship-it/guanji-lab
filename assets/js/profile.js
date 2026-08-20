@@ -2,17 +2,6 @@
   'use strict';
 
   var KEY = 'guan_profile';
-  var ZODIACS = ['摩羯座', '水瓶座', '双鱼座', '白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座'];
-  var BOUNDS = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 23, 22];
-
-  function zodiacOf(dateStr) {
-    if (!dateStr) return '';
-    var parts = dateStr.split('-');
-    var m = parseInt(parts[1], 10);
-    var d = parseInt(parts[2], 10);
-    if (!m || !d) return '';
-    return d < BOUNDS[m - 1] ? ZODIACS[m - 1] : ZODIACS[m % 12];
-  }
 
   function read() {
     try {
@@ -23,6 +12,15 @@
   }
 
   window.guanProfile = read;
+
+  var avatar = '🌙';
+
+  function setAvatar(val) {
+    avatar = val;
+    document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-avatar') === val);
+    });
+  }
 
   function session() {
     try {
@@ -48,26 +46,59 @@
   })();
 
   function collect() {
+    var birthText = document.getElementById('pBirth').value.trim();
+    var birth = window.guanAstrology.parseBirth(birthText);
+    var hourText = document.getElementById('pHour').value;
+    var hour = window.guanAstrology.parseHour(hourText);
+    var city = document.getElementById('pCity').value.trim();
+
+    var bazi = null, moon = null, rising = null, zodiac = '';
+    if (birth) {
+      zodiac = window.guanAstrology.zodiacOfBirth(birth.y, birth.m, birth.d);
+      bazi = window.guanAstrology.bazi(birth.y, birth.m, birth.d, hour);
+      moon = window.guanAstrology.moon(birth.y, birth.m, birth.d);
+      var r = window.guanAstrology.rising(birth.y, birth.m, birth.d, hour, city);
+      rising = r.ok ? r.zodiac : r.reason;
+    }
+
     var p = {
       nickname: document.getElementById('pNick').value.trim(),
-      birth: document.getElementById('pBirth').value,
+      avatar: avatar,
+      birth: birthText,
       hour: document.getElementById('pHour').value,
-      place: document.getElementById('pPlace').value.trim(),
+      city: city,
       mbti: document.getElementById('pMbti').value,
       ennea: document.getElementById('pEnnea').value,
-      bazi: [
-        document.getElementById('pBazi1').value.trim(),
-        document.getElementById('pBazi2').value.trim(),
-        document.getElementById('pBazi3').value.trim(),
-        document.getElementById('pBazi4').value.trim()
-      ].filter(Boolean).join(' '),
-      rising: document.getElementById('pRising').value,
-      moon: document.getElementById('pMoon').value,
+      bazi: bazi ? bazi.year + ' ' + bazi.month + ' ' + bazi.day + ' ' + bazi.hour : '',
+      rising: rising || '',
+      moon: moon || '',
       stage: document.getElementById('pStage').value,
+      selfDesc: document.getElementById('pSelfDesc').value.trim(),
       focus: document.getElementById('pFocus').value.trim()
     };
-    p.zodiac = zodiacOf(p.birth);
+    p.zodiac = zodiac;
     return p;
+  }
+
+  function renderCharts() {
+    var birthText = document.getElementById('pBirth').value.trim();
+    var hourText = document.getElementById('pHour').value;
+    var birth = window.guanAstrology.parseBirth(birthText);
+    var hour = window.guanAstrology.parseHour(hourText);
+    if (!birth) {
+      document.getElementById('baziChart').textContent = '填写出生日期与时辰后自动生成';
+      document.getElementById('risingAuto').textContent = '填写出生日期与时辰后自动生成';
+      document.getElementById('moonAuto').textContent = '填写出生日期与时辰后自动生成';
+      return;
+    }
+    var bazi = window.guanAstrology.bazi(birth.y, birth.m, birth.d, hour);
+    document.getElementById('baziChart').innerHTML =
+      '<span class="pillar">' + bazi.year + '</span><span class="pillar">' + bazi.month + '</span>' +
+      '<span class="pillar">' + bazi.day + '</span><span class="pillar">' + bazi.hour + '</span>';
+    document.getElementById('moonAuto').textContent = window.guanAstrology.moon(birth.y, birth.m, birth.d) + '（近似）';
+    var city = document.getElementById('pCity').value.trim();
+    var r = window.guanAstrology.rising(birth.y, birth.m, birth.d, hour, city);
+    document.getElementById('risingAuto').textContent = r.ok ? r.zodiac + '（近似）' : r.reason;
   }
 
   function renderPreview(p) {
@@ -78,12 +109,14 @@
     lines.push(['出生日期', p.birth || '未填写']);
     lines.push(['星座', p.zodiac || '未填写']);
     lines.push(['出生时辰', p.hour || '未填写']);
+    lines.push(['头像', p.avatar || '🌙']);
     if (p.mbti) lines.push(['MBTI', p.mbti]);
     if (p.ennea) lines.push(['九型人格', p.ennea]);
-    if (p.bazi) lines.push(['八字四柱', p.bazi]);
+    if (p.bazi) lines.push(['八字（近似）', p.bazi]);
     if (p.rising) lines.push(['上升星座', p.rising]);
-    if (p.moon) lines.push(['月亮星座', p.moon]);
+    if (p.moon) lines.push(['月亮星座（近似）', p.moon]);
     if (p.stage) lines.push(['人生阶段', p.stage]);
+    if (p.selfDesc) lines.push(['此刻的我', p.selfDesc]);
     if (p.focus) lines.push(['探索议题', p.focus]);
     body.innerHTML = lines.map(function (l) {
       return '<div class="profile-line"><span>' + l[0] + '</span><b>' + l[1] + '</b></div>';
@@ -97,6 +130,29 @@
     renderPreview(p);
     window.guanToast('档案已保存，之后的设计与模拟会参考它');
   });
+
+  // Avatar upload
+  document.getElementById('pAvatarFile').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      avatar = e.target.result;
+      document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) { b.classList.remove('on'); });
+      window.guanToast('照片头像已读取，保存档案后生效');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      setAvatar(b.getAttribute('data-avatar'));
+    });
+  });
+
+  document.getElementById('pBirth').addEventListener('input', renderCharts);
+  document.getElementById('pHour').addEventListener('change', renderCharts);
+  document.getElementById('pCity').addEventListener('input', renderCharts);
 
   document.getElementById('exportProfile').addEventListener('click', function () {
     var p = collect();
@@ -174,20 +230,17 @@
   var existing = read();
   if (existing && Object.keys(existing).length && existing.birth) {
     document.getElementById('pNick').value = existing.nickname || '';
+    if (existing.avatar && existing.avatar.length <= 8) setAvatar(existing.avatar);
+    else if (existing.avatar && existing.avatar.length > 8) avatar = existing.avatar;
     document.getElementById('pBirth').value = existing.birth || '';
     document.getElementById('pHour').value = existing.hour || '';
-    document.getElementById('pPlace').value = existing.place || '';
+    document.getElementById('pCity').value = existing.city || '';
     document.getElementById('pMbti').value = existing.mbti || '';
     document.getElementById('pEnnea').value = existing.ennea || '';
-    var b = (existing.bazi || '').split(/\s+/).filter(Boolean);
-    if (b[0]) document.getElementById('pBazi1').value = b[0];
-    if (b[1]) document.getElementById('pBazi2').value = b[1];
-    if (b[2]) document.getElementById('pBazi3').value = b[2];
-    if (b[3]) document.getElementById('pBazi4').value = b[3];
-    document.getElementById('pRising').value = existing.rising || '';
-    document.getElementById('pMoon').value = existing.moon || '';
     document.getElementById('pStage').value = existing.stage || '';
+    document.getElementById('pSelfDesc').value = existing.selfDesc || '';
     document.getElementById('pFocus').value = existing.focus || '';
     renderPreview(existing);
+    renderCharts();
   }
 })();

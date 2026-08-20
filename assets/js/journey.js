@@ -135,4 +135,10 @@
   });
 
   render();
+  if (window.guanCalendar) {
+    window.guanCalendar({
+      mount: 'journeyCal',
+      getRecords: function () { return read(); }
+    });
+  }
 })();

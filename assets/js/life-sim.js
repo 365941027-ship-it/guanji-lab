@@ -167,6 +167,129 @@
     return localStorage.getItem(key) || '';
   }
 
+  function planResult() {
+    try {
+      return JSON.parse(window.guanGet('guan_plan') || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function roleScenario(role, theme) {
+    var text = role + '';
+    var template;
+    if (/医生|医|护理/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你穿上了白大褂。这份职业的光环背后，是每天面对真实的病痛、家属的焦虑，和那些你必须独自做决定的时刻。',
+        stages: [
+          { q: '值班的深夜，一位病人病情突然变化，你会？', options: [
+            { text: '立刻按流程处理，即使心里也慌', tag: '专业', effect: { career: 2, self: 1 }, story: '你选择相信训练。手在抖，但流程让你稳住了。' },
+            { text: '先请上级/同事支援，不独自扛', tag: '协作', effect: { relation: 2, career: 1 }, story: '你懂得求助不是无能——医疗从来不是一个人的战斗。' },
+            { text: '先安抚家属，再处理病情', tag: '共情', effect: { relation: 2, energy: 1 }, story: '你看见的不只是病，还有人。这份看见，让沟通变得不同。' }
+          ] },
+          { q: '一位病人不信任你，反复质疑，你会？', options: [
+            { text: '耐心解释，不因情绪而敷衍', tag: '耐心', effect: { relation: 2, career: 1 }, story: '你把质疑当成一次沟通的开始，而不是冒犯。' },
+            { text: '保持专业边界，不被他带节奏', tag: '边界', effect: { career: 2, self: 1 }, story: '你清楚自己的职责，也不让情绪影响判断。' },
+            { text: '请更有经验的同事一起沟通', tag: '求助', effect: { relation: 2 }, story: '你懂得在需要时借力——这是成熟，不是退缩。' }
+          ] },
+          { q: '连续值班让你身心俱疲，你会？', options: [
+            { text: '坚持，因为病人需要我', tag: '坚持', effect: { career: 2, energy: -1 }, story: '你选择留下。但身体在记账，这份债需要被偿还。' },
+            { text: '申请轮休，先照顾好自己', tag: '自护', effect: { energy: 2, care: 1 }, story: '你明白：只有自己不倒下，才能一直守护别人。' },
+            { text: '和同行聊聊，分担这份沉重', tag: '倾诉', effect: { relation: 2, energy: 1 }, story: '你没有把沉重都咽下去——说出来，轻了一半。' }
+          ] },
+          { q: '三年后，你希望自己成为怎样的医者？', options: [
+            { text: '技术过硬、值得托付的医生', tag: '精进', effect: { career: 2, meaning: 1 }, story: '你选择在专业上不断深耕，让「可靠」成为你的名字。' },
+            { text: '既专业又懂人心的医者', tag: '人文', effect: { relation: 2, meaning: 1 }, story: '你相信医学是科学，也是对人的关怀。' },
+            { text: '能平衡工作与生活的医者', tag: '平衡', effect: { energy: 2, self: 1 }, story: '你不想燃烧自己成全职业——你想走得远，也活得久。' }
+          ] }
+        ]
+      };
+    } else if (/老师|教师|教育/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你站上了讲台。教书这件事，比想象中更复杂：你要面对的，不只是知识，还有一个个真实的孩子和他们的家庭。',
+        stages: [
+          { q: '一个学生明显不在状态，你会？', options: [
+            { text: '课后单独找TA聊聊', tag: '关怀', effect: { relation: 2, care: 1 }, story: '你没有当众点破，而是留了一个温柔的空间。' },
+            { text: '先观察，找合适的时机', tag: '观察', effect: { self: 2 }, story: '你相信每个孩子都有自己的节奏，先看懂再介入。' },
+            { text: '和班主任/家长沟通', tag: '协作', effect: { relation: 2 }, story: '你懂得教育是合力，不独自扛。' }
+          ] },
+          { q: '备课、批改、家长沟通压在一起，你会？', options: [
+            { text: '排优先级，重要的先做', tag: '规划', effect: { career: 2, energy: 1 }, story: '你没有被琐事淹没，而是先做最重要的事。' },
+            { text: '先停下来，重新安排节奏', tag: '调整', effect: { energy: 2 }, story: '你知道硬撑只会让质量下降，先稳住自己。' },
+            { text: '和同事分担、互相支持', tag: '协作', effect: { relation: 2 }, story: '你发现同行者能让这条路轻很多。' }
+          ] },
+          { q: '你发现自己开始麻木，会？', options: [
+            { text: '找回最初选择教育的理由', tag: '初心', effect: { meaning: 2 }, story: '你回到那个「想点亮什么人」的起点。' },
+            { text: '给自己休息，允许暂时失去热情', tag: '允许', effect: { energy: 2, care: 1 }, story: '你允许热情休息，而不是假装它还在。' },
+            { text: '和学生多接触，从他们身上找回能量', tag: '联结', effect: { relation: 2 }, story: '你发现孩子的眼睛，会重新点亮你。' }
+          ] },
+          { q: '三年后，你希望自己是怎样的老师？', options: [
+            { text: '能真正影响一些孩子的老师', tag: '影响', effect: { meaning: 2, relation: 1 }, story: '你希望自己教的不只是知识，还有勇气。' },
+            { text: '既专业又受学生信任的老师', tag: '专业', effect: { career: 2, relation: 1 }, story: '你相信信任是最好的讲台。' },
+            { text: '能保持热爱的老师', tag: '热爱', effect: { energy: 2, meaning: 1 }, story: '你不想在日复一日里磨掉最初的光。' }
+          ] }
+        ]
+      };
+    } else if (/创作|作家|写|画|设计|艺术/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你开始靠创作生活。自由背后，是收入的不确定、灵感的起伏，和无数个「没人看见」的时刻。',
+        stages: [
+          { q: '灵感枯竭、什么都写不出来时，你会？', options: [
+            { text: '允许空白，去散步、发呆、换环境', tag: '留白', effect: { energy: 2, explore: 1 }, story: '你懂得灵感不是逼出来的，是养出来的。' },
+            { text: '先做大量输入，喂养自己', tag: '输入', effect: { career: 2, self: 1 }, story: '你把空白当成补给期，而不是失败。' },
+            { text: '硬写，相信先完成后完美', tag: '行动', effect: { career: 2, energy: -1 }, story: '你相信动作本身会带来灵感。' }
+          ] },
+          { q: '作品没什么人看时，你会？', options: [
+            { text: '继续做，为自己而做', tag: '自持', effect: { self: 2, meaning: 1 }, story: '你记得最初创作的快乐，不需要掌声确认。' },
+            { text: '研究别人怎么做，调整方向', tag: '学习', effect: { career: 2 }, story: '你把无人问津当成数据，而不是判决。' },
+            { text: '和同行交流，获得反馈', tag: '联结', effect: { relation: 2 }, story: '你没有在孤岛里硬撑。' }
+          ] },
+          { q: '收入不稳定让你焦虑，你会？', options: [
+            { text: '接一些能糊口的活，保障基本生活', tag: '务实', effect: { career: 2, energy: 1 }, story: '你明白理想需要现实托底。' },
+            { text: '相信长期积累，继续专注作品', tag: '专注', effect: { meaning: 2, self: 1 }, story: '你选择相信复利，哪怕短期看不到。' },
+            { text: '规划多渠道收入，不把鸡蛋放一个篮子', tag: '经营', effect: { career: 2, steady: 1 }, story: '你开始像经营一个小事业一样经营创作。' }
+          ] },
+          { q: '三年后，你希望自己的创作状态是？', options: [
+            { text: '能靠创作养活自己', tag: '自立', effect: { career: 2, meaning: 1 }, story: '你希望热爱与生存不再对立。' },
+            { text: '作品被一些人真心喜欢', tag: '共鸣', effect: { relation: 2, meaning: 1 }, story: '你在意的是「被懂」，而不是「被多少人懂」。' },
+            { text: '一直保持创作的快乐', tag: '热爱', effect: { energy: 2, self: 1 }, story: '你不愿让创作变成新的牢笼。' }
+          ] }
+        ]
+      };
+    } else {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你开始走向「' + role + '」这条路。它比想象中具体：有琐事、有瓶颈、有诱惑你放弃的时刻。',
+        stages: [
+          { q: '刚起步，事情多而杂，你会？', options: [
+            { text: '先做最重要的一件事', tag: '聚焦', effect: { career: 2, energy: 1 }, story: '你没有被琐事淹没，先抓住核心。' },
+            { text: '搭好流程和习惯，再往前走', tag: '系统', effect: { steady: 2 }, story: '你相信好系统能陪你走很远。' },
+            { text: '找前辈请教，少走弯路', tag: '请教', effect: { relation: 2 }, story: '你懂得借别人的经验，而不是全部亲自踩坑。' }
+          ] },
+          { q: '遇到一个很大的坎，你会？', options: [
+            { text: '拆成小块，一步步解决', tag: '拆解', effect: { career: 2, steady: 1 }, story: '你把大山拆成可以搬的石头。' },
+            { text: '先照顾好情绪，再面对问题', tag: '自护', effect: { energy: 2, care: 1 }, story: '你明白状态是解决问题的前提。' },
+            { text: '向信任的人求助', tag: '求助', effect: { relation: 2 }, story: '你没有独自硬扛，这让路轻了很多。' }
+          ] },
+          { q: '你开始怀疑「这真的是我想要的吗」，你会？', options: [
+            { text: '回到最初的动机，重新确认', tag: '回望', effect: { meaning: 2 }, story: '你问自己：当时为什么出发？' },
+            { text: '允许怀疑，把它当成信息', tag: '允许', effect: { self: 2, care: 1 }, story: '你没有否定怀疑，而是听它想说什么。' },
+            { text: '做一次小实验验证，而不是空想', tag: '验证', effect: { explore: 2 }, story: '你用行动回答怀疑，而不是用更多想象。' }
+          ] },
+          { q: '三年后，你希望自己走成什么样？', options: [
+            { text: '站稳了，有了自己的位置', tag: '立足', effect: { career: 2, meaning: 1 }, story: '你希望这条路走得踏实。' },
+            { text: '被一些人真心认可', tag: '认可', effect: { relation: 2 }, story: '你在意的是真实的联结。' },
+            { text: '还在走，而且依然热爱', tag: '热爱', effect: { energy: 2, self: 1 }, story: '你希望热情没有在路上被磨灭。' }
+          ] }
+        ]
+      };
+    }
+    return template;
+  }
+
   function buildPersonalScenario() {
     var prof = read('guan_profile', {});
     var growth = read('guan_growth', []);
@@ -336,6 +459,35 @@
     cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function startRoleScenario(role, theme) {
+    var sc = roleScenario(role, theme);
+    sc.id = 'role_' + role.slice(0, 8);
+    sc.desc = '这是基于你人生设计里「或许可以成为」的方向，生成的一段职业推演。它不是预言，而是一组真实会面临的选择。';
+    sc.futures = {
+      career: '三年后，你在这条路上有了自己的位置。它不是最轻松的路，但每一步都是你选的。你发现，「成为' + role + '」不是一种状态，而是一连串日常决定的总和——而你已经练会了做这些决定。',
+      relation: '三年后，你回看这段路，发现真正支撑你的不只是成就，还有那些陪你走过困难时刻的人。',
+      energy: '三年后，你依然在路上，但你学会了另一种节奏：不再用燃烧自己证明决心。你走得不算最快，却是少数不喊累的人。',
+      self: '三年后，你也许还没有抵达终点，但你比谁都清楚自己是谁、想要什么、底线在哪里。',
+      meaning: '三年后，你做的事开始对一些人有了意义——而这份意义，也反过来滋养了你。',
+      steady: '三年后，你不再急着证明什么。你按自己的节奏走，反而比很多慌忙的人走得更稳。',
+      express: '三年后，那些曾经咽下去的话，你已经能说出来了。你被听见的机会，也随之变多。',
+      explore: '三年后，你试过了几条不同的路。它们没有白费——它们共同告诉你，哪条路更像你。',
+      boundary: '三年后，你更懂得什么时候该靠近、什么时候该守着自己。这份分寸，让你走得既真实又不失自己。',
+      care: '三年后，你学会了在赶路时也照顾自己。这让你走得慢了一点，却走了更远。'
+    };
+    state.scenario = sc.id;
+    state.index = 0;
+    state.picks = [];
+    SCENARIOS[sc.id] = sc;
+    titleEl.textContent = sc.title;
+    descEl.textContent = sc.desc;
+    pickEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    cardEl.classList.remove('hidden');
+    renderStage();
+    cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function dimsOf() {
     var dims = { career: 0, relation: 0, energy: 0, self: 0 };
     state.picks.forEach(function (p) {
@@ -489,6 +641,33 @@
     if (btn) startScenario(btn.getAttribute('data-scenario'));
   });
   document.getElementById('simPersonalBtn').addEventListener('click', startPersonal);
+  // 设计方案的「或许可以成为」入口
+  var planEntry = document.getElementById('simPlanEntry');
+  var plan = planResult();
+  if (plan && plan.roles && planEntry) {
+    planEntry.style.display = 'flex';
+    var roleBox = document.getElementById('simPlanRoles');
+    plan.roles.forEach(function (r, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sim-script role-btn';
+      btn.innerHTML = '<span class="sim-en">原型 ' + ['A', 'B', 'C'][i] + '</span><h3>' + r.role + '</h3><p>' + r.desc + '</p>';
+      btn.addEventListener('click', function () {
+        startRoleScenario(r.role, plan.theme);
+      });
+      roleBox.appendChild(btn);
+    });
+  }
+
+  // 不满意预见结果 -> 写下理想 -> 联动档案
+  document.getElementById('idealSave').addEventListener('click', function () {
+    var ideal = document.getElementById('idealInput').value.trim();
+    if (!ideal) { window.guanToast('先写下一个你真正想成为的样子'); return; }
+    window.guanSet('guan_ideal', JSON.stringify({ ideal: ideal, date: new Date().toISOString() }));
+    document.getElementById('idealNote').textContent = '已记入你的档案。从现在开始，它不再只是一个念头——它是一份三十天路径的起点。去「三十天陪伴」里，让第一个星期为你而开始。';
+    document.getElementById('idealNote').innerHTML = '已记入你的档案。从现在开始，它不再只是一个念头——它是一份三十天路径的起点。<a href="journey.html" class="btn btn-gold btn-sm" style="margin-top:8px">去三十天陪伴，开始第一周</a>';
+    window.guanToast('已记下你的理想，路径已生成');
+  });
   backBtn.addEventListener('click', function () {
     if (state.index > 0) {
       state.index -= 1;

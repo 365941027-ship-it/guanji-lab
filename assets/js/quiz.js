@@ -10,6 +10,56 @@
   };
 
   var letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  var SOFTEN = {
+    '怕失败': '有点怕失败', '自我否定': '对自己严格', '灾难化': '想到最坏处', '被否定': '怕被否定',
+    '被比下': '怕被比下去', '高期待': '被期待着', '被催': '被催促着', '被比较': '常被比较',
+    '失眠': '睡不太好', '熬夜': '常熬夜', '前慢后急': '时间有点紧', '卡难题': '容易卡住',
+    '手抖': '有点紧张', '审判': '把它看得很重', '无关联': '与复习无关', '不够': '总觉得不够',
+    '别人多': '觉得别人准备得多', '身体先': '身体先紧张', '白复习': '觉得白费', '浪费': '怕浪费',
+    '落后': '怕落后', '身体感觉': '身体很难受', '被念头拉走': '容易走神', '被时间拉走': '被时间追着',
+    '被外界拉走': '容易分心', '被身体拉走': '被紧张带走', '求完美': '想做到完美', '怕评价': '怕被评价',
+    '硬撑': '想再撑一下', '奢侈感': '觉得是奢侈', '假装': '假装没事', '不够好': '觉得自己不够好',
+    '否定情绪': '先否定情绪', '忽略': '想忽略它', '掩盖': '想盖住它', '挑剔身体': '对身材苛刻',
+    '工具化': '把它当工具', '努力归因': '归因于不够努力', '不配休息': '觉得不配休息', '教练': '像位严师',
+    '不庆祝': '很少庆祝', '赶路': '忙着赶下一件', '自我归咎': '归咎自己', '硬忍': '硬忍着',
+    '放纵论': '觉得是放纵', '高频': '几乎每天', '压制': '常压下去', '零容错': '几乎不容错',
+    '空想': '反复想', '假装忙': '做别的事', '逃离': '想逃开', '怕累': '怕自己太累',
+    '怕批评': '怕被批评', '不值': '觉得不值得', '怕难受': '怕不舒服', '拖延': '想慢一点',
+    '逃避': '想缓一缓', '回避': '先退一步', '焦虑': '有些在意', '担心': '有些担心', '恐惧': '有些害怕'
+  };
+
+  function softenTag(tag) {
+    if (!tag) return '';
+    if (SOFTEN[tag]) return SOFTEN[tag];
+    return tag;
+  }
+
+  var THEORY = {
+    guan_archetype: '荣格原型理论 · 塔罗象征学',
+    guan_stage: '心理发展阶段理论 · 过渡期心理学',
+    guan_inneros: '认知心理学 · 决策科学',
+    guan_relationship: '关系动力学 · 沟通心理学',
+    guan_energy: '能量管理 · 积极心理学',
+    guan_values: '价值澄清理论 · 存在主义心理学',
+    guan_learning: '学习风格理论 · 认知通道研究',
+    guan_academic: '学业压力研究 · 认知行为视角',
+    guan_burnout: '职业倦怠理论（Maslach）',
+    guan_pivot: '职业转型研究 · 决策心理学',
+    guan_drain: '反刍思维研究 · 自我决定理论',
+    guan_attachment: '依恋理论（Bowlby / Ainsworth）',
+    guan_pleasing: '讨好型人格研究 · 自我分化理论',
+    guan_boundary: '边界理论 · 家庭系统视角',
+    guan_selfcare: '自我关怀研究（Kristin Neff）',
+    guan_night: '睡眠心理学 · 反刍与情绪调节',
+    guan_exam: '考试焦虑研究 · 认知行为视角',
+    guan_procrastination: '拖延心理学（情绪调节模型）',
+    guan_drive: '自我决定理论（Deci & Ryan）',
+    guan_communication: '非暴力沟通 · 关系语言研究',
+    guan_selfworth: '自我价值理论 · 自尊研究',
+    guan_emotions: '情绪粒度研究 · 情绪功能观',
+    guan_custom: '整合你的档案、测试与记录'
+  };
   var stepEl = document.getElementById('quizStep');
   var optionsEl = document.getElementById('quizOptions');
   var titleEl = document.getElementById('questionTitle');
@@ -36,7 +86,7 @@
       var picked = state.answers[state.index] === i;
       if (picked) btn.classList.add('on');
       var html = '<span>' + letters[i] + ' · ' + opt.text + '</span>';
-      if (opt.tag) html += '<span class="opt-tag">' + opt.tag + '</span>';
+      if (opt.tag) html += '<span class="opt-tag">' + softenTag(opt.tag) + '</span>';
       btn.innerHTML = html;
       btn.addEventListener('click', function () {
         pick(i);
@@ -193,6 +243,9 @@
     var p = QUIZ.results[r.primary];
     var html = resultCardHTML(QUIZ.iconSVG || starSVG(), p.name, p.en, tarotSVG(), '塔罗象征 · ' + p.tarot);
     html += '<div class="result-sections">';
+    if (THEORY[QUIZ.key]) {
+      html += '<div class="theory-badge">专业依据 · ' + THEORY[QUIZ.key] + '</div>';
+    }
     html += '<div class="result-block wide"><h4>核心特征</h4>' + deepBlock('core', p) + '</div>';
     html += '<div class="result-block wide"><h4>内在冲突</h4>' + deepBlock('conflict', p) + '</div>';
     html += '<div class="result-block wide"><h4>成长方向</h4>' + deepBlock('growth', p) + '</div>';
@@ -215,6 +268,10 @@
     var otherList = collectOthers();
     if (otherList.length) {
       html += block('你的声音', listHTML(otherList), 'wide');
+    }
+    var pathList = collectPath();
+    if (pathList.length) {
+      html += block('你的选择轨迹 · 你怎样走到这里', listHTML(pathList), 'wide');
     }
     if (QUIZ.depth && QUIZ.depth.title) {
       html += block('关于' + (QUIZ.categoryTitle || '这个板块') + ' · 深度文章',
@@ -260,6 +317,10 @@
     if (otherList.length) {
       html += block('你的声音', listHTML(otherList), 'wide');
     }
+    var pathList = collectPath();
+    if (pathList.length) {
+      html += block('你的选择轨迹 · 你怎样走到这里', listHTML(pathList), 'wide');
+    }
     if (QUIZ.depth && QUIZ.depth.title) {
       html += block('关于' + (QUIZ.categoryTitle || '这个板块') + ' · 深度文章',
         '<p>' + QUIZ.depth.lead + '</p><p>' + QUIZ.depth.body + '</p>' +
@@ -293,6 +354,21 @@
         var text = a.other;
         var interpretation = interpretOther(text);
         list.push('关于「' + q.q.slice(0, 22) + (q.q.length > 22 ? '…' : '') + '」，你写下了：「' + text + '」。' + interpretation);
+      }
+    });
+    return list.slice(0, 5);
+  }
+
+  function collectPath() {
+    var list = [];
+    state.answers.forEach(function (a, qi) {
+      if (!a) return;
+      var q = QUIZ.questions[qi];
+      if (a.option !== undefined) {
+        var opt = q.options[a.option];
+        if (opt) {
+          list.push('在第 ' + (qi + 1) + ' 题，你选择了「' + opt.text.slice(0, 18) + (opt.text.length > 18 ? '…' : '') + '」——这透露了你此刻的真实倾向。');
+        }
       }
     });
     return list.slice(0, 5);
@@ -446,6 +522,15 @@
       '  <button type="button" class="btn btn-gold" data-copy>复制结果，分享到微信</button>' +
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
+      '</div>' +
+      '<div class="next-steps">' +
+      '  <h4>接下来，你可以</h4>' +
+      '  <div class="next-links">' +
+      '    <a href="tests.html">继续探索 · 认识自己的另一面</a>' +
+      '    <a href="design.html">去人生设计 · 把此刻的看见变成方向</a>' +
+      '    <a href="simulator.html">去人生模拟 · 在沙盒里试走一条路</a>' +
+      '    <a href="journey.html">开始三十天陪伴 · 慢慢陪自己</a>' +
+      '  </div>' +
       '</div>' +
       (QUIZ.category ? crisisHTML(QUIZ.category) : '');
   }

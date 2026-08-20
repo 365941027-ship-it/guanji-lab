@@ -28,12 +28,10 @@
       <nav class="site-nav" id="siteNav">
   <a href="index.html">首页</a>
   <a href="tests.html">探索</a>
-  <a href="journey.html">三十天</a>
-  <a href="wisdom.html">思想</a>
-  <a href="letters.html">来信</a>
   <a href="design.html" class="active">设计</a>
-  <a href="growth.html">轨迹</a>
   <a href="simulator.html">模拟</a>
+  <a href="growth.html">轨迹</a>
+  <a href="journey.html">三十天</a>
   <a href="garden.html">花园</a>
   <a href="about.html">关于</a>
 </nav>
@@ -46,7 +44,7 @@
       <div class="container">
         <span class="kicker kicker-center">Design Your Life</span>
         <h1>人生设计</h1>
-        <p>不需要想清楚一辈子，只需要为下一个阶段做一个「最小版本」。回答三个问题，我们会为你生成一份设计方案。</p>
+        <p>这里没有标准答案，也没有「你应该怎样」。它更像是和一个懂你处境的朋友慢慢聊：把你想成为的样子、你手里有的资源、你心里的障碍，都摊开来看一看——然后一起，为下一段路画一张地图。</p>
       </div>
     </section>
 
@@ -54,19 +52,34 @@
       <div class="container">
         <div class="design-grid">
           <div class="design-form">
-            <h3>三个问题，一次设计</h3>
+            <h3>让我们慢慢聊</h3>
             <div class="form-field">
               <label>1 · 你现在卡在哪里？</label>
-              <textarea id="painInput" rows="3" placeholder="例如：工作三年觉得没有成长，每天都很消耗，但不知道能做什么。"></textarea>
+              <textarea id="painInput" rows="3" placeholder="例如：工作三年觉得没有成长，每天都很消耗，但不知道能做什么。用你的话说就好。"></textarea>
             </div>
             <div class="form-field">
               <label>2 · 你希望成为的状态？</label>
-              <textarea id="wishInput" rows="3" placeholder="例如：想做一个能发挥创造力、时间自由、做得久的事业。"></textarea>
+              <textarea id="wishInput" rows="3" placeholder="例如：想做一个能发挥创造力、时间自由、做得久的事业。不用说得完美，说真心话就好。"></textarea>
             </div>
             <div class="form-field">
-              <label>3 · 你愿意投入什么？</label>
-              <textarea id="resourceInput" rows="3" placeholder="例如：每周 8 小时、每月 1000 元、三个月时间。"></textarea>
-              <div class="form-hint">写下真实的数字和条件，设计需要建立在现实之上。</div>
+              <label>3 · 你每周大约能投入多少时间？</label>
+              <input type="text" id="timeInput" placeholder="例如：每周 8 小时">
+            </div>
+            <div class="form-field">
+              <label>4 · 你每月大约能投入多少预算？</label>
+              <input type="text" id="moneyInput" placeholder="例如：每月 200 元">
+            </div>
+            <div class="form-field">
+              <label>5 · 你手里已经有什么（技能/人脉/资源/条件）？</label>
+              <textarea id="assetInput" rows="2" placeholder="例如：会剪辑、认识两个同行、晚上比较自由……"></textarea>
+            </div>
+            <div class="form-field">
+              <label>6 · 你心里最大的障碍或担心是什么？</label>
+              <textarea id="blockInput" rows="2" placeholder="例如：怕坚持不下来、怕钱不够、怕别人不理解……"></textarea>
+            </div>
+            <div class="form-field">
+              <label>7 · 如果三十天后能看到一点变化，你最希望那是什么？</label>
+              <textarea id="goalInput" rows="2" placeholder="例如：做出第一个作品、跑通一次完整尝试、或只是更了解自己……"></textarea>
             </div>
             <button type="button" class="btn btn-gold btn-block" id="designBtn">生成我的设计方案</button>
           </div>
@@ -77,6 +90,8 @@
             <div id="designRoutes"></div>
             <div class="design-principles" id="designPrinciples"></div>
             <div class="design-principles" id="designSimBlock" style="margin-top:16px"></div>
+            <div class="design-principles becoming-block" id="designBecoming" style="margin-top:16px"></div>
+            <div class="design-principles plan30-block" id="designPlan30" style="margin-top:16px"></div>
             <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
               <button type="button" class="btn btn-gold btn-sm" id="copyDesign">复制方案</button>
               <button type="button" class="btn btn-sm" id="redoDesign">重新设计</button>

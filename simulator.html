@@ -28,12 +28,10 @@
       <nav class="site-nav" id="siteNav">
   <a href="index.html">首页</a>
   <a href="tests.html">探索</a>
-  <a href="journey.html">三十天</a>
-  <a href="wisdom.html">思想</a>
-  <a href="letters.html">来信</a>
   <a href="design.html">设计</a>
-  <a href="growth.html">轨迹</a>
   <a href="simulator.html" class="active">模拟</a>
+  <a href="growth.html">轨迹</a>
+  <a href="journey.html">三十天</a>
   <a href="garden.html">花园</a>
   <a href="about.html">关于</a>
 </nav>
@@ -60,6 +58,14 @@
             <button type="button" class="btn btn-gold btn-sm" id="simPersonalBtn">开始我的模拟</button>
           </div>
           <div class="custom-entry-mark" aria-hidden="true">✦</div>
+        </div>
+        <div class="sim-plan-entry" id="simPlanEntry" style="display:none">
+          <div>
+            <span class="kicker" style="margin-bottom:6px">From Your Design</span>
+            <h3>根据你的人生设计方案模拟</h3>
+            <p id="simPlanDesc">你在人生设计里写下的三种可能，已经准备好在这里变成真实的选择。选一个「或许可以成为」的身份，替自己走一段。</p>
+            <div id="simPlanRoles"></div>
+          </div>
         </div>
         <p class="sim-free-title">或者，自由选择一个剧本：</p>
         <div id="simPick" class="sim-script-grid">
@@ -120,6 +126,13 @@
               <button type="button" class="btn btn-gold btn-sm" id="simSave">保存这次模拟</button>
               <button type="button" class="btn btn-sm" id="simAgain">再试一次不同选择</button>
               <a class="btn btn-sm" href="design.html">带回人生设计</a>
+            </div>
+            <div class="sim-revise" id="simRevise">
+              <h4>如果预见的成果，不是你想要的</h4>
+              <p>写下一个你真正想成为的样子。它会记入你的档案，并为你生成一份从今天开始的三十天路径。</p>
+              <textarea class="journal-area" id="idealInput" rows="3" placeholder="例如：我想成为一个能靠作品养活自己、同时内心平静的人……"></textarea>
+              <button type="button" class="btn btn-gold btn-sm" id="idealSave">写下我的理想，生成路径</button>
+              <p class="sim-note" id="idealNote"></p>
             </div>
             <p class="sim-note">模拟是可能性的推演，不是预言。它展示的是一组「如果……那么……」的叙事，帮助你看见每种选择背后的代价与礼物——真正的选择权，永远在你手里。</p>
           </div>

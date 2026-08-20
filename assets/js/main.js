@@ -17,6 +17,37 @@
   var yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
+  // Splash screen (first visit, brand introduction)
+  if (!localStorage.getItem('guan_splash_seen')) {
+    var splash = document.createElement('div');
+    splash.id = 'splash';
+    splash.innerHTML =
+      '<div class="splash-card">' +
+      '  <img src="assets/img/logo.svg" alt="观己实验室" class="splash-logo">' +
+      '  <div class="splash-name">观己实验室</div>' +
+      '  <div class="splash-en">SELF INSIGHT LAB</div>' +
+      '  <p class="splash-lead">理解自己，设计人生。</p>' +
+      '  <p class="splash-desc">我们相信，真正的成长不是变成更好的别人，而是成为更完整的自己。</p>' +
+      '  <div class="splash-path">' +
+      '    <div><b>理解</b><span>先看清自己</span></div>' +
+      '    <div><b>设计</b><span>再选择方向</span></div>' +
+      '    <div><b>记录</b><span>在轨迹里看见变化</span></div>' +
+      '    <div><b>成长</b><span>慢慢成为自己</span></div>' +
+      '  </div>' +
+      '  <div class="splash-links">' +
+      '    <a href="letters.html">读一封来信</a>' +
+      '    <a href="wisdom.html">看思想源头</a>' +
+      '  </div>' +
+      '  <button type="button" class="btn btn-gold" id="splashEnter">开始这段旅程</button>' +
+      '</div>';
+    document.body.appendChild(splash);
+    document.getElementById('splashEnter').addEventListener('click', function () {
+      localStorage.setItem('guan_splash_seen', '1');
+      splash.classList.add('hide');
+      setTimeout(function () { splash.remove(); }, 500);
+    });
+  }
+
   // Floating help button (crisis support)
   var helpBtn = document.createElement('button');
   helpBtn.type = 'button';

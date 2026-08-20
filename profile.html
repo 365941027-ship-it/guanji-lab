@@ -28,12 +28,10 @@
       <nav class="site-nav" id="siteNav">
   <a href="index.html">首页</a>
   <a href="tests.html">探索</a>
-  <a href="journey.html">三十天</a>
-  <a href="wisdom.html">思想</a>
-  <a href="letters.html">来信</a>
   <a href="design.html">设计</a>
-  <a href="growth.html">轨迹</a>
   <a href="simulator.html">模拟</a>
+  <a href="growth.html">轨迹</a>
+  <a href="journey.html">三十天</a>
   <a href="garden.html">花园</a>
   <a href="about.html">关于</a>
 </nav>
@@ -66,10 +64,26 @@
               <label>昵称（可选）</label>
               <input type="text" id="pNick" placeholder="希望我们怎么称呼你">
             </div>
+            <div class="form-field">
+              <label>头像（可以上传自己的照片）</label>
+              <div class="avatar-row" id="pAvatarRow">
+                <button type="button" data-avatar="🌙" class="avatar-btn on">🌙</button>
+                <button type="button" data-avatar="🌿" class="avatar-btn">🌿</button>
+                <button type="button" data-avatar="✨" class="avatar-btn">✨</button>
+                <button type="button" data-avatar="🌊" class="avatar-btn">🌊</button>
+                <button type="button" data-avatar="🔥" class="avatar-btn">🔥</button>
+                <button type="button" data-avatar="🕊️" class="avatar-btn">🕊️</button>
+                <button type="button" data-avatar="🌄" class="avatar-btn">🌄</button>
+                <button type="button" data-avatar="🌱" class="avatar-btn">🌱</button>
+              </div>
+              <div class="form-hint">也可以上传你自己的照片头像（只保存在这台设备上）</div>
+              <input type="file" id="pAvatarFile" accept="image/*" style="margin-top:8px">
+            </div>
             <div class="form-row">
               <div class="form-field">
-                <label>出生日期</label>
-                <input type="date" id="pBirth">
+                <label>出生日期（填写或选择均可）</label>
+                <input type="text" id="pBirth" placeholder="例如：1995-05-18" inputmode="numeric">
+                <div class="form-hint">可以直接输入，也可以用日期选择器</div>
               </div>
               <div class="form-field">
                 <label>出生时辰（可选）</label>
@@ -91,9 +105,16 @@
               </div>
             </div>
             <div class="form-field">
-              <label>出生地（可选）</label>
-              <input type="text" id="pPlace" placeholder="例如：北京">
-              <div class="form-hint">用于日后更精细的星盘与历法推算</div>
+              <label>出生城市（可选，仅用于上升星座排盘）</label>
+              <input type="text" id="pCity" list="cityList" placeholder="例如：北京">
+              <datalist id="cityList">
+                <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
+                <option>成都</option><option>杭州</option><option>重庆</option><option>武汉</option>
+                <option>南京</option><option>西安</option><option>长沙</option><option>青岛</option>
+                <option>天津</option><option>苏州</option><option>郑州</option><option>沈阳</option>
+                <option>厦门</option><option>福州</option><option>昆明</option><option>贵阳</option>
+              </datalist>
+              <div class="form-hint">上升星座需要出生地点才能较准确排盘；未填写时只给参考说明</div>
             </div>
             <div class="form-row">
               <div class="form-field">
@@ -107,47 +128,30 @@
                 </select>
               </div>
               <div class="form-field">
-                <label>九型人格（可选）</label>
+                <label>九型人格（翼型格式）</label>
                 <select id="pEnnea">
                   <option value="">不确定</option>
-                  <option>1 完美型</option><option>2 助人型</option><option>3 成就型</option>
-                  <option>4 自我型</option><option>5 理智型</option><option>6 忠诚型</option>
-                  <option>7 活跃型</option><option>8 领袖型</option><option>9 平和型</option>
+                  <option value="1w2">1w2</option><option value="2w1">2w1</option><option value="2w3">2w3</option><option value="3w2">3w2</option><option value="3w4">3w4</option><option value="4w3">4w3</option><option value="4w5">4w5</option><option value="5w4">5w4</option><option value="5w6">5w6</option><option value="6w5">6w5</option><option value="6w7">6w7</option><option value="7w6">7w6</option><option value="7w8">7w8</option><option value="8w7">8w7</option><option value="8w9">8w9</option><option value="9w8">9w8</option><option value="9w1">9w1</option>
                 </select>
               </div>
             </div>
             <div class="form-field">
-              <label>八字四柱（如果你已经知道，可直接填写）</label>
-              <div class="form-row">
-                <input type="text" id="pBazi1" placeholder="年柱 如：甲辰" style="width:100%">
-                <input type="text" id="pBazi2" placeholder="月柱 如：壬申" style="width:100%">
-                <input type="text" id="pBazi3" placeholder="日柱 如：戊子" style="width:100%">
-                <input type="text" id="pBazi4" placeholder="时柱 如：庚申" style="width:100%">
-              </div>
-              <div class="form-hint">如果不知道四柱，可以先填写出生日期与时辰；深度排盘将在后续版本提供</div>
+              <label>八字四柱 · 自动排盘</label>
+              <div class="auto-chart" id="baziChart">填写出生日期与时辰后自动生成</div>
             </div>
             <div class="form-row">
               <div class="form-field">
-                <label>上升星座（可选）</label>
-                <select id="pRising">
-                  <option value="">不确定</option>
-                  <option>白羊座</option><option>金牛座</option><option>双子座</option><option>巨蟹座</option>
-                  <option>狮子座</option><option>处女座</option><option>天秤座</option><option>天蝎座</option>
-                  <option>射手座</option><option>摩羯座</option><option>水瓶座</option><option>双鱼座</option>
-                </select>
+                <label>上升星座 · 自动校准</label>
+                <div class="auto-chart" id="risingAuto">填写出生日期与时辰后自动生成</div>
               </div>
               <div class="form-field">
-                <label>月亮星座（可选）</label>
-                <select id="pMoon">
-                  <option value="">不确定</option>
-                  <option>白羊座</option><option>金牛座</option><option>双子座</option><option>巨蟹座</option>
-                  <option>狮子座</option><option>处女座</option><option>天秤座</option><option>天蝎座</option>
-                  <option>射手座</option><option>摩羯座</option><option>水瓶座</option><option>双鱼座</option>
-                </select>
+                <label>月亮星座 · 自动校准</label>
+                <div class="auto-chart" id="moonAuto">填写出生日期与时辰后自动生成</div>
               </div>
             </div>
+            <p class="chart-note">排盘由出生日期与时辰自动计算，为近似结果；如需精确命盘，请以专业排盘软件为准。</p>
             <div class="form-field">
-              <label>你最近的人生阶段（可选）</label>
+              <label>你最近的人生阶段</label>
               <select id="pStage">
                 <option value="">不确定</option>
                 <option>探索期 · 在找方向</option>
@@ -155,6 +159,11 @@
                 <option>积累期 · 在深耕一件事</option>
                 <option>转型期 · 在酝酿变化</option>
               </select>
+            </div>
+            <div class="form-field">
+              <label>用你自己的话，描述此刻的你</label>
+              <textarea id="pSelfDesc" rows="3" placeholder="不需要写得很好，用你最真实的话就好。例如：最近我常常觉得累，但又不敢停下来，我好像一直在为别人活……"></textarea>
+              <div class="form-hint">这里没有标准答案，也没有标签。只是让你有机会，把真实的自己说出来。</div>
             </div>
             <div class="form-field">
               <label>最近最想探索的议题</label>
@@ -229,6 +238,7 @@
   </footer>
 
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/astrology.js"></script>
   <script src="assets/js/profile.js"></script>
 </body>
 </html>
