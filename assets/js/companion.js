@@ -5,26 +5,26 @@
 
   // 成长阶段：种子 → 幼芽 → 小树 → 成人 → 理想形象
   var STAGES = [
-    { min: 0, name: '种子期', sprite: '🌱', desc: '一颗刚种下的种子，正在等待被看见。' },
-    { min: 30, name: '幼芽期', sprite: '🌿', desc: '芽破土了。你开始记录，它开始长大。' },
-    { min: 90, name: '小树期', sprite: '🌳', desc: '小树有了形状。你每一次坚持，都在给它年轮。' },
-    { min: 180, name: '成人期', sprite: '🧑', desc: '它站起来了，开始像你理想中的样子。' },
-    { min: 365, name: '理想期', sprite: '🌟', desc: '连续陪伴一年——你正在成为想成为的人。' }
+    { min: 0, name: '奶猫期', sprite: 'cat', body: '#c9a86e', ear: '#a9854a', cheek: '#e8cfa0', desc: '一只刚睁开眼的小奶猫，正在等待被好好照顾。' },
+    { min: 30, name: '幼猫期', sprite: 'cat', body: '#b98f5e', ear: '#96703f', cheek: '#e2c493', desc: '小猫开始长开，会蹭你、会等你的记录了。' },
+    { min: 90, name: '成长期', sprite: 'cat', body: '#9c7448', ear: '#7a5733', cheek: '#d9b47e', desc: '它有了自己的性格，也开始像你理想中的样子。' },
+    { min: 180, name: '成熟期', sprite: 'cat', body: '#7f5c36', ear: '#61431f', cheek: '#d0a66b', desc: '它站得更稳了，眼神里有你的影子。' },
+    { min: 365, name: '理想期', sprite: 'cat', body: '#6b4a26', ear: '#4e3315', cheek: '#c9995c', desc: '连续陪伴一年——它正在成为你理想中的样子。' }
   ];
 
   // 装扮商店：用奖章兑换
   var SHOP = [
-    { id: 'hat', name: '小草帽', icon: '👒', cost: 3, type: 'hat', desc: '戴上一顶草帽，遮住一点风雨。' },
+    { id: 'bow', name: '小领结', icon: '🎀', cost: 3, type: 'bow', desc: '给小猫系上一个蝴蝶结。' },
     { id: 'scarf', name: '红围巾', icon: '🧣', cost: 5, type: 'scarf', desc: '天冷的时候，记得照顾自己。' },
-    { id: 'glasses', name: '圆眼镜', icon: '👓', cost: 8, type: 'glasses', desc: '看得更清楚，也更有书卷气。' },
-    { id: 'flower', name: '小花环', icon: '🌸', cost: 6, type: 'flower', desc: '把春天戴在头上。' },
-    { id: 'star', name: '星月披风', icon: '✨', cost: 12, type: 'star', desc: '披上它，走夜路也不怕。' }
+    { id: 'glasses', name: '圆眼镜', icon: '👓', cost: 8, type: 'glasses', desc: '戴上眼镜，更有书卷气。' },
+    { id: 'hat', name: '小礼帽', icon: '🎩', cost: 7, type: 'hat', desc: '一顶神气的小礼帽。' },
+    { id: 'crown', name: '星月小冠', icon: '👑', cost: 12, type: 'crown', desc: '为它戴上，走夜路也不怕。' }
   ];
 
   var BADGES = [
-    { id: 'first', name: '第一次出发', icon: '🌱', need: '第一笔记录', check: function (d) { return d.days >= 1; } },
+    { id: 'first', name: '第一次相遇', icon: '🐾', need: '第一笔记录', check: function (d) { return d.days >= 1; } },
     { id: 'streak7', name: '七日之约', icon: '🌙', need: '连续 7 天', check: function (d) { return d.streak >= 7; } },
-    { id: 'streak21', name: '二十一天', icon: '🌻', need: '连续 21 天', check: function (d) { return d.streak >= 21; } },
+    { id: 'streak21', name: '二十一天', icon: '🐱', need: '连续 21 天', check: function (d) { return d.streak >= 21; } },
     { id: 'streak30', name: '满月', icon: '🌕', need: '连续 30 天', check: function (d) { return d.streak >= 30; } },
     { id: 'days30', name: '三十次日落', icon: '🌇', need: '累计 30 天', check: function (d) { return d.days >= 30; } },
     { id: 'days100', name: '百日之约', icon: '🏔️', need: '累计 100 天', check: function (d) { return d.days >= 100; } },
@@ -114,6 +114,32 @@
     return '你在走向「' + role + '」。连续记录与真诚的成长值，会让这个形象一点点靠近它。';
   }
 
+  function catSVG(body, ear, cheek, equipped) {
+    var e = equipped || {};
+    var extras = '';
+    if (e.bow === 1) extras += '<ellipse cx="60" cy="72" rx="8" ry="6" fill="#d65a5a"/><ellipse cx="60" cy="78" rx="10" ry="7" fill="#b84444"/>';
+    if (e.scarf === 1) extras += '<path d="M42 74 Q60 84 78 74 L76 96 Q60 104 44 96 Z" fill="#c0392b"/>';
+    if (e.glasses === 1) extras += '<circle cx="46" cy="52" r="8" fill="none" stroke="#3b3b3b" stroke-width="2.5"/><circle cx="74" cy="52" r="8" fill="none" stroke="#3b3b3b" stroke-width="2.5"/><path d="M54 52 H66" stroke="#3b3b3b" stroke-width="2.5"/>';
+    if (e.hat === 1) extras += '<path d="M34 42 Q40 22 60 22 Q80 22 86 42 Z" fill="#2c3e50"/><path d="M32 42 H88 L84 48 H36 Z" fill="#1f2c38"/>';
+    if (e.crown === 1) extras += '<path d="M44 36 L50 22 L58 32 L66 20 L76 36 Z" fill="#e0c07e" stroke="#a9854a" stroke-width="1.5"/><circle cx="50" cy="26" r="2.5" fill="#fff"/><circle cx="66" cy="25" r="2.5" fill="#fff"/>';
+    return '<svg viewBox="0 0 120 120" width="150" height="150">' +
+      '<ellipse cx="60" cy="96" rx="26" ry="6" fill="rgba(0,0,0,.18)"/>' +
+      '<path d="M28 66 Q20 34 44 40 Q40 26 52 30 Q60 24 68 30 Q80 26 76 40 Q100 34 92 66 Q88 88 60 92 Q32 88 28 66 Z" fill="' + body + '"/>' +
+      '<path d="M30 50 Q22 30 42 38 L44 52 Z" fill="' + ear + '"/>' +
+      '<path d="M90 50 Q98 30 78 38 L76 52 Z" fill="' + ear + '"/>' +
+      '<path d="M36 44 Q34 36 42 40 Z" fill="#e8b4b8"/>' +
+      '<path d="M84 44 Q86 36 78 40 Z" fill="#e8b4b8"/>' +
+      '<ellipse cx="46" cy="54" rx="2.8" ry="3.4" fill="#2b2b2b"/>' +
+      '<ellipse cx="74" cy="54" rx="2.8" ry="3.4" fill="#2b2b2b"/>' +
+      '<path d="M55 58 Q60 63 65 58" fill="none" stroke="#2b2b2b" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<path d="M60 62 V66 M56 66 H64" stroke="#2b2b2b" stroke-width="1.4" stroke-linecap="round" fill="none"/>' +
+      '<path d="M34 72 Q20 82 26 90" stroke="' + body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M86 72 Q100 82 94 90" stroke="' + body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M34 88 Q48 98 60 98 Q72 98 86 88" fill="none" stroke="' + body + '" stroke-width="5" stroke-linecap="round"/>' +
+      extras +
+      '</svg>';
+  }
+
   function render() {
     if (!document.getElementById('companionSprite')) return;
     var d = computeState();
@@ -121,7 +147,9 @@
     var s = stageFor(exp);
     var pct = Math.min(100, Math.round((exp - s.acc) / s.need * 100));
 
-    document.getElementById('companionSprite').textContent = s.stage.sprite;
+    var own2 = read();
+    document.getElementById('companionSprite').innerHTML = catSVG(s.stage.body, s.stage.ear, s.stage.cheek, own2.equipped || {});
+    document.getElementById('companionSprite').style.fontSize = '0';
     document.getElementById('companionStage').textContent = s.stage.name;
     document.getElementById('companionName').textContent = d.ideal && d.ideal.ideal ? '正在成为：' + d.ideal.ideal.slice(0, 12) : '小小的我';
     document.getElementById('cLevel').textContent = 'Lv.' + s.level;

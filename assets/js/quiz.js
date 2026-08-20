@@ -53,19 +53,6 @@
     return tag;
   }
 
-  // 把选项从「自我审判」翻译成「自我观察」：
-  // 渲染时给选项加一个温和的框架，让用户感到「我是在观察自己，而不是在审判自己」
-  function frameOption(text) {
-    if (!text) return text;
-    var t = text.trim();
-    // 已经以「我」开头的，保持
-    if (/^我/.test(t)) return t;
-    // 以引号开头的内心话，保持原样（那是用户心里的声音）
-    if (/^[「『“]/.test(t)) return t;
-    // 其他选项统一温和化
-    return '我有时会——' + t.charAt(0).toLowerCase() + t.slice(1);
-  }
-
   var THEORY = {
     guan_archetype: '荣格原型理论 · 塔罗象征学',
     guan_stage: '心理发展阶段理论 · 过渡期心理学',
@@ -127,7 +114,7 @@
       btn.className = 'option';
       var picked = state.answers[state.index] === i;
       if (picked) btn.classList.add('on');
-      var html = '<span>' + letters[i] + ' · ' + frameOption(opt.text) + '</span>';
+      var html = '<span>' + letters[i] + ' · ' + opt.text + '</span>';
       if (opt.tag) html += '<span class="opt-tag">' + softenTag(opt.tag) + '</span>';
       btn.innerHTML = html;
       btn.addEventListener('click', function () {
@@ -288,9 +275,9 @@
     if (THEORY[QUIZ.key]) {
       html += '<div class="theory-badge">专业依据 · ' + THEORY[QUIZ.key] + '</div>';
     }
-    html += '<div class="result-block wide"><h4>核心特征</h4>' + deepBlock('core', p) + '</div>';
-    html += '<div class="result-block wide"><h4>内在冲突</h4>' + deepBlock('conflict', p) + '</div>';
-    html += '<div class="result-block wide"><h4>成长方向</h4>' + deepBlock('growth', p) + '</div>';
+    html += '<div class="result-block wide"><h4>核心特征</h4>' + personBlock('core', p) + '</div>';
+    html += '<div class="result-block wide"><h4>内在冲突</h4>' + personBlock('conflict', p) + '</div>';
+    html += '<div class="result-block wide"><h4>成长方向</h4>' + personBlock('growth', p) + '</div>';
     if (p.possibilities) {
       html += block('新的可能 · 你未曾想过的方向', listHTML(p.possibilities), 'wide');
     }
@@ -307,22 +294,8 @@
     if (insightList.length) {
       html += block('属于你的个性化解读', listHTML(insightList), 'wide');
     }
-    var otherList = collectOthers();
-    if (otherList.length) {
-      html += block('你的声音', listHTML(otherList), 'wide');
-    }
-    var pathList = collectPath();
-    if (pathList.length) {
-      html += block('你的选择轨迹 · 你怎样走到这里', listHTML(pathList), 'wide');
-    }
-    if (QUIZ.depth && QUIZ.depth.title) {
-      html += block('关于' + (QUIZ.categoryTitle || '这个板块') + ' · 深度文章',
-        '<p>' + QUIZ.depth.lead + '</p><p>' + QUIZ.depth.body + '</p>' +
-        (QUIZ.depth.closing ? '<p><strong>' + QUIZ.depth.closing + '</strong></p>' : ''),
-        'wide');
-    }
     html += '</div>';
-    html += actionsHTML(r.primary, p.name);
+    html += actionsHTML(r.primary, p.name, p.core);
     resultEl.innerHTML = html;
     window.guanSet(QUIZ.key, p.name);
     bindResultActions(shareText(r.primary, p.name, p.core));
@@ -354,20 +327,6 @@
     var insightList = collectInsights();
     if (insightList.length) {
       html += block('属于你的个性化解读', listHTML(insightList), 'wide');
-    }
-    var otherList = collectOthers();
-    if (otherList.length) {
-      html += block('你的声音', listHTML(otherList), 'wide');
-    }
-    var pathList = collectPath();
-    if (pathList.length) {
-      html += block('你的选择轨迹 · 你怎样走到这里', listHTML(pathList), 'wide');
-    }
-    if (QUIZ.depth && QUIZ.depth.title) {
-      html += block('关于' + (QUIZ.categoryTitle || '这个板块') + ' · 深度文章',
-        '<p>' + QUIZ.depth.lead + '</p><p>' + QUIZ.depth.body + '</p>' +
-        (QUIZ.depth.closing ? '<p><strong>' + QUIZ.depth.closing + '</strong></p>' : ''),
-        'wide');
     }
     html += '</div>';
     html += actionsHTML('inneros', summary);
@@ -471,86 +430,47 @@
     return '<p style="margin-bottom:12px">' + text + '</p>';
   }
 
-  function deepBlock(kind, p) {
+  // 个性化结果：每个板块 = 该结果独有的文本 + 基于你的选择与档案的呼应（不与其他测试雷同）
+  function personBlock(kind, p) {
     var prof = profileData();
     var paras = [];
+    var text = kind === 'core' ? p.core : kind === 'conflict' ? p.conflict : p.growth;
+    paras.push(text);
 
-    if (kind === 'core') {
-      paras.push(p.core);
-      if (QUIZ.depth && QUIZ.depth.body) {
-        paras.push(QUIZ.depth.lead);
-        paras.push(QUIZ.depth.body.split('。').slice(0, 2).join('。') + '。');
+    // 呼应用户的真实选择（从答案里挑一两个）
+    var picks = [];
+    state.answers.forEach(function (a, qi) {
+      if (a && a.option !== undefined && picks.length < 2) {
+        var opt = QUIZ.questions[qi] && QUIZ.questions[qi].options[a.option];
+        if (opt) picks.push(opt.text.replace(/^我有时会——/, '').slice(0, 14));
       }
-      paras.push('塔罗里有一张牌，叫做「' + p.tarot + '」。它并不预言你的人生，而是像一面古老的镜子，映照出你此刻正在经验的主题。牌面里的象征——无论是一段旅程、一座塔、还是一盏灯——都在提醒你：你正在经历的，是人类心灵里早就被反复描绘过的章节。你不是孤独的，也不是奇怪的，你正走在许多人都走过的路上。');
-      paras.push('这个特质最常在这样一些时刻显现：当别人还在犹豫时，你已经迈出了那一步；当生活变得一成不变，你是最先感到不安的那一个；当身边的人需要支持，你会下意识地用自己的方式伸出手。它不是只在重要时刻才出现，而是藏在你的日常里，像一条安静而持续的河流。');
-      var archetype = testResult('guan_archetype');
-      var drain = testResult('guan_drain');
-      var values = testResult('guan_values');
-      paras.push('「' + p.name + '」不是贴在你身上的标签，而是你面对世界时最常用的一种姿势。它往往不是深思熟虑的选择，而是你早年为了被爱、被接纳、被保护而学会的——所以它那么自然，自然到你几乎意识不到它正在运行。');
-      paras.push('当这份特质被善待时，它会变成你最稳定的力量：它让你在人群里有自己的位置，让你在困难面前有自己的方式，也让那些了解你的人，一想到你就感到安心。它从来不是需要被纠正的问题，而是需要被好好使用的能力。');
-      paras.push('如果你愿意，可以试着在今天留意它一次：注意你在哪个瞬间使用了' + p.name + '的能量，那一刻你是感到充实，还是感到勉强？这个觉察本身，就是你和自己关系变深的开始。');
-      if (archetype) {
-        paras.push('你的人生原型测试同样指向「' + archetype.split(' · ')[0] + '」的能量，这不是巧合：原型是你更深处的剧本，而' + p.name + '是这出戏里你出场的方式。两者叠加在一起，构成了你独特的存在感。');
-      }
-      if (drain) {
-        var drainKind = drain.split(' · ')[0];
-        paras.push('你的内耗常来自「' + drainKind + '」——这恰恰说明' + p.name + '这一面的能量容易在无人看见的地方消耗。它不是你不够好，而是你这一面太用力了。');
-      }
-      if (prof.zodiac) {
-        paras.push('你出生在' + prof.zodiac + '的时节，星象学里这个位置承载着特定的原型色彩——但它从来不是命运，而是一种语言：帮助你辨认自己身上那些本来就有的质地。');
-      }
-      if (values) {
-        paras.push('你真正看重的价值是「' + values.split(' · ')[0] + '」——当你活得贴合这个价值时，' + p.name + '的一面会格外明亮；当它被压抑时，你会先感到疲惫。');
-      }
-      paras.push('而无论这份特质此刻带给你的是力量还是疲惫，它都值得被记住一个事实：它是你的一部分，但它不是你的一切。你比任何单一的特质都更大、更丰富。');
-      paras.push('所以，核心特征这一栏，与其说是「诊断」，不如说是「欢迎词」：欢迎你看见自己身上这个一直在努力的部分。它值得被温柔地认识。');
+    });
+    if (picks.length) {
+      paras.push('你在作答时选择了「' + picks.join('」「') + '」——这和你' + (kind === 'conflict' ? '内在的拉扯' : kind === 'growth' ? '想去的方向' : '本来的样子') + '是连在一起的：它不是随手的勾选，而是你心里早已有过的声音。');
     }
+    // 引用用户自定义输入（若有）
+    state.answers.forEach(function (a) {
+      if (a && a.other && kind === 'growth') {
+        paras.push('你还写下了自己的答案：「' + a.other + '」。这句话比任何选项都更接近真实的你——上面的成长方向，就是顺着这句话展开的。');
+      }
+    });
 
-    if (kind === 'conflict') {
-      paras.push(p.conflict);
-      if (QUIZ.depth && QUIZ.depth.body) {
-        paras.push(QUIZ.depth.body.split('。').slice(2, 4).join('。') + '。');
-      }
-      paras.push('这个冲突，很可能曾经帮过你。它让你在不确定的关系里保护自己，让你在竞争的环境里保持警觉，让你在受伤之后还能站起来继续走。它不是你性格的缺陷，而是你在某个阶段为自己找到的生存方式——只是时过境迁，它服务的那个「过去」，已经不再是你现在的生活。');
-      paras.push('冲突最常被看见的地方，往往不是大事，而是小事：一句没回的话、一次临时的变动、一个不被满足的期待，都能在瞬间把那个旧的你唤醒。你可能会惊讶于自己的反应比事情本身大得多——那不是你小题大做，而是旧的声音在你心里响了一下。');
-      paras.push('这个冲突不是凭空出现的。它往往来自两种同时存在的需要：一边想被爱、被接纳，一边想保护自己、不受伤。' + p.name + '的姿态，正是这两种需要反复协商后的产物——所以它那么矛盾，又那么真实。');
-      paras.push('你可以在这些场景里看见它的影子：在你反复纠结的深夜、在你答应不想答应的事之后、在你明明在意却假装没事的瞬间。它不是你的敌人，它是你的保护者——只是它用的方式，已经不再适合现在的你。');
-      paras.push('如果用一个词来描述这个冲突的底色，也许是「恐惧」：害怕被否定、害怕被丢下、害怕自己不够好。恐惧本身没有错，它是人类最古老的信使。只是这个信使跑得太勤了，常常在并不危险的时刻拉响警报。');
-      var attachment = testResult('guan_attachment');
-      if (attachment) {
-        paras.push('你的依恋测试指向「' + attachment.split(' · ')[0] + '」——这解释了为什么有些冲突会反复出现在关系里：那不是对方的问题，而是你的旧模式在熟悉的场景里自动启动。看清它，不是责怪自己，而是让自动变成可选。');
-      }
-      paras.push('与这个冲突相处，不需要你立刻战胜它。你可以先认识它：它出现时，身体哪里在紧张？心里在重复哪句话？它想保护的那个「过去的你」，现在还需要它这样用力保护吗？这些问题本身，就是松动的开始。');
-      paras.push('塔罗里与这张牌相对的意象，也暗示着一种和解的可能：当' + p.tarot + '的力量被理解，它就不再是威胁，而会转化为一种清醒。同一股能量，在恐惧手里是枷锁，在理解手里是钥匙。');
-      paras.push('如果这个冲突一直不被看见，它会以另一种方式继续存在：可能是身体的疲惫，可能是关系里的疏远，可能是「说不清为什么」的低落。它不是在惩罚你，它只是在用它的方式提醒你：这里有一个需要被处理的内在课题。');
-      paras.push('所以，内在冲突这一栏，不是一份判决书，而是一份邀请：邀请你以好奇而不是恐惧，去看一看这个一直陪着你、却从未被好好倾听的部分。你不需要立刻解决它——你只需要承认它存在。');
+    // 融入档案（星座/八字/阶段/自我描述）
+    if (kind === 'core' && prof.zodiac) {
+      paras.push('你出生在' + prof.zodiac + '的时节。星座不是命运，但它像一门古老的语言，帮你辨认自己身上本来就有的质地——而这份质地，和上面的描述暗暗呼应。');
     }
-
-    if (kind === 'growth') {
-      paras.push(p.growth);
-      paras.push('「成长」这个词，常常让人想到「变成更好的自己」。但请允许我们换一种理解：成长不是否定现在的你，而是让现在的你，多出几种选择。你不是要离开' + p.name + '，而是要让它从唯一的姿态，变成众多姿态之一。');
-      paras.push('塔罗里关于成长的象征，从来不是「变得完美」，而是「变得完整」：把被压抑的部分接回来，把被忽略的需要看见，把那个一直躲在暗处的声音请到光里。完整，比完美更重要——这也是' + p.tarot + '想提醒你的。');
-      paras.push('成长方向不是一份「你应该变成什么样」的命令。恰恰相反：真正的成长，是允许自己先完整地成为现在的样子，再慢慢长出新的可能性。你现在需要做的，不是「改正」自己，而是「扩展」自己——在' + p.name + '的姿态之外，学习另一种姿势。');
-      var soft = (p.actions || []).slice(0, 2);
-      if (soft.length) {
-        paras.push('如果愿意，可以从这里轻轻开始：' + soft[0] + '。它不需要你立刻做到，不需要你坚持多少天——它只是一个方向，让你在明天、后天，或某个合适的时刻，可以试着往那里走一步。');
-        if (soft[1]) paras.push('另一个同样轻的选择是：' + soft[1] + '。你不必两个都做，选一个当下最不费力的，就足够。');
-      }
-      paras.push('你可能会担心「慢慢来」会让别人超过你。但请相信：人生不是一场和所有人比的赛跑，而是一条只有你知道路况的路。别人的节奏是别人的，你的节奏是你这些年一步步长出来的——它值得被尊重，而不是被催促。');
-      var stage = testResult('guan_stage');
-      if (stage) {
-        paras.push('你的人生阶段显示你正处在「' + stage.split(' · ')[0] + '」——这个阶段的功课不是冲刺，而是与' + stage.split(' · ')[0] + '相处。你在成长方向上的尝试，需要配上这个阶段该有的节奏：探索期多试，重构期先修复，积累期做深，转型期酝酿。');
-      }
-      paras.push('回望过去，你或许能看到：每一次你以为自己「没有成长」的日子，其实都在悄悄积累着什么——那些独自消化的夜晚、那些坚持下来的小事、那些你为自己做的选择，都是你走到今天的台阶。');
-      paras.push('而望向未来，你不必知道终点在哪里。你只需要知道：从今天起，每一次你对自己温柔一点，每一次你允许自己按自己的节奏走，都是在朝那个更完整的你，靠近一小步。');
-      var energy = testResult('guan_energy');
-      if (energy) {
-        paras.push('你的能量状态是「' + energy.split(' · ')[0] + '」——在你电量不足的时候，成长不是再加码，而是先照顾自己。允许自己今天只做一个很小的动作，甚至只是写下「我想……」，就已经是向前。');
-      }
-      paras.push('回看过往，你会发现：你其实一直在以自己的方式成长——那些绕过的路、停过的站、走过的弯路，都是你走到这里的一部分。你不缺努力，你缺的只是对自己温和一点的眼光。');
-      paras.push('所以，成长方向这一栏，最终想对你说的是：你不需要成为「更好的别人」。你只需要，成为更完整、更愿意理解自己的你。这一路，我们会陪你。');
+    if (kind === 'conflict' && prof.selfDesc) {
+      paras.push('你在档案里写道：「' + prof.selfDesc.slice(0, 30) + (prof.selfDesc.length > 30 ? '…' : '') + '」。这份诚实，恰恰是理解这个冲突最好的钥匙——它说明你已经准备好面对它了。');
     }
-
+    if (kind === 'growth' && prof.bazi) {
+      paras.push('你的八字排盘是「' + prof.bazi + '」。命理不替你决定方向，但它提醒你：你带着自己的时区走到今天。成长不必追上别人的季节，按你自己的时区来就好。');
+    }
+    if (kind === 'growth' && prof.stage) {
+      paras.push('你正在' + prof.stage.split(' · ')[0] + '——这个阶段的功课，不是和别的阶段比速度，而是完成这个阶段该完成的事。');
+    }
+    if (prof.focus && kind === 'growth') {
+      paras.push('你写下的探索议题是「' + prof.focus + '」——上面说的成长方向，恰好可以成为这个议题的第一步落点。');
+    }
     return paras.map(deepParagraph).join('');
   }
 
@@ -559,22 +479,25 @@
     return '<ul>' + items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>';
   }
 
-  function actionsHTML(label, summary) {
+  function actionsHTML(label, summary, core) {
     return '' +
       '<div class="result-actions">' +
-      '  <button type="button" class="btn btn-gold" data-copy>复制结果，分享到微信</button>' +
+      '  <button type="button" class="btn btn-gold" data-share>分享这一刻</button>' +
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
-      '<div class="next-steps">' +
-      '  <h4>接下来，你可以</h4>' +
-      '  <div class="next-links">' +
-      '    <a href="tests.html">继续探索 · 认识自己的另一面</a>' +
-      '    <a href="design.html">去人生设计 · 把此刻的看见变成方向</a>' +
-      '    <a href="simulator.html">去人生模拟 · 在沙盒里试走一条路</a>' +
-      '    <a href="journey.html">开始三十天陪伴 · 慢慢陪自己</a>' +
+      (label && label !== 'inneros' ? '<div class="share-modal" id="shareModal">' +
+      '  <div class="share-card" id="shareCard">' +
+      '    <div class="share-logo">' + (window.guanProfile && window.guanProfile().nickname ? window.guanProfile().nickname : '观己者') + ' · ' + QUIZ.title + '</div>' +
+      '    <div class="share-big">' + (typeof label === 'string' && label.indexOf('inneros') > -1 ? summary : (summary || label)) + '</div>' +
+      '    <div class="share-quote">理解自己，设计人生</div>' +
+      '    <div class="share-foot">观己实验室 · SELF INSIGHT LAB</div>' +
       '  </div>' +
-      '</div>' +
+      '  <div class="share-actions">' +
+      '    <button type="button" class="btn btn-gold btn-sm" data-share-download>保存卡片</button>' +
+      '    <button type="button" class="btn btn-sm" data-share-close>关闭</button>' +
+      '  </div>' +
+      '</div>' : '') +
       (QUIZ.category ? crisisHTML(QUIZ.category) : '');
   }
 
@@ -593,19 +516,35 @@
   }
 
   function bindResultActions(share) {
-    var copyBtn = resultEl.querySelector('[data-copy]');
+    var shareBtn = resultEl.querySelector('[data-share]');
     var restartBtn = resultEl.querySelector('[data-restart]');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', function () {
-        if (navigator.share && navigator.canShare && navigator.canShare({ text: share })) {
-          navigator.share({ title: '观己实验室 · ' + QUIZ.title, text: share }).catch(function () {});
-          return;
-        }
-        window.guanCopy(share, function (ok) {
-          window.guanToast(ok ? '已复制，去微信粘贴即可' : '复制失败，请手动选择文本');
-        });
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function () {
+        var modal = resultEl.querySelector('#shareModal');
+        if (modal) modal.classList.add('show');
       });
     }
+    var closeBtn = resultEl.querySelector('[data-share-close]');
+    if (closeBtn) closeBtn.addEventListener('click', function () {
+      resultEl.querySelector('#shareModal').classList.remove('show');
+    });
+    var dlBtn = resultEl.querySelector('[data-share-download]');
+    if (dlBtn) dlBtn.addEventListener('click', function () {
+      var card = resultEl.querySelector('#shareCard');
+      if (card && window.html2canvas) {
+        window.html2canvas(card, { backgroundColor: '#0a0f1c', scale: 2 }).then(function (canvas) {
+          var a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = 'guanji-share.png';
+          a.click();
+          window.guanToast('分享卡片已保存');
+        });
+      } else {
+        window.guanCopy(share, function (ok) {
+          window.guanToast(ok ? '已复制分享文字' : '复制失败');
+        });
+      }
+    });
     if (restartBtn) {
       restartBtn.addEventListener('click', function () {
         state.answers = new Array(QUIZ.questions.length).fill(null);

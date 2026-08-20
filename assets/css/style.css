@@ -21,8 +21,9 @@
 html{scroll-behavior:smooth}
 body{
   background:
-    radial-gradient(1200px 700px at 85% -10%, rgba(127,168,217,.09), transparent 60%),
-    radial-gradient(900px 600px at -10% 30%, rgba(201,168,106,.07), transparent 55%),
+    radial-gradient(1200px 700px at 85% -10%, rgba(127,168,217,.12), transparent 60%),
+    radial-gradient(900px 600px at -10% 30%, rgba(201,168,106,.1), transparent 55%),
+    radial-gradient(700px 500px at 50% 110%, rgba(127,168,217,.06), transparent 60%),
     var(--bg);
   color:var(--text);
   font-family:var(--sans);
@@ -86,7 +87,7 @@ button{font-family:inherit}
 /* Header */
 .site-header{
   position:sticky;top:0;z-index:50;
-  background:rgba(10,15,28,.82);
+  background:linear-gradient(180deg,rgba(10,15,28,.92),rgba(10,15,28,.78));
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
@@ -109,21 +110,29 @@ button{font-family:inherit}
 .nav-toggle{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--text);width:42px;height:42px;font-size:20px;cursor:pointer}
 
 /* Footer */
-.site-footer{border-top:1px solid var(--line);padding:56px 0 32px;margin-top:40px}
-.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px}
-.footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.footer-brand img{width:30px;height:30px}
-.footer-brand span{font-family:var(--serif);font-size:16px;letter-spacing:.12em}
-.footer-desc{color:var(--muted);font-size:13.5px;max-width:340px}
-.footer-col h4{font-size:13px;letter-spacing:.18em;color:var(--text);margin-bottom:14px;font-weight:600}
-.footer-col a{display:block;color:var(--muted);font-size:13.5px;padding:4px 0;transition:.2s}
-.footer-col a:hover{color:var(--gold-bright)}
-.footer-bottom{
-  border-top:1px solid var(--line);margin-top:40px;padding-top:22px;
-  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  color:var(--muted-2);font-size:12px;
+.site-footer{
+  border-top:1px solid var(--line);padding:0;margin:60px 0 0;
+  background:linear-gradient(180deg,rgba(10,15,28,.4),rgba(10,15,28,.92));
 }
-.disclaimer{margin-top:14px;color:var(--muted-2);font-size:12px;line-height:1.8;max-width:760px}
+.site-footer .container{padding:34px 4% 26px;max-width:100%}
+.footer-grid{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.footer-brand{display:flex;align-items:center;gap:10px}
+.footer-brand img{width:26px;height:26px}
+.footer-brand span{font-family:var(--serif);font-size:15px;letter-spacing:.1em}
+.footer-desc{color:var(--muted);font-size:12.5px;margin-top:4px}
+.footer-nav{display:flex;gap:4px 14px;flex-wrap:wrap}
+.footer-nav a{color:var(--muted);font-size:12.5px;padding:5px 8px;border-radius:8px;transition:.2s}
+.footer-nav a:hover{color:var(--gold-bright);background:rgba(201,168,106,.08)}
+.footer-bottom{
+  margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  color:var(--muted-2);font-size:11.5px;
+}
+.disclaimer{margin-top:12px;color:var(--muted-2);font-size:11px;line-height:1.8;max-width:720px}
+@media (max-width:760px){
+  .footer-grid{flex-direction:column;align-items:flex-start}
+  .footer-nav{gap:4px 10px}
+}
 
 /* Hero */
 .hero{position:relative;padding:96px 0 72px;overflow:hidden}
@@ -131,6 +140,11 @@ button{font-family:inherit}
 .hero-eyebrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
 .hero h1{font-family:var(--serif);font-size:clamp(34px,5.2vw,58px);line-height:1.25;font-weight:600;letter-spacing:.08em}
 .hero h1 em{font-style:normal;color:var(--gold-bright)}
+@keyframes glow{
+  0%,100%{text-shadow:0 0 18px rgba(224,192,126,.25)}
+  50%{text-shadow:0 0 32px rgba(224,192,126,.5)}
+}
+.hero h1 em{animation:glow 4s ease-in-out infinite}
 .hero-lead{color:var(--muted);font-size:16.5px;max-width:540px;margin:22px 0 8px}
 .hero-sub{color:var(--muted-2);font-size:14px;max-width:520px}
 .hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px}
@@ -714,6 +728,18 @@ button{font-family:inherit}
 .journey-history time{display:block;font-size:11px;color:var(--muted-2);margin-bottom:4px}
 .journey-mid-card{border:1px solid var(--line-gold);border-radius:16px;padding:26px;background:linear-gradient(180deg,rgba(201,168,106,.07),var(--panel))}
 .journey-mid-card p{font-size:13.5px;color:var(--muted);line-height:1.9;margin-bottom:14px}
+.journey-companion-entry{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  border:1px solid var(--line-gold);border-radius:16px;padding:24px 26px;
+  background:radial-gradient(400px 160px at 80% -20%,rgba(201,168,106,.14),transparent 60%),var(--panel);
+}
+.journey-companion-entry h3{font-family:var(--serif);font-size:18px;letter-spacing:.06em;margin-bottom:8px}
+.journey-companion-entry p{font-size:13px;color:var(--muted);line-height:1.85;margin-bottom:12px}
+.journey-companion-icon{font-size:56px;flex:none}
+@media (max-width:520px){
+  .journey-companion-entry{flex-direction:column;align-items:flex-start}
+  .journey-companion-icon{display:none}
+}
 .habit-banner{
   display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
   border:1px solid var(--line-gold);border-radius:14px;padding:16px 22px;margin-bottom:24px;
@@ -873,6 +899,21 @@ button{font-family:inherit}
   background:rgba(201,168,106,.05);
 }
 .crisis-note::before{content:"如果你需要帮助 ";font-weight:700;letter-spacing:.06em}
+.share-modal{
+  position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
+  background:rgba(5,8,16,.8);backdrop-filter:blur(6px);padding:20px;
+}
+.share-modal.show{display:flex}
+.share-card{
+  width:min(360px,100%);border-radius:20px;padding:30px 26px;text-align:center;
+  background:radial-gradient(500px 240px at 50% -10%,rgba(201,168,106,.22),transparent 65%),#0a0f1c;
+  border:1px solid var(--line-gold);box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.share-logo{font-family:var(--serif);font-size:14px;color:var(--gold-bright);letter-spacing:.12em;margin-bottom:18px}
+.share-big{font-family:var(--serif);font-size:26px;line-height:1.6;color:var(--text);letter-spacing:.06em;margin-bottom:14px}
+.share-quote{font-size:13px;color:var(--muted);letter-spacing:.1em;margin-bottom:24px}
+.share-foot{font-size:10px;letter-spacing:.24em;color:var(--muted-2);text-transform:uppercase;border-top:1px solid var(--line);padding-top:16px}
+.share-actions{display:flex;gap:10px;justify-content:center;margin-top:14px}
 .next-steps{
   margin:0 40px 30px;border:1px solid var(--line);border-radius:14px;padding:22px 24px;background:rgba(10,15,28,.35);
 }

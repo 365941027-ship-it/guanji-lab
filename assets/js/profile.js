@@ -143,11 +143,12 @@
     var bazi = window.guanAstrology.bazi(birth.y, birth.m, birth.d, hour);
     document.getElementById('baziChart').innerHTML =
       '<span class="pillar">' + bazi.year + '</span><span class="pillar">' + bazi.month + '</span>' +
-      '<span class="pillar">' + bazi.day + '</span><span class="pillar">' + bazi.hour + '</span>';
+      '<span class="pillar">' + bazi.day + '</span><span class="pillar">' + bazi.hour + '</span>' +
+      '<span class="pillar-label">年柱 月柱 日柱 时柱</span>';
     document.getElementById('moonAuto').textContent = window.guanAstrology.moon(birth.y, birth.m, birth.d) + '（近似）';
     var city = document.getElementById('pCity').value.trim();
     var r = window.guanAstrology.rising(birth.y, birth.m, birth.d, hour, city);
-    document.getElementById('risingAuto').textContent = r.ok ? r.zodiac + '（近似）' : r.reason;
+    document.getElementById('risingAuto').textContent = r.ok ? r.zodiac + '（近似）' : (r.reason + '：可填写城市后自动校准');
   }
 
   function renderPreview(p) {
@@ -219,6 +220,7 @@
     });
   });
 
+  document.getElementById('pBirth').addEventListener('change', renderCharts);
   document.getElementById('pBirth').addEventListener('input', renderCharts);
   document.getElementById('pHour').addEventListener('change', renderCharts);
   document.getElementById('pCity').addEventListener('input', renderCharts);

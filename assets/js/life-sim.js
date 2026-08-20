@@ -259,6 +259,114 @@
           ] }
         ]
       };
+    } else if (/翻译|口译|外语/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你开始走翻译这条路。它看起来是「会外语」，实际是「在两个世界之间搭桥」——每一句话，都要在准确与温度之间做选择。',
+        stages: [
+          { q: '一场重要会谈，发言人语速很快还带口音，你会？', options: [
+            { text: '专注抓核心意思，流畅转述', tag: '顺译', effect: { career: 2, meaning: 1 }, story: '你没有被细节绊住，把意思稳稳传了过去。' },
+            { text: '请对方放慢，确保准确', tag: '准确', effect: { career: 2, steady: 1 }, story: '你宁可慢一点，也不让一句话被误解。' },
+            { text: '提前做足功课，熟悉背景', tag: '准备', effect: { career: 2, energy: 1 }, story: '你把功夫下在会前，现场才能从容。' }
+          ] },
+          { q: '你翻的一句话，双方理解出现偏差，你会？', options: [
+            { text: '主动澄清，把两边的意思对齐', tag: '澄清', effect: { relation: 2, career: 1 }, story: '你没有让误解滚雪球，及时把桥修好了。' },
+            { text: '如实说明，不替任何一边美化', tag: '如实', effect: { career: 2, meaning: 1 }, story: '你守住了翻译的底线：忠实。' },
+            { text: '会后私下提醒，避免现场尴尬', tag: '体贴', effect: { relation: 2 }, story: '你既守住了专业，也留住了体面。' }
+          ] },
+          { q: '长期赶稿/连场让你疲惫，你会？', options: [
+            { text: '接单有度，保护自己的节奏', tag: '节律', effect: { energy: 2, steady: 1 }, story: '你学会了说不，反而走得更远。' },
+            { text: '趁热多接，快速积累', tag: '冲刺', effect: { career: 2, energy: -1 }, story: '你积累很快，但身体在记账。' },
+            { text: '在专业领域深耕，做出口碑', tag: '深耕', effect: { career: 2, meaning: 1 }, story: '你选择做窄做深，成为某个领域的可靠译手。' }
+          ] },
+          { q: '三年后，你希望自己成为怎样的译者？', options: [
+            { text: '专业扎实、值得托付的译者', tag: '专业', effect: { career: 2, meaning: 1 }, story: '你希望「TA翻的，可以放心」。' },
+            { text: '能传递温度与文化的译者', tag: '人文', effect: { relation: 2, meaning: 1 }, story: '你相信翻译是让不同世界互相理解。' },
+            { text: '工作与生活平衡的译者', tag: '平衡', effect: { energy: 2, self: 1 }, story: '你不想被赶稿淹没，想一直热爱这件事。' }
+          ] }
+        ]
+      };
+    } else if (/律师|法律|法务|仲裁/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你走进法律这条路。它听起来是「背法条」，实际是「在规则里守护公平」——每一份文书背后，都站着真实的人和他们的命运。',
+        stages: [
+          { q: '接手一个证据不理想的案子，你会？', options: [
+            { text: '如实评估风险，不夸大希望', tag: '诚实', effect: { career: 2, meaning: 1 }, story: '你没有给对方虚假的希望，而是给了真实的路径。' },
+            { text: '全力找突破口，不轻易放弃', tag: '坚持', effect: { career: 2, energy: 1 }, story: '你在细节里找到了别人没看见的角度。' },
+            { text: '建议和解，权衡利弊', tag: '务实', effect: { steady: 2, relation: 1 }, story: '你懂得有时最好的结果不是赢，而是止损。' }
+          ] },
+          { q: '对方提出有违你原则的要求，你会？', options: [
+            { text: '守住底线，明确拒绝', tag: '底线', effect: { meaning: 2, boundary: 1 }, story: '你清楚有些线不能越，哪怕会失去一个客户。' },
+            { text: '在法律框架内据理力争', tag: '据理', effect: { career: 2, meaning: 1 }, story: '你用规则说话，而不是情绪。' },
+            { text: '先沟通，理解对方的真实诉求', tag: '沟通', effect: { relation: 2 }, story: '你发现很多僵局，源于没有真正听懂彼此。' }
+          ] },
+          { q: '长期高压、案件堆积，你会？', options: [
+            { text: '建立自己的案件管理系统', tag: '系统', effect: { career: 2, steady: 1 }, story: '你靠秩序对抗混乱，让每个案子都有进度。' },
+            { text: '学会把部分工作交给伙伴', tag: '协作', effect: { relation: 2, energy: 1 }, story: '你不再一个人扛，团队让你走得更远。' },
+            { text: '定期运动/休息，护住自己', tag: '自护', effect: { energy: 2, care: 1 }, story: '你明白，倒下的律师帮不了任何人。' }
+          ] },
+          { q: '三年后，你希望自己成为怎样的法律人？', options: [
+            { text: '专业过硬、让当事人安心的法律人', tag: '专业', effect: { career: 2, meaning: 1 }, story: '你希望「交给TA，我放心」。' },
+            { text: '既懂规则又有温度的法律人', tag: '温度', effect: { relation: 2, meaning: 1 }, story: '你相信法律不是冰冷的条文。' },
+            { text: '在专业领域深耕出独特定位', tag: '深耕', effect: { career: 2, self: 1 }, story: '你想做窄做深，成为某个领域的名字。' }
+          ] }
+        ]
+      };
+    } else if (/自媒体|博主|视频|up主|网红/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你开始做自媒体。它看起来是「拍视频」，实际是「持续真诚地表达」——流量是结果，但热度会起伏，你需要在喧嚣里找到自己的节奏。',
+        stages: [
+          { q: '做了很久没什么人看，你会？', options: [
+            { text: '复盘内容，调整方向', tag: '复盘', effect: { career: 2, steady: 1 }, story: '你把数据当地图，而不是判决。' },
+            { text: '坚持做自己真正想做的', tag: '自持', effect: { meaning: 2, self: 1 }, story: '你相信真诚的内容，会等到对的人。' },
+            { text: '去研究同领域做得好的账号', tag: '学习', effect: { career: 2, relation: 1 }, story: '你从别人身上学，而不是嫉妒。' }
+          ] },
+          { q: '评论区出现攻击性言论，你会？', options: [
+            { text: '不回应，专注内容本身', tag: '稳', effect: { energy: 2, boundary: 1 }, story: '你没有让噪音带走你的注意力。' },
+            { text: '理性回应一次，澄清误解', tag: '澄清', effect: { career: 1, boundary: 1 }, story: '你澄清了，但没陷入骂战。' },
+            { text: '设置界限，维护创作环境', tag: '界限', effect: { boundary: 2, energy: 1 }, story: '你懂得保护自己，才能持续表达。' }
+          ] },
+          { q: '灵感枯竭、更新压力大，你会？', options: [
+            { text: '去生活，输入新的素材', tag: '输入', effect: { explore: 2, energy: 1 }, story: '你明白没有输入，就没有输出。' },
+            { text: '允许自己休息，不断更焦虑', tag: '允许', effect: { energy: 2, care: 1 }, story: '你允许热情休息，而不是假装它还在。' },
+            { text: '和观众互动，听他们的故事', tag: '互动', effect: { relation: 2 }, story: '你发现观众的故事，就是最好的素材。' }
+          ] },
+          { q: '三年后，你希望自己的自媒体状态是？', options: [
+            { text: '能靠内容体面生活', tag: '自立', effect: { career: 2, meaning: 1 }, story: '你希望表达与生存不再对立。' },
+            { text: '内容被一群真正懂的人喜欢', tag: '共鸣', effect: { relation: 2, meaning: 1 }, story: '你在意的是被懂，不是被多少人懂。' },
+            { text: '一直保持创作的快乐', tag: '热爱', effect: { energy: 2, self: 1 }, story: '你不愿让更新变成新的牢笼。' }
+          ] }
+        ]
+      };
+    } else if (/工程师|程序员|开发|技术/.test(text)) {
+      template = {
+        title: '成为「' + role + '」的模拟',
+        start: '你开始走技术这条路。它看起来是「写代码」，实际是「在复杂系统里找到优雅解法」——你每天面对的是真实的问题和真实的人。',
+        stages: [
+          { q: '一个 bug 反复出现，你会？', options: [
+            { text: '沉下心看日志，追根溯源', tag: '深挖', effect: { career: 2, self: 1 }, story: '你没有打补丁糊弄，而是找到了根因。' },
+            { text: '和同事一起排查', tag: '协作', effect: { relation: 2 }, story: '你懂得「一起看」常常比独自熬更快。' },
+            { text: '先记录，排好优先级', tag: '有序', effect: { career: 2, steady: 1 }, story: '你没有让一个 bug 打乱整个节奏。' }
+          ] },
+          { q: '产品经理提了一个模糊的需求，你会？', options: [
+            { text: '追问清楚，把边界定好', tag: '澄清', effect: { career: 2, relation: 1 }, story: '你在动手前把问题问清楚了。' },
+            { text: '先做最小版本，快速反馈', tag: '迭代', effect: { career: 2, explore: 1 }, story: '你用行动代替空谈。' },
+            { text: '提出更合理的方案', tag: '建议', effect: { career: 2, meaning: 1 }, story: '你不只是执行，而是贡献判断。' }
+          ] },
+          { q: '技术更新太快，焦虑跟不上，你会？', options: [
+            { text: '先吃透一门，再向外延展', tag: '纵深', effect: { career: 2, steady: 1 }, story: '你选择用深度对抗焦虑。' },
+            { text: '跟热点，保持广泛接触', tag: '广度', effect: { explore: 2 }, story: '你保持嗅觉，不错过趋势。' },
+            { text: '把基础打牢，以不变应万变', tag: '根基', effect: { career: 2, meaning: 1 }, story: '你相信底层能力永远不过时。' }
+          ] },
+          { q: '三年后，你希望自己成为怎样的工程师？', options: [
+            { text: '能独当一面、解决难题的工程师', tag: '独当', effect: { career: 2, meaning: 1 }, story: '你希望成为团队里可靠的那个人。' },
+            { text: '能带新人、让团队更好的工程师', tag: '带领', effect: { relation: 2, career: 1 }, story: '你希望自己的经验能点亮别人。' },
+            { text: '工作与生活平衡的工程师', tag: '平衡', effect: { energy: 2, self: 1 }, story: '你不愿让代码吞掉生活。' }
+          ] }
+        ]
+      };
     } else {
       template = {
         title: '成为「' + role + '」的模拟',
