@@ -87,6 +87,10 @@
     guan_resilience: '心理韧性研究（Masten）',
     guan_conflictrepair: '关系修复研究（Gottman）',
     guan_goodbye: '哀伤理论（Worden）',
+    guan_gad7: 'GAD-7 焦虑筛查量表（Spitzer 等）',
+    guan_phq9: 'PHQ-9 抑郁筛查量表（Kroenke 等）',
+    guan_swls: '生活满意度量表 SWLS（Diener 等）',
+    guan_ucla: 'UCLA 孤独感量表（Russell）',
     guan_custom: '整合你的档案、测试与记录'
   };
   var stepEl = document.getElementById('quizStep');
@@ -187,6 +191,7 @@
   }
 
   function computeResult() {
+    if (QUIZ.scoring === 'sum' || QUIZ.scoring === 'swls' || QUIZ.scoring === 'ucla') return computeSum();
     if (QUIZ.scoring === 'inneros') return computeInnerOS();
     var scores = {};
     Object.keys(QUIZ.results).forEach(function (k) { scores[k] = 0; });
@@ -200,6 +205,22 @@
     var primary = sorted[0];
     var secondary = sorted[1] || null;
     return { primary: primary, secondary: secondary, scores: scores };
+  }
+
+  function computeSum() {
+    var total = 0;
+    state.answers.forEach(function (a, qi) {
+      if (a && a.option !== undefined) {
+        var opt = QUIZ.questions[qi].options[a.option];
+        total += (opt.score && opt.score._) || 0;
+      }
+    });
+    var tier = QUIZ.sumScale[0];
+    for (var i = 0; i < QUIZ.sumScale.length; i++) {
+      if (total <= QUIZ.sumScale[i].max) { tier = QUIZ.sumScale[i]; break; }
+      tier = QUIZ.sumScale[i];
+    }
+    return { total: total, tier: tier };
   }
 
   function computeInnerOS() {
@@ -249,12 +270,32 @@
     resultEl.classList.remove('hidden');
     resultEl.innerHTML = '';
 
-    if (QUIZ.scoring === 'inneros') {
+    if (QUIZ.isStandard) {
+      renderStandardSum();
+    } else if (QUIZ.scoring === 'inneros') {
       renderInnerOS();
     } else {
       renderStandard();
     }
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderStandardSum() {
+    var r = computeResult();
+    var tier = r.tier;
+    var html = resultCardHTML(starSVG(), tier.name, '标准计分 ' + r.total + ' 分', '', '');
+    html += '<div class="result-sections">';
+    html += block('量表结果', '<p style="font-size:26px;color:var(--gold-bright);font-family:var(--serif)">' + r.total + ' / ' + (QUIZ.sumScale[QUIZ.sumScale.length - 1].max) + ' 分</p>', 'wide');
+    html += block('这意味着什么', '<p>' + tier.desc + '</p>', 'wide');
+    html += block('请记得', '<p>这份量表是自我觉察的工具，不是诊断。如果你感到困扰持续存在，请寻求专业心理支持——你值得被帮助。</p>', 'wide');
+    if (r.total >= (QUIZ.scoring === 'phq9' ? 10 : QUIZ.scoring === 'gad7' ? 10 : 25)) {
+      html += '<div class="crisis-note">你的得分提示你最近可能负担较重。如果情绪难以承受，请拨打心理援助热线 400-161-9995，或前往最近的精神卫生中心。</div>';
+    }
+    html += '</div>';
+    html += actionsHTML(r.total + '分', tier.name, tier.desc);
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, tier.name + '（' + r.total + '分）');
+    bindResultActions(shareText(QUIZ.title, tier.name + '（' + r.total + '分）', tier.desc));
   }
 
   function resultCardHTML(iconSvg, title, en, chipSvg, chipText) {

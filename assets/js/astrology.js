@@ -28,6 +28,76 @@
     '午': 12, '未': 14, '申': 16, '酉': 18, '戌': 20, '亥': 22
   };
 
+  // 十神
+  var SHISHEN = {
+    same: ['比肩', '劫财'],
+    produce: ['食神', '伤官'],
+    consumed: ['正财', '偏财'],
+    control: ['正官', '七杀'],
+    controlled: ['正印', '偏印']
+  };
+
+  var WUXING = { '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土', '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水' };
+  var ZHI_WUXING = { '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火', '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水' };
+  var WUXING_SHENG = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
+  var WUXING_KE = { '木': '土', '土': '水', '水': '火', '火': '金', '金': '木' };
+
+  // 日干与十神关系（同性=偏，异性=正）
+  function shishenOf(dayGan, otherGan) {
+    var dW = WUXING[dayGan], oW = WUXING[otherGan];
+    var samePolarity = (GAN.indexOf(dayGan) % 2) === (GAN.indexOf(otherGan) % 2);
+    if (dW === oW) return samePolarity ? '比肩' : '劫财';
+    if (WUXING_SHENG[dW] === oW) return samePolarity ? '食神' : '伤官';
+    if (WUXING_SHENG[oW] === dW) return samePolarity ? '偏印' : '正印';
+    if (WUXING_KE[dW] === oW) return samePolarity ? '偏财' : '正财';
+    if (WUXING_KE[oW] === dW) return samePolarity ? '七杀' : '正官';
+    return '—';
+  }
+
+  // 地支藏干简化（主气）
+  var ZHI_MAIN = {
+    '子': '癸', '丑': '己', '寅': '甲', '卯': '乙', '辰': '戊',
+    '巳': '丙', '午': '丁', '未': '己', '申': '庚', '酉': '辛', '戌': '戊', '亥': '壬'
+  };
+
+  // 真太阳时：经度修正 + 均时差
+  function trueSolarTime(y, m, d, localHour, lon) {
+    // 本地平太阳时（东八区）
+    var localMean = localHour;
+    // 经度修正：每度 4 分钟
+    var lonOffset = (lon - 120) * 4 / 60.0;
+    // 均时差（分钟，简化近似）
+    var jd = julianDay(y, m, d, 12);
+    var T = (jd - 2451545.0) / 36525.0;
+    var L0 = 280.46646 + 36000.76983 * T;
+    var M = 357.52911 + 35999.05029 * T;
+    var e = 0.016708634 - 0.000042037 * T;
+    var C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(rad(M)) +
+      (0.019993 - 0.000101 * T) * Math.sin(rad(2 * M));
+    var trueLong = L0 + C;
+    var omega = 125.04 - 1934.136 * T;
+    var lambda = trueLong - 0.00569 - 0.00478 * Math.sin(rad(omega));
+    var eot = 4 * (L0 - 0.0057183 - lambda + (e * Math.sin(rad(M)) * 2));
+    return localMean + lonOffset + eot / 60.0;
+  }
+
+  // 大运：从出生月柱起，按年干阳顺阴逆排
+  function dayun(y, m, d, hour, gender) {
+    var b = baziPillars(y, m, d, hour);
+    var yearGan = b.year.charAt(0);
+    var yang = GAN.indexOf(yearGan) % 2 === 0;
+    var male = gender === '男';
+    var forward = (yang && male) || (!yang && !male);
+    var startIdx = ZHI.indexOf(b.month.charAt(1));
+    var list = [];
+    for (var i = 0; i < 8; i++) {
+      var idx = forward ? (startIdx + 1 + i) % 12 : (startIdx - 1 - i + 24) % 12;
+      var gan = GAN[mod((GAN.indexOf(yearGan)) + (idx + 2) - 2, 10)];
+      list.push(gan + ZHI[idx] + ' ' + ((i + 1) * 10) + '岁');
+    }
+    return list;
+  }
+
   function parseBirth(text) {
     if (!text) return null;
     var m = text.match(/(\d{4})[-\/年.](\d{1,2})[-\/月.](\d{1,2})日?/);
@@ -198,6 +268,12 @@
     moon: moonZodiac,
     rising: risingZodiac,
     zodiacOfBirth: zodiacOfBirth,
-    cities: CITIES
+    cities: CITIES,
+    trueSolarTime: trueSolarTime,
+    shishenOf: shishenOf,
+    WUXING: WUXING,
+    ZHI_WUXING: ZHI_WUXING,
+    ZHI_MAIN: ZHI_MAIN,
+    dayun: dayun
   };
 })();
