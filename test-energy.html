@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今天的电量 · 观己实验室</title>
+  <meta name="description" content="今天的电量：能量不是人格，它像天气一样会变化。这个测试不是给你贴标签，而是帮你看见：此刻的你，需要什么。观己实验室 · 理解自己，设计人生">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="观己实验室">
+  <meta property="og:title" content="今天的电量 · 观己实验室">
+  <meta property="og:description" content="今天的电量：能量不是人格，它像天气一样会变化。这个测试不是给你贴标签，而是帮你看见：此刻的你，需要什么。观己实验室 · 理解自己，设计人生">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+      <nav class="site-nav" id="siteNav">
+  <a href="index.html">首页</a>
+  <a href="tests.html">探索</a>
+  <a href="journey.html">三十天</a>
+  <a href="wisdom.html">思想</a>
+  <a href="letters.html">来信</a>
+  <a href="design.html">设计</a>
+  <a href="growth.html">轨迹</a>
+  <a href="simulator.html">模拟</a>
+  <a href="garden.html">花园</a>
+  <a href="about.html">关于</a>
+</nav>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+    </div>
+  </header>
+
+  <main class="quiz-page">
+    <div class="container quiz-shell">
+
+      <div class="quiz-card" id="quizCard">
+        <div class="quiz-head">
+          <span class="badge badge-gold">25 题 · 约 6 分钟</span>
+          <h1>今天的电量</h1>
+          <div class="quiz-en">Energy Check-in</div>
+          <p>能量不是人格，它像天气一样会变化。这个测试不是给你贴标签，而是帮你看见：此刻的你，需要什么。</p>
+          <div class="quiz-meta">
+            <span class="badge">当下状态</span>
+            <span class="badge">能量养护</span>
+            <span class="badge">温柔提醒</span>
+          </div>
+        </div>
+        <div class="quiz-body">
+          <div class="quiz-progress">
+            <span class="count" id="quizCount">1 / 25</span>
+            <div class="bar"><i id="quizBar" style="width:0%"></i></div>
+          </div>
+          <h2 class="question-title" id="questionTitle"></h2>
+          <div class="options" id="quizOptions"></div>
+          <div class="quiz-nav">
+            <button type="button" class="back-link" id="quizBack" style="visibility:hidden">← 上一题</button>
+            <button type="button" class="btn btn-sm" id="quizNext" style="visibility:hidden">下一题 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-card hidden" id="quizResult"></div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/img/logo.svg" alt="观己实验室">
+            <span>观己实验室</span>
+          </div>
+          <p class="footer-desc">理解自己，设计人生。东方智慧 × 哲学思考 × 数字工具。</p>
+        </div>
+        <div class="footer-col">
+          <h4>同行</h4>
+          <a href="tests.html">探索自我</a>
+          <a href="wisdom.html">思想源头</a>
+          <a href="letters.html">观己来信</a>
+          <a href="design.html">人生设计</a>
+          <a href="growth.html">成长轨迹</a>
+          <a href="journey.html">三十天陪伴</a>
+          <a href="simulator.html">人生模拟</a>
+          <a href="garden.html">同频花园</a>
+          <a href="profile.html">我的档案</a>
+        </div>
+      </div>
+      <p class="disclaimer">免责声明：观己实验室提供的测试与内容用于自我探索和心理成长，属于文化象征与哲学工具，不构成医疗诊断、心理诊断、法律或投资建议。</p>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> 观己实验室 Self Insight Lab</span>
+        <a href="privacy.html" style="color:var(--muted-2);text-decoration:underline">隐私政策</a><span>东方智慧 × 哲学思考 × 数字工具</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/quiz-energy.js"></script>
+  <script src="assets/js/quiz.js"></script>
+</body>
+</html>

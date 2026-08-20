@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人生模拟 · 观己实验室</title>
+  <meta name="description" content="在一个不会真正受伤的沙盒里，试走人生不同的岔路，预见多种可能的轨迹。">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="观己实验室">
+  <meta property="og:title" content="人生模拟 · 观己实验室">
+  <meta property="og:description" content="在一个不会真正受伤的沙盒里，试走人生不同的岔路，预见多种可能的轨迹。">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+      <nav class="site-nav" id="siteNav">
+  <a href="index.html">首页</a>
+  <a href="tests.html">探索</a>
+  <a href="journey.html">三十天</a>
+  <a href="wisdom.html">思想</a>
+  <a href="letters.html">来信</a>
+  <a href="design.html">设计</a>
+  <a href="growth.html">轨迹</a>
+  <a href="simulator.html" class="active">模拟</a>
+  <a href="garden.html">花园</a>
+  <a href="about.html">关于</a>
+</nav>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="kicker kicker-center">Life Simulator</span>
+        <h1>人生模拟</h1>
+        <p>人生最可惜的不是选错，而是很多可能性你永远不敢试。在一个不会真正受伤的沙盒里，替自己走一走那些不敢走的路——看看不同的选择，会把你带向哪里。</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="container sim-wrap">
+        <div class="sim-personal" id="simPersonal">
+          <div>
+            <span class="kicker" style="margin-bottom:6px">Made For You</span>
+            <h3>为你生成的人生模拟</h3>
+            <p id="simPersonalDesc">它会读取你的档案、测试结果与成长记录，生成一个只属于你的选择剧本——替你在不会受伤的沙盒里，走一走你正在犹豫的路。</p>
+            <button type="button" class="btn btn-gold btn-sm" id="simPersonalBtn">开始我的模拟</button>
+          </div>
+          <div class="custom-entry-mark" aria-hidden="true">✦</div>
+        </div>
+        <p class="sim-free-title">或者，自由选择一个剧本：</p>
+        <div id="simPick" class="sim-script-grid">
+          <button type="button" class="sim-script" data-scenario="career">
+            <span class="sim-en">Career Pivot</span>
+            <h3>职业换轨</h3>
+            <p>当你开始怀疑「现在这条路是不是我的」……要不要走，怎么走，先替自己试一次。</p>
+          </button>
+          <button type="button" class="sim-script" data-scenario="relation">
+            <span class="sim-en">Relational Choice</span>
+            <h3>关系课题</h3>
+            <p>一段让你反复内耗的关系，靠近、退后、还是放手？在沙盒里看看每种选择的代价与礼物。</p>
+          </button>
+          <button type="button" class="sim-script" data-scenario="self">
+            <span class="sim-en">Finding Direction</span>
+            <h3>自我探索</h3>
+            <p>迷茫的时候，该停下、该尝试、还是该继续？让模拟告诉你，不同活法会开出不同的花。</p>
+          </button>
+        </div>
+
+        <div class="sim-card hidden" id="simCard">
+          <div class="sim-head">
+            <h2 id="simTitle"></h2>
+            <p id="simDesc"></p>
+          </div>
+          <div class="sim-body">
+            <div class="sim-progress">
+              <span class="count" id="simCount"></span>
+              <div class="dots" id="simDots"></div>
+            </div>
+            <h3 class="sim-question" id="simQuestion"></h3>
+            <div class="sim-options" id="simOptions"></div>
+            <div class="sim-story" id="simStory"></div>
+            <div class="sim-nav">
+              <button type="button" class="back-link" id="simBack" style="visibility:hidden">← 回到上一个选择</button>
+              <button type="button" class="btn btn-gold btn-sm" id="simRestart">重新模拟</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-card hidden" id="simResult">
+          <div class="sim-head">
+            <h2 id="simResultTitle"></h2>
+            <p id="simResultSub"></p>
+          </div>
+          <div class="sim-body">
+            <div class="sim-timeline">
+              <h4>你的选择轨迹</h4>
+              <ol id="simTimeline"></ol>
+            </div>
+            <div class="sim-dims" id="simDims"></div>
+            <div class="sim-insight">
+              <h4>这次模拟告诉你</h4>
+              <p id="simInsight"></p>
+            </div>
+            <div class="sim-futures" id="simFutures"></div>
+            <div class="sim-actions">
+              <button type="button" class="btn btn-gold btn-sm" id="simSave">保存这次模拟</button>
+              <button type="button" class="btn btn-sm" id="simAgain">再试一次不同选择</button>
+              <a class="btn btn-sm" href="design.html">带回人生设计</a>
+            </div>
+            <p class="sim-note">模拟是可能性的推演，不是预言。它展示的是一组「如果……那么……」的叙事，帮助你看见每种选择背后的代价与礼物——真正的选择权，永远在你手里。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/img/logo.svg" alt="观己实验室">
+            <span>观己实验室</span>
+          </div>
+          <p class="footer-desc">理解自己，设计人生。东方智慧 × 哲学思考 × 数字工具。</p>
+        </div>
+        <div class="footer-col">
+          <h4>同行</h4>
+          <a href="tests.html">探索自我</a>
+          <a href="wisdom.html">思想源头</a>
+          <a href="letters.html">观己来信</a>
+          <a href="design.html">人生设计</a>
+          <a href="growth.html">成长轨迹</a>
+          <a href="journey.html">三十天陪伴</a>
+          <a href="simulator.html">人生模拟</a>
+          <a href="garden.html">同频花园</a>
+          <a href="profile.html">我的档案</a>
+          <a href="about.html">关于</a>
+        </div>
+      </div>
+      <p class="disclaimer">免责声明：观己实验室提供的测试与内容用于自我探索和心理成长，属于文化象征与哲学工具，不构成医疗诊断、心理诊断、法律或投资建议；若你正经历严重心理困扰，请及时寻求专业心理帮助或拨打当地心理援助热线。</p>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> 观己实验室 Self Insight Lab</span>
+        <a href="privacy.html" style="color:var(--muted-2);text-decoration:underline">隐私政策</a><span>东方智慧 × 哲学思考 × 数字工具</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/life-sim.js"></script>
+</body>
+</html>

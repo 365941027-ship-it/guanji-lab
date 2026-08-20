@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人生设计 · 观己实验室</title>
+  <meta name="description" content="带着你的困惑与渴望，生成属于你的人生设计：三条思路、个性天赋点与温柔的方向。">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="观己实验室">
+  <meta property="og:title" content="人生设计 · 观己实验室">
+  <meta property="og:description" content="带着你的困惑与渴望，生成属于你的人生设计：三条思路、个性天赋点与温柔的方向。">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+      <nav class="site-nav" id="siteNav">
+  <a href="index.html">首页</a>
+  <a href="tests.html">探索</a>
+  <a href="journey.html">三十天</a>
+  <a href="wisdom.html">思想</a>
+  <a href="letters.html">来信</a>
+  <a href="design.html" class="active">设计</a>
+  <a href="growth.html">轨迹</a>
+  <a href="simulator.html">模拟</a>
+  <a href="garden.html">花园</a>
+  <a href="about.html">关于</a>
+</nav>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="kicker kicker-center">Design Your Life</span>
+        <h1>人生设计</h1>
+        <p>不需要想清楚一辈子，只需要为下一个阶段做一个「最小版本」。回答三个问题，我们会为你生成一份设计方案。</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="container">
+        <div class="design-grid">
+          <div class="design-form">
+            <h3>三个问题，一次设计</h3>
+            <div class="form-field">
+              <label>1 · 你现在卡在哪里？</label>
+              <textarea id="painInput" rows="3" placeholder="例如：工作三年觉得没有成长，每天都很消耗，但不知道能做什么。"></textarea>
+            </div>
+            <div class="form-field">
+              <label>2 · 你希望成为的状态？</label>
+              <textarea id="wishInput" rows="3" placeholder="例如：想做一个能发挥创造力、时间自由、做得久的事业。"></textarea>
+            </div>
+            <div class="form-field">
+              <label>3 · 你愿意投入什么？</label>
+              <textarea id="resourceInput" rows="3" placeholder="例如：每周 8 小时、每月 1000 元、三个月时间。"></textarea>
+              <div class="form-hint">写下真实的数字和条件，设计需要建立在现实之上。</div>
+            </div>
+            <button type="button" class="btn btn-gold btn-block" id="designBtn">生成我的设计方案</button>
+          </div>
+
+          <div class="design-output" id="designOutput">
+            <h3>你的人生设计方案</h3>
+            <p class="design-intro" id="designIntro"></p>
+            <div id="designRoutes"></div>
+            <div class="design-principles" id="designPrinciples"></div>
+            <div class="design-principles" id="designSimBlock" style="margin-top:16px"></div>
+            <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+              <button type="button" class="btn btn-gold btn-sm" id="copyDesign">复制方案</button>
+              <button type="button" class="btn btn-sm" id="redoDesign">重新设计</button>
+              <a class="btn btn-sm" href="simulator.html">去人生模拟器验证</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:20px">
+      <div class="container">
+        <span class="kicker">Why Prototype</span>
+        <h2 class="section-title">为什么是「原型实验」，而不是「人生规划」？</h2>
+        <p class="section-sub">规划假设世界不变，而世界一直在变。原型实验假设你会变——所以它只需要你在真实世界里试一小步，然后听反馈。</p>
+        <div class="pillars-grid">
+          <div class="pillar">
+            <span class="pillar-index">壹</span>
+            <span class="pillar-en">Low Risk</span>
+            <h3>低风险试错</h3>
+            <p>一个原型只投入你愿意投入的最小资源：一周、几百块、一个对话。错了不伤元气，对了就是信号。</p>
+          </div>
+          <div class="pillar">
+            <span class="pillar-index">贰</span>
+            <span class="pillar-en">Real Feedback</span>
+            <h3>真实世界反馈</h3>
+            <p>想象再美好也不算数，只有真实世界会告诉你答案。原型实验让世界成为你的导师。</p>
+          </div>
+          <div class="pillar">
+            <span class="pillar-index">叁</span>
+            <span class="pillar-en">Iterate</span>
+            <h3>持续迭代</h3>
+            <p>人生不是一次定型，而是无数个版本的叠加。每次迭代，你都在更接近自己的版本。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:20px">
+      <div class="container">
+        <div class="soft-band">
+          <h2>设计之后，是记录</h2>
+          <p>把心里的方向放进成长轨迹，每次记录，都是你靠近它的一小步。</p>
+          <div class="cta-actions">
+            <a class="btn btn-gold" href="growth.html">开始记录成长轨迹</a>
+            <a class="btn" href="tests.html">先做一次探索</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/img/logo.svg" alt="观己实验室">
+            <span>观己实验室</span>
+          </div>
+          <p class="footer-desc">理解自己，设计人生。东方智慧 × 哲学思考 × 数字工具。</p>
+        </div>
+        <div class="footer-col">
+          <h4>同行</h4>
+          <a href="tests.html">探索自我</a>
+          <a href="wisdom.html">思想源头</a>
+          <a href="letters.html">观己来信</a>
+          <a href="design.html">人生设计</a>
+          <a href="growth.html">成长轨迹</a>
+          <a href="journey.html">三十天陪伴</a>
+          <a href="simulator.html">人生模拟</a>
+          <a href="garden.html">同频花园</a>
+          <a href="profile.html">我的档案</a>
+          <a href="about.html">关于</a>
+        </div>
+      </div>
+      <p class="disclaimer">免责声明：观己实验室提供的测试与内容用于自我探索和心理成长，属于文化象征与哲学工具，不构成医疗诊断、心理诊断、法律或投资建议；若你正经历严重心理困扰，请及时寻求专业帮助。</p>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> 观己实验室 Self Insight Lab</span>
+        <a href="privacy.html" style="color:var(--muted-2);text-decoration:underline">隐私政策</a><span>东方智慧 × 哲学思考 × 数字工具</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/design.js"></script>
+</body>
+</html>

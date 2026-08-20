@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="观己实验室标志">
+  <defs>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e0c07e"/>
+      <stop offset="1" stop-color="#a9854a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="55" fill="#0a0f1c" stroke="url(#goldGrad)" stroke-width="2"/>
+  <circle cx="60" cy="60" r="46" fill="none" stroke="url(#goldGrad)" stroke-width="1" opacity="0.45"/>
+  <circle cx="60" cy="60" r="30" fill="none" stroke="url(#goldGrad)" stroke-width="1" opacity="0.2" stroke-dasharray="3 5"/>
+  <path d="M60 34 L63.6 52.4 L82 52.8 L68 63.8 L73.4 81.8 L60 70 L46.6 81.8 L52 63.8 L38 52.8 L56.4 52.4 Z"
+        fill="url(#goldGrad)"/>
+  <path d="M60 26 L61.2 31.6 M60 26 L60 31 M60 26 L58.8 31.6" stroke="url(#goldGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+  <path d="M60 94 L58.8 88.4 M60 94 L61.2 88.4 M60 94 L60 89" stroke="url(#goldGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="60" cy="60" r="2.4" fill="#0a0f1c"/>
+</svg>

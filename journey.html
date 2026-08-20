@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三十天陪伴 · 观己实验室</title>
+  <meta name="description" content="三十天，不是一场打卡，而是一段与自己相处的旅程。每周一封信，每天一句指引，还有专属于你的自察。">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="观己实验室">
+  <meta property="og:title" content="三十天陪伴 · 观己实验室">
+  <meta property="og:description" content="三十天，不是一场打卡，而是一段与自己相处的旅程。每周一封信，每天一句指引，还有专属于你的自察。">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+      <nav class="site-nav" id="siteNav">
+  <a href="index.html">首页</a>
+  <a href="tests.html">探索</a>
+  <a href="journey.html" class="active">三十天</a>
+  <a href="wisdom.html">思想</a>
+  <a href="letters.html">来信</a>
+  <a href="design.html">设计</a>
+  <a href="growth.html">轨迹</a>
+  <a href="simulator.html">模拟</a>
+  <a href="garden.html">花园</a>
+  <a href="about.html">关于</a>
+</nav>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="kicker kicker-center">Thirty Days With You</span>
+        <h1>三十天，慢慢陪自己走一段</h1>
+        <p>这不是打卡，也不是任务。它是一段邀请：未来三十天，每天留一点点时间给自己，看看自己发生了什么变化。</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="container">
+        <div class="journey-grid">
+          <div class="journey-side">
+            <div class="journey-progress-card">
+              <h3>我们的进度</h3>
+              <div class="journey-big-num" id="journeyDay">第 1 天</div>
+              <div class="journey-bar"><i id="journeyBar"></i></div>
+              <p id="journeyCount">共 30 天 · 你已经陪了自己 0 天</p>
+              <button type="button" class="btn btn-gold btn-sm" id="journeyToday">记下今天</button>
+            </div>
+            <div class="journey-letter-card">
+              <span class="kicker" style="margin-bottom:6px">Weekly Letter</span>
+              <h3 id="letterWeek">第一周 · 先认识此刻的自己</h3>
+              <p id="letterBody"></p>
+              <div class="letter-sign" id="letterSign"></div>
+            </div>
+          </div>
+
+          <div class="journey-main">
+            <div class="journey-day-card">
+              <span class="kicker" style="margin-bottom:6px">Today's Prompt</span>
+              <h3 id="dayPrompt"></h3>
+              <p id="dayHint"></p>
+              <textarea class="journal-area" id="dayNote" rows="4" placeholder="写下今天这一刻的你……"></textarea>
+              <div class="mood-row" id="dayMoods">
+                <button type="button" class="mood-btn" data-mood="平静">平静</button>
+                <button type="button" class="mood-btn" data-mood="焦虑">焦虑</button>
+                <button type="button" class="mood-btn" data-mood="期待">期待</button>
+                <button type="button" class="mood-btn" data-mood="疲惫">疲惫</button>
+                <button type="button" class="mood-btn" data-mood="喜悦">喜悦</button>
+                <button type="button" class="mood-btn" data-mood="低落">低落</button>
+                <button type="button" class="mood-btn" data-mood="清晰">清晰</button>
+                <button type="button" class="mood-btn" data-mood="混乱">混乱</button>
+              </div>
+              <button type="button" class="btn btn-gold" id="journeySave">保存今天</button>
+              <div class="journey-history" id="journeyHistory"></div>
+            </div>
+            <div class="journey-mid-card">
+              <h3>这一周，我想对你说的</h3>
+              <p id="weekNote"></p>
+              <a class="btn btn-sm" href="custom-test.html" id="weekTestLink">生成本周专属自察</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/img/logo.svg" alt="观己实验室">
+            <span>观己实验室</span>
+          </div>
+          <p class="footer-desc">理解自己，设计人生。东方智慧 × 哲学思考 × 数字工具。</p>
+        </div>
+        <div class="footer-col">
+          <h4>同行</h4>
+          <a href="tests.html">探索自我</a>
+          <a href="wisdom.html">思想源头</a>
+          <a href="letters.html">观己来信</a>
+          <a href="design.html">人生设计</a>
+          <a href="growth.html">成长轨迹</a>
+          <a href="journey.html">三十天陪伴</a>
+          <a href="simulator.html">人生模拟</a>
+          <a href="garden.html">同频花园</a>
+          <a href="profile.html">我的档案</a>
+          <a href="about.html">关于</a>
+        </div>
+      </div>
+      <p class="disclaimer">免责声明：观己实验室提供的测试与内容用于自我探索和心理成长，属于文化象征与哲学工具，不构成医疗诊断、心理诊断、法律或投资建议；若你正经历严重心理困扰，请及时寻求专业心理帮助或拨打当地心理援助热线。</p>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> 观己实验室 Self Insight Lab</span>
+        <a href="privacy.html" style="color:var(--muted-2);text-decoration:underline">隐私政策</a><span>东方智慧 × 哲学思考 × 数字工具</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/journey.js"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同频花园 · 观己实验室</title>
+  <meta name="description" content="在花园里遇见灵魂相似的人：生成你的同频名片，参与话题，等待真正的相遇。">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="观己实验室">
+  <meta property="og:title" content="同频花园 · 观己实验室">
+  <meta property="og:description" content="在花园里遇见灵魂相似的人：生成你的同频名片，参与话题，等待真正的相遇。">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+      <nav class="site-nav" id="siteNav">
+  <a href="index.html">首页</a>
+  <a href="tests.html">探索</a>
+  <a href="journey.html">三十天</a>
+  <a href="wisdom.html">思想</a>
+  <a href="letters.html">来信</a>
+  <a href="design.html">设计</a>
+  <a href="growth.html">轨迹</a>
+  <a href="simulator.html">模拟</a>
+  <a href="garden.html" class="active">花园</a>
+  <a href="about.html">关于</a>
+</nav>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="kicker kicker-center">Resonance Garden</span>
+        <h1>同频花园</h1>
+        <p>理解自己的人，终会遇见彼此。在这里生成你的同频名片，留下你的声音，等待与灵魂相似的人相遇。</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="container">
+        <div class="garden-grid">
+          <div class="garden-card">
+            <h3>我的同频名片</h3>
+            <p style="font-size:13.5px;color:var(--muted);line-height:1.9">名片由你的测试结果与档案生成。它不定义你，只是让相似的人能认出你。</p>
+            <button type="button" class="btn btn-gold btn-sm" id="genCard" style="margin-top:10px">生成我的同频名片</button>
+            <div class="resonance-card" id="resonanceCard">
+              <div class="rc-name" id="rcName">同频者</div>
+              <div class="rc-code" id="rcCode"></div>
+              <div class="rc-tags" id="rcTags"></div>
+              <p id="rcNote" style="font-size:13px;color:var(--muted);line-height:1.85"></p>
+              <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+                <button type="button" class="btn btn-gold btn-sm" id="copyCard">复制名片</button>
+                <a class="btn btn-sm" href="profile.html">完善我的档案</a>
+              </div>
+            </div>
+            <div class="match-note" style="margin-top:20px">
+              <strong>真正的相遇，从这里开始：</strong>完成测试与档案后，你的名片会带着你真实的模样——原型、价值观、MBTI 与人生阶段。当另一个和你同频的人出现时，你们会在花园里互相认出彼此。<br><br>
+              花园还在慢慢生长：名片可以先分享给在意的人，让理解你的人先看见你。等花园里的声音多了，同频的人自然会循着声音找到彼此。
+            </div>
+          </div>
+
+          <div class="garden-card">
+            <h3>花园话题</h3>
+            <p style="font-size:13.5px;color:var(--muted);line-height:1.9">先留下你的声音。每条留言都保存在本机，它们会成为花园里第一批开出的花。</p>
+            <div id="topics"></div>
+            <div class="match-note" style="margin-top:20px">
+              <strong>为什么叫「同频花园」？</strong>我们不按「条件」匹配，而是按「共振」匹配：你们可能在同一个阶段、共享同一种价值观、使用同一种内在语言。灵魂相似不是处处相同，而是在最深的地方，用同一种频率呼吸。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/img/logo.svg" alt="观己实验室">
+            <span>观己实验室</span>
+          </div>
+          <p class="footer-desc">理解自己，设计人生。东方智慧 × 哲学思考 × 数字工具。</p>
+        </div>
+        <div class="footer-col">
+          <h4>同行</h4>
+          <a href="tests.html">探索自我</a>
+          <a href="wisdom.html">思想源头</a>
+          <a href="letters.html">观己来信</a>
+          <a href="design.html">人生设计</a>
+          <a href="growth.html">成长轨迹</a>
+          <a href="journey.html">三十天陪伴</a>
+          <a href="simulator.html">人生模拟</a>
+          <a href="garden.html">同频花园</a>
+          <a href="profile.html">我的档案</a>
+          <a href="about.html">关于</a>
+        </div>
+      </div>
+      <p class="disclaimer">免责声明：观己实验室提供的测试与内容用于自我探索和心理成长，属于文化象征与哲学工具，不构成医疗诊断、心理诊断、法律或投资建议；若你正经历严重心理困扰，请及时寻求专业心理帮助或拨打当地心理援助热线。</p>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> 观己实验室 Self Insight Lab</span>
+        <a href="privacy.html" style="color:var(--muted-2);text-decoration:underline">隐私政策</a><span>东方智慧 × 哲学思考 × 数字工具</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/garden.js"></script>
+</body>
+</html>
