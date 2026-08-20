@@ -3,6 +3,57 @@
 
   var KEY = 'guan_journey';
 
+  var AI_PROVIDERS = {
+    openai: {
+      url: 'https://api.openai.com/v1/chat/completions',
+      model: 'gpt-4o-mini',
+      headers: function (key) { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key }; },
+      body: function (sys, user) { return { model: 'gpt-4o-mini', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 200, temperature: 0.9 }; },
+      parse: function (d) { return d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content; }
+    },
+    gemini: {
+      url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+      model: 'gemini-2.0-flash',
+      headers: function (key) { return { 'Content-Type': 'application/json' }; },
+      urlKey: function (key) { return '?key=' + encodeURIComponent(key); },
+      body: function (sys, user) { return { contents: [{ role: 'user', parts: [{ text: sys + '\n\n' + user }] }], generationConfig: { maxOutputTokens: 200, temperature: 0.9 } }; },
+      parse: function (d) { return d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts.map(function (p) { return p.text || ''; }).join(''); }
+    },
+    deepseek: {
+      url: 'https://api.deepseek.com/chat/completions',
+      model: 'deepseek-chat',
+      headers: function (key) { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key }; },
+      body: function (sys, user) { return { model: 'deepseek-chat', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 200, temperature: 0.9 }; },
+      parse: function (d) { return d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content; }
+    }
+  };
+
+  function availableKey() {
+    return ['openai', 'gemini', 'deepseek'].filter(function (p) {
+      return localStorage.getItem('guan_ai_key_' + p);
+    })[0] || null;
+  }
+
+  function callAiDaily(prompt) {
+    var provider = availableKey();
+    if (!provider) return Promise.resolve(null);
+    var key = localStorage.getItem('guan_ai_key_' + provider);
+    var cfg = AI_PROVIDERS[provider];
+    var url = cfg.url + (cfg.urlKey ? cfg.urlKey(key) : '');
+    return fetch(url, {
+      method: 'POST',
+      headers: cfg.headers(key),
+      body: JSON.stringify(cfg.body(prompt.sys, prompt.user))
+    }).then(function (res) {
+      if (!res.ok) return null;
+      return res.json();
+    }).then(function (data) {
+      if (!data) return null;
+      var text = cfg.parse(data);
+      return text ? text.trim().slice(0, 120) : null;
+    }).catch(function () { return null; });
+  }
+
   var DAYS = [
     '今天，只回答一个问题：此刻的我是怎样的？',
     '留意一个「让我有能量」的瞬间——它很小，但值得被看见。',
@@ -75,6 +126,16 @@
     var promptIdx = (day - 1) % DAYS.length;
     document.getElementById('dayPrompt').textContent = DAYS[promptIdx];
     document.getElementById('dayHint').textContent = '第 ' + day + ' 天 · 不需要做得很好，只要愿意回来。';
+
+    // AI 每日一问：如果有 key，根据最近记录生成专属问题；失败则保留固定文案
+    var recent = items.slice(-5).map(function (it) { return it.note || ''; }).filter(Boolean);
+    var aiQ = callAiDaily({
+      sys: '你是「观己实验室」的温柔陪伴者。请根据用户最近几天的记录，生成一句只属于今天的「每日一问」。要求：1）引用TA记录里的一个细节；2）语气温暖、像朋友；3）一句话，不超过50字；4）不评判、不给建议。',
+      user: '我最近几天的记录：' + (recent.length ? recent.join('；') : '（还没有记录）') + '\n\n请生成今天的每日一问。'
+    });
+    aiQ.then(function (text) {
+      if (text) document.getElementById('dayPrompt').textContent = text;
+    });
 
     var letter = WEEK_LETTERS[week - 1];
     document.getElementById('letterWeek').textContent = letter.title;
