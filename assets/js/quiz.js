@@ -92,6 +92,14 @@
     guan_majorfit: '霍兰德职业兴趣理论（RIASEC）',
     guan_attention: '注意力研究 · 心流理论（Csikszentmihalyi）',
     guan_family: '原生家庭心理学 · 依恋与代际传递研究',
+    guan_flow: '心流理论（Csikszentmihalyi）',
+    guan_confidence: '自我效能理论（Bandura）',
+    guan_workvalues: '工作价值观研究 · 职业发展理论',
+    guan_careergap: '职业空窗期研究 · 生涯过渡理论',
+    guan_identity: '身份发展理论（Erikson）',
+    guan_resilience: '心理韧性研究（Masten）',
+    guan_conflictrepair: '关系修复研究（Gottman）',
+    guan_goodbye: '哀伤理论（Worden）',
     guan_custom: '整合你的档案、测试与记录'
   };
   var stepEl = document.getElementById('quizStep');

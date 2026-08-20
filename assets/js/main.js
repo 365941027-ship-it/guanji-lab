@@ -223,7 +223,15 @@
     ,
     guan_majorfit: '我属于哪间教室',
     guan_attention: '我的注意力去了哪里',
-    guan_family: '从家出发'
+    guan_family: '从家出发',
+    guan_flow: '什么让我忘记时间',
+    guan_confidence: '我相信自己能做到什么',
+    guan_workvalues: '工作对你意味着什么',
+    guan_careergap: '停下来之后的自己',
+    guan_identity: '我是谁',
+    guan_resilience: '弯而不折的你',
+    guan_conflictrepair: '吵架之后',
+    guan_goodbye: '告别之后'
   };
   Object.keys(resultKeys).forEach(function (key) {
     var val = window.guanGet ? window.guanGet(key) : localStorage.getItem(key);
