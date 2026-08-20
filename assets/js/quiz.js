@@ -367,11 +367,18 @@
   function renderStandard() {
     var r = computeResult();
     var p = QUIZ.results[r.primary];
+    var prof = profileData();
+    var nickname = prof.nickname ? prof.nickname + '，' : '';
     var html = resultCardHTML(QUIZ.iconSVG || starSVG(), p.name, p.en, tarotSVG(), '塔罗象征 · ' + p.tarot);
     html += '<div class="result-sections">';
     if (THEORY[QUIZ.key]) {
       html += '<div class="theory-badge">专业依据 · ' + THEORY[QUIZ.key] + '</div>';
     }
+    // 第 2 层：先复述用户的选择（真正的互动感）
+    html += '<div class="result-block wide"><h4>你刚刚告诉我的</h4>' +
+      '<p>' + nickname + '你选了几件很具体的事——让我先复述一下，确认我没有听错：</p>' +
+      '<ul>' + echoPicks().map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' +
+      '<p style="margin-top:10px">这些答案不是随手勾的。它们连在一起，构成了我下面要对你说的判断。</p></div>';
     html += '<div class="result-block wide"><h4>核心特征</h4>' + personBlock('core', p) + '</div>';
     html += '<div class="result-block wide"><h4>内在冲突</h4>' + personBlock('conflict', p) + '</div>';
     html += '<div class="result-block wide"><h4>成长方向</h4>' + personBlock('growth', p) + '</div>';
@@ -471,6 +478,22 @@
       }
     });
     return list.slice(0, 5);
+  }
+
+  // 复述用户的选择（用于结果开头，产生「被听见」感）
+  function echoPicks() {
+    var list = [];
+    state.answers.forEach(function (a, qi) {
+      if (!a) return;
+      var q = QUIZ.questions[qi];
+      if (a.option !== undefined && q && q.options && q.options[a.option]) {
+        var opt = q.options[a.option];
+        list.push('在「' + q.q.slice(0, 14) + (q.q.length > 14 ? '…' : '') + '」上，你选择了「' + opt.text.slice(0, 18) + (opt.text.length > 18 ? '…' : '') + '」');
+      } else if (a.other) {
+        list.push('你还写下了自己的答案：「' + a.other.slice(0, 24) + (a.other.length > 24 ? '…' : '') + '」');
+      }
+    });
+    return list.slice(0, 4);
   }
 
   function interpretOther(text) {
@@ -583,6 +606,7 @@
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
+      keepTalkingHTML() +
       (label && label !== 'inneros' ? '<div class="share-modal" id="shareModal">' +
       '  <div class="share-card" id="shareCard">' +
       '    <div class="share-logo">' + (window.guanProfile && window.guanProfile().nickname ? window.guanProfile().nickname : '观己者') + ' · ' + QUIZ.title + '</div>' +
@@ -596,6 +620,90 @@
       '  </div>' +
       '</div>' : '') +
       (QUIZ.category ? crisisHTML(QUIZ.category) : '');
+  }
+
+  // 结果后「继续对话」：基于结果精准推荐 1 个相关测试 + 追问（替代全部推荐）
+  function keepTalkingHTML() {
+    var r = computeResult();
+    var key = r && r.primary ? r.primary : (r.tier ? r.tier.name : '');
+    var rec = relatedTest(QUIZ.key, key);
+    var followups = followupsFor(QUIZ.key, key);
+    return '<div class="keep-talking">' +
+      '<h4>再往下走一步</h4>' +
+      (rec ? '<div class="kt-rec"><b>既然你' + (rec.reason || '）') + '，去这里看看会更完整：</b>' +
+        '<a href="' + rec.href + '" class="btn btn-gold btn-sm">' + rec.label + ' →</a></div>' : '') +
+      (followups.length ? '<div class="kt-followups"><b>如果你想继续聊聊自己：</b>' +
+        followups.map(function (f) { return '<button type="button" class="btn btn-sm" data-followup>' + f + '</button>'; }).join('') +
+        '</div>' : '') +
+      '<p class="kt-note">选一个追问，或直接去推荐的测试——这次探索不用停在这里。</p>' +
+      '</div>';
+  }
+
+  var RELATED = {
+    guan_archetype: [
+      { key: '探索者', test: 'guan_stage', href: 'test-life-stage.html', label: '你现在走到的季节', reason: '看见了自己的原型，下一步值得看看自己正处在哪个季节' },
+      { key: '创造者', test: 'guan_flow', href: 'test-flow.html', label: '什么让我忘记时间', reason: '创造者的能量，需要知道它流向哪里' },
+      { key: '觉知者', test: 'guan_emotions', href: 'test-emotions.html', label: '你的情绪语言', reason: '觉知者的敏感，需要用情绪语言来安放' },
+      { key: '重构者', test: 'guan_burnout', href: 'test-burnout.html', label: '当工作开始抽干你', reason: '重构者的疲惫，常常来自旧结构的拉扯' },
+      { key: '守护者', test: 'guan_boundary', href: 'test-boundary.html', label: '你的门与墙', reason: '守护者最需要学习的，是边界' }
+    ],
+    guan_drain: [
+      { key: '反刍型', test: 'guan_goodbye', href: 'test-goodbye.html', label: '告别之后', reason: '反复回想，往往和没有完成的告别有关' },
+      { key: '比较型', test: 'guan_confidence', href: 'test-confidence.html', label: '我相信自己能做到什么', reason: '比较的背后，是自信地图上的一块暗区' },
+      { key: '完美型', test: 'guan_selfcare', href: 'test-selfcare.html', label: '你如何对待自己', reason: '完美主义的钥匙，藏在你对自己的话里' },
+      { key: '讨好型', test: 'guan_pleasing', href: 'test-pleasing.html', label: '不必讨好也值得被爱', reason: '讨好的模式，值得单独被看见' }
+    ],
+    guan_burnout: [
+      { key: '疲惫耗竭', test: 'guan_energy', href: 'test-energy.html', label: '今天的电量', reason: '先看看你的电量还剩多少' },
+      { key: '冷漠疏离', test: 'guan_selfcare', href: 'test-selfcare.html', label: '你如何对待自己', reason: '麻木的时候，最需要听见对自己的话' },
+      { key: '意义失落', test: 'guan_workvalues', href: 'test-workvalues.html', label: '工作对你意味着什么', reason: '意义感的丢失，和工作的坐标有关' },
+      { key: '觉醒转型', test: 'guan_pivot', href: 'test-pivot.html', label: '换一条路之前', reason: '觉醒期最需要的，是换路前的准备' }
+    ],
+    guan_attachment: [
+      { key: '焦虑型', test: 'guan_selfworth', href: 'test-selfworth.html', label: '你配得上什么', reason: '焦虑的底层，常常是「我配吗」' },
+      { key: '回避型', test: 'guan_boundary', href: 'test-boundary.html', label: '你的门与墙', reason: '回避的背后，是一堵很高的墙' },
+      { key: '恐惧回避', test: 'guan_pleasing', href: 'test-pleasing.html', label: '不必讨好也值得被爱', reason: '既想靠近又怕受伤，和讨好模式常常交织' }
+    ]
+  };
+
+  function relatedTest(quizKey, resultKey) {
+    var list = RELATED[quizKey];
+    if (!list) return null;
+    var hit = list.filter(function (x) { return x.key === resultKey; })[0];
+    return hit || list[0];
+  }
+
+  function followupsFor(quizKey, resultKey) {
+    var map = {
+      guan_archetype: ['「我这样的姿态，最早是从什么时候开始的？」', '「如果换一种姿态，我会先失去什么？」', '「我最想把这个原型用在哪个场景里？」'],
+      guan_drain: ['「这个声音，最早是谁对我说的？」', '「如果今天允许自己松手一样东西，会是什么？」'],
+      guan_burnout: ['「如果休息不是逃避，我敢不敢先停下来一天？」', '「这份工作里，还有什么是值得留下的？」'],
+      guan_attachment: ['「我最早在谁身上学会了这样靠近？」', '「如果我允许自己慢慢来，最怕发生什么？」']
+    };
+    return map[quizKey] || ['「这个结果里，最戳中我的是哪一句？」'];
+  }
+
+  function followupHints() {
+    var map = {
+      guan_archetype: [
+        '试着回想：最早让你觉得「这样做是对的」的那个时刻。那个时刻里，藏着你现在姿态的来处。',
+        '把它写下来。你会发现，你害怕失去的东西，恰恰是你在旧姿态里一直保护的东西。',
+        '不是所有场景都需要同一种姿态。认出「哪里它最有用」，就是你开始自由使用它的地方。'
+      ],
+      guan_drain: [
+        '也许不是任何人对你说过，而是你很久以前为了保护自己，自己学会的。它不是你的敌人，它是旧日的你。',
+        '选最小的那一样。松手不是失去，是给手腾出空间。'
+      ],
+      guan_burnout: [
+        '把「休息」从任务清单之外挪进任务清单里，它才可能真正发生。',
+        '哪怕只有一件。它是你接下来选择的地基。'
+      ],
+      guan_attachment: [
+        '也许是父母，也许是某段重要的关系。看见来处，不是责怪，是理解。',
+        '把它说出来。恐惧一旦被命名，就不再有那么大力量。'
+      ]
+    };
+    return map[QUIZ.key] || ['这个问题没有标准答案，但它值得你给自己十分钟。'];
   }
 
   function crisisHTML(cat) {
@@ -641,6 +749,23 @@
           window.guanToast(ok ? '已复制分享文字' : '复制失败');
         });
       }
+    });
+    resultEl.querySelectorAll('[data-followup]').forEach(function (btn, idx) {
+      btn.addEventListener('click', function () {
+        var sections = resultEl.querySelector('.result-sections');
+        if (!sections) return;
+        var box = resultEl.querySelector('#followupAnswer');
+        if (!box) {
+          box = document.createElement('div');
+          box.id = 'followupAnswer';
+          box.className = 'result-block wide followup-box';
+          sections.appendChild(box);
+        }
+        var hints = followupHints();
+        box.innerHTML = '<h4>关于这个问题，我想对你说</h4><p>' + (hints[idx] || '这个问题没有标准答案——但它值得你给自己十分钟，认真想一想。') + '</p>' +
+          '<p style="margin-top:10px"><a class="btn btn-gold btn-sm" href="growth.html">把答案记下来 →</a></p>';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     });
     if (restartBtn) {
       restartBtn.addEventListener('click', function () {
