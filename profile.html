@@ -152,19 +152,48 @@
             </div>
             <div class="form-field">
               <label>八字四柱 · 自动排盘</label>
-              <div class="auto-chart" id="baziChart">填写出生日期与时辰后自动生成</div>
+              <div class="auto-chart">
+                <input type="text" id="baziChart" placeholder="填写出生日期与时辰后自动生成" readonly>
+              </div>
+              <div class="chart-actions">
+                <button type="button" class="btn btn-sm" data-editable="baziChart">编辑校对</button>
+                <span class="chart-verify" id="baziVerify">自动排盘（未校对）</span>
+              </div>
+              <div class="chart-note">自动排盘基于天文算法，时辰未精确到分钟会有偏差。你可以点「编辑校对」按自己的命理知识修正。</div>
             </div>
             <div class="form-row">
               <div class="form-field">
                 <label>上升星座 · 自动校准</label>
-                <div class="auto-chart" id="risingAuto">填写出生日期与时辰后自动生成</div>
+                <div class="auto-chart">
+                  <select id="risingAuto" disabled>
+                    <option value="">填写出生日期与时辰后自动生成</option>
+                    <option>白羊座</option><option>金牛座</option><option>双子座</option><option>巨蟹座</option>
+                    <option>狮子座</option><option>处女座</option><option>天秤座</option><option>天蝎座</option>
+                    <option>射手座</option><option>摩羯座</option><option>水瓶座</option><option>双鱼座</option>
+                  </select>
+                </div>
+                <div class="chart-actions">
+                  <button type="button" class="btn btn-sm" data-editable="risingAuto">编辑校对</button>
+                  <span class="chart-verify" id="risingVerify">自动校准（未校对）</span>
+                </div>
               </div>
               <div class="form-field">
                 <label>月亮星座 · 自动校准</label>
-                <div class="auto-chart" id="moonAuto">填写出生日期与时辰后自动生成</div>
+                <div class="auto-chart">
+                  <select id="moonAuto" disabled>
+                    <option value="">填写出生日期与时辰后自动生成</option>
+                    <option>白羊座</option><option>金牛座</option><option>双子座</option><option>巨蟹座</option>
+                    <option>狮子座</option><option>处女座</option><option>天秤座</option><option>天蝎座</option>
+                    <option>射手座</option><option>摩羯座</option><option>水瓶座</option><option>双鱼座</option>
+                  </select>
+                </div>
+                <div class="chart-actions">
+                  <button type="button" class="btn btn-sm" data-editable="moonAuto">编辑校对</button>
+                  <span class="chart-verify" id="moonVerify">自动校准（未校对）</span>
+                </div>
               </div>
             </div>
-            <p class="chart-note">排盘基于天文算法（太阳黄经节气、月亮摄动项、恒星时）自动计算，时辰未精确到分钟时会有小幅偏差；如需精确命盘，请以专业排盘软件为准。</p>
+            <p class="chart-note">所有排盘均为自动计算结果，可能存在偏差：① 时辰未精确到分钟；② 上升星座依赖出生城市；③ 八字用近似节气法。强烈建议你对照专业排盘软件校对后保存。</p>
             <div class="form-field">
               <label>你最近的人生阶段</label>
               <select id="pStage">

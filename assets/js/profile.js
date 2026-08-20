@@ -118,9 +118,15 @@
       city: city,
       mbti: document.getElementById('pMbti').value,
       ennea: document.getElementById('pEnnea').value,
-      bazi: bazi ? bazi.year + ' ' + bazi.month + ' ' + bazi.day + ' ' + bazi.hour : '',
-      rising: rising || '',
-      moon: moon || '',
+      // 优先用用户校对后的值；未校对则用自动排盘值
+      bazi: document.getElementById('baziChart').value.trim() || (bazi ? bazi.year + ' ' + bazi.month + ' ' + bazi.day + ' ' + bazi.hour : ''),
+      rising: document.getElementById('risingAuto').value || rising || '',
+      moon: document.getElementById('moonAuto').value || moon || '',
+      verified: {
+        bazi: document.getElementById('baziVerify').classList.contains('verified'),
+        rising: document.getElementById('risingVerify').classList.contains('verified'),
+        moon: document.getElementById('moonVerify').classList.contains('verified')
+      },
       stage: document.getElementById('pStage').value,
       selfDesc: document.getElementById('pSelfDesc').value.trim(),
       focus: document.getElementById('pFocus').value.trim()
@@ -135,20 +141,17 @@
     var birth = window.guanAstrology.parseBirth(birthText);
     var hour = window.guanAstrology.parseHour(hourText);
     if (!birth) {
-      document.getElementById('baziChart').textContent = '填写出生日期与时辰后自动生成';
-      document.getElementById('risingAuto').textContent = '填写出生日期与时辰后自动生成';
-      document.getElementById('moonAuto').textContent = '填写出生日期与时辰后自动生成';
+      document.getElementById('baziChart').value = '';
+      document.getElementById('risingAuto').value = '';
+      document.getElementById('moonAuto').value = '';
       return;
     }
     var bazi = window.guanAstrology.bazi(birth.y, birth.m, birth.d, hour);
-    document.getElementById('baziChart').innerHTML =
-      '<span class="pillar">' + bazi.year + '</span><span class="pillar">' + bazi.month + '</span>' +
-      '<span class="pillar">' + bazi.day + '</span><span class="pillar">' + bazi.hour + '</span>' +
-      '<span class="pillar-label">年柱 月柱 日柱 时柱</span>';
-    document.getElementById('moonAuto').textContent = window.guanAstrology.moon(birth.y, birth.m, birth.d) + '（近似）';
+    document.getElementById('baziChart').value = bazi.year + ' ' + bazi.month + ' ' + bazi.day + ' ' + bazi.hour;
+    document.getElementById('moonAuto').value = window.guanAstrology.moon(birth.y, birth.m, birth.d);
     var city = document.getElementById('pCity').value.trim();
     var r = window.guanAstrology.rising(birth.y, birth.m, birth.d, hour, city);
-    document.getElementById('risingAuto').textContent = r.ok ? r.zodiac + '（近似）' : (r.reason + '：可填写城市后自动校准');
+    document.getElementById('risingAuto').value = r.ok ? r.zodiac : '';
   }
 
   function renderPreview(p) {
@@ -224,6 +227,24 @@
   document.getElementById('pBirth').addEventListener('input', renderCharts);
   document.getElementById('pHour').addEventListener('change', renderCharts);
   document.getElementById('pCity').addEventListener('input', renderCharts);
+
+  // 编辑校对：解锁对应排盘控件，标记已校对
+  document.querySelectorAll('[data-editable]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-editable');
+      var el = document.getElementById(id);
+      var verifyId = id === 'baziChart' ? 'baziVerify' : id === 'risingAuto' ? 'risingVerify' : 'moonVerify';
+      if (el.readOnly !== undefined) el.readOnly = false;
+      if (el.disabled !== undefined) el.disabled = false;
+      el.focus();
+      var verify = document.getElementById(verifyId);
+      if (verify) {
+        verify.textContent = '已由本人校对 ✓';
+        verify.classList.add('verified');
+      }
+      window.guanToast('已解锁，可修改；修改后记得保存档案');
+    });
+  });
 
   document.getElementById('exportProfile').addEventListener('click', function () {
     var p = collect();
