@@ -626,16 +626,21 @@
   }
 
   function aiKeyModalHTML() {
-    var has = !!localStorage.getItem('guan_ai_key');
     return '<div class="ai-modal" id="aiKeyModal" style="display:none">' +
       '  <div class="ai-modal-card">' +
       '    <h4>开启 AI 深度解读</h4>' +
-      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，由 AI 为你一个人生成。API Key 只保存在这台设备的浏览器里。</p>' +
-      (has ? '<p class="ai-key-hint">已保存一个 Key（<span id="aiKeyMask"></span>），你可以继续使用或更换。</p>' : '') +
-      '    <div class="form-field"><label>OpenAI API Key</label>' +
+      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，由 AI 为你一个人生成。选择一家你已有 Key 的服务，Key 只保存在这台设备。</p>' +
+      '    <div class="form-field"><label>选择 AI 服务</label>' +
+      '      <select id="aiProvider">' +
+      '        <option value="openai">OpenAI（需付费额度）</option>' +
+      '        <option value="gemini">Google Gemini（有免费额度）</option>' +
+      '        <option value="deepseek">DeepSeek（价格低）</option>' +
+      '      </select></div>' +
+      '    <div class="form-field"><label id="aiKeyLabel">API Key</label>' +
       '      <input type="password" id="aiKeyInput" placeholder="sk-..." autocomplete="off"></div>' +
+      '    <p class="ai-key-hint" id="aiKeyHint">如何获取：</p>' +
       '    <label class="ai-keep"><input type="checkbox" id="aiKeyKeep" checked> 记住在这台设备上</label>' +
-      '    <p class="ai-warn">个人使用验证：Key 仅存本机、仅用于本次请求。正式产品应改用服务端代理。建议使用低额度 Key。</p>' +
+      '    <p class="ai-warn">Key 仅存本机、仅用于本次请求。正式产品应改用服务端代理。</p>' +
       '    <div class="ai-modal-actions">' +
       '      <button type="button" class="btn btn-gold btn-sm" data-ai-confirm>开始解读</button>' +
       '      <button type="button" class="btn btn-sm" data-ai-cancel>取消</button>' +
@@ -729,29 +734,66 @@
   }
 
   // ---------- AI 深度解读 ----------
+  var AI_PROVIDERS = {
+    openai: {
+      label: 'OpenAI',
+      keyHint: '在 platform.openai.com → API keys 创建。注意：OpenAI 需要账户有余额，余额为 0 时会失败。',
+      placeholder: 'sk-...'
+    },
+    gemini: {
+      label: 'Google Gemini',
+      keyHint: '在 aistudio.google.com/app/apikey 免费创建（有免费额度，适合个人使用）。',
+      placeholder: 'AIza...'
+    },
+    deepseek: {
+      label: 'DeepSeek',
+      keyHint: '在 platform.deepseek.com → API keys 创建。价格很低，适合个人使用。',
+      placeholder: 'sk-...'
+    }
+  };
+
+  function aiKeyFor(provider) {
+    return localStorage.getItem('guan_ai_key_' + provider) || '';
+  }
+
   function openAiDeep() {
     var modal = resultEl.querySelector('#aiKeyModal');
-    var mask = resultEl.querySelector('#aiKeyMask');
-    var saved = localStorage.getItem('guan_ai_key') || '';
-    if (mask) mask.textContent = saved ? saved.slice(0, 8) + '…' + saved.slice(-4) : '';
+    var providerSel = resultEl.querySelector('#aiProvider');
+    var saved = aiKeyFor(providerSel.value);
     var input = resultEl.querySelector('#aiKeyInput');
     if (input) {
       input.value = saved;
-      input.placeholder = saved ? '已保存，可直接开始' : 'sk-...';
     }
+    updateAiProviderUI();
     modal.style.display = 'flex';
   }
 
+  function updateAiProviderUI() {
+    var providerSel = resultEl.querySelector('#aiProvider');
+    var p = AI_PROVIDERS[providerSel.value];
+    var input = resultEl.querySelector('#aiKeyInput');
+    var label = resultEl.querySelector('#aiKeyLabel');
+    var hint = resultEl.querySelector('#aiKeyHint');
+    var saved = aiKeyFor(providerSel.value);
+    if (label) label.textContent = p.label + ' API Key';
+    if (input) {
+      input.placeholder = saved ? '已保存，可直接开始（' + saved.slice(0, 6) + '…）' : p.placeholder;
+    }
+    if (hint) hint.textContent = p.keyHint;
+  }
+
   function runAiDeep() {
+    var providerSel = resultEl.querySelector('#aiProvider');
+    var provider = providerSel ? providerSel.value : 'openai';
     var input = resultEl.querySelector('#aiKeyInput');
     var keep = resultEl.querySelector('#aiKeyKeep');
-    var key = (input && input.value.trim()) || localStorage.getItem('guan_ai_key') || '';
+    var key = (input && input.value.trim()) || aiKeyFor(provider) || '';
     if (!key) {
       window.guanToast('请先填入你的 API Key');
       return;
     }
     if (keep && keep.checked) {
-      localStorage.setItem('guan_ai_key', key);
+      localStorage.setItem('guan_ai_key_' + provider, key);
     }
     resultEl.querySelector('#aiKeyModal').style.display = 'none';
 
@@ -761,7 +803,7 @@
     readingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     var prompt = buildAiPrompt();
-    callChat(key, prompt).then(function (text) {
+    callChat(provider, key, prompt).then(function (text) {
       renderDeepReading(text);
     }).catch(function (err) {
       readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + (err && err.message ? err.message : '网络或服务异常，请稍后重试。') + '</p>' +
@@ -798,8 +840,18 @@
     };
   }
 
-  function callChat(key, sysPrompt) {
+  function callChat(provider, key, sysPrompt) {
     var userText = buildAiUserText();
+    if (provider === 'gemini') {
+      return callGemini(key, sysPrompt.content, userText);
+    }
+    if (provider === 'deepseek') {
+      return callDeepSeek(key, sysPrompt.content, userText);
+    }
+    return callOpenAI(key, sysPrompt.content, userText);
+  }
+
+  function callOpenAI(key, sys, user) {
     return fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -809,8 +861,65 @@
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          sysPrompt,
-          { role: 'user', content: userText }
+          { role: 'system', content: sys },
+          { role: 'user', content: user }
+        ],
+        max_tokens: 1600,
+        temperature: 0.8
+      })
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().then(function (data) {
+          var msg = (data && data.error && data.error.message) || ('请求失败（' + res.status + '）');
+          throw new Error(msg);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (!text) throw new Error('没有收到解读内容，请重试。');
+      return text.trim();
+    });
+  }
+
+  function callGemini(key, sys, user) {
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          { role: 'user', parts: [{ text: sys + '\n\n以下是用户的回答：\n' + user }] }
+        ],
+        generationConfig: { maxOutputTokens: 1600, temperature: 0.8 }
+      })
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().then(function (data) {
+          var msg = (data && data.error && data.error.message) || ('请求失败（' + res.status + '）');
+          throw new Error(msg);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+        data.candidates[0].content.parts && data.candidates[0].content.parts.map(function (p) { return p.text || ''; }).join('');
+      if (!text) throw new Error('没有收到解读内容，请重试。');
+      return text.trim();
+    });
+  }
+
+  function callDeepSeek(key, sys, user) {
+    return fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + key
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: user }
         ],
         max_tokens: 1600,
         temperature: 0.8
@@ -945,6 +1054,8 @@
     if (aiCancel) aiCancel.addEventListener('click', function () {
       resultEl.querySelector('#aiKeyModal').style.display = 'none';
     });
+    var aiProviderSel = resultEl.querySelector('#aiProvider');
+    if (aiProviderSel) aiProviderSel.addEventListener('change', updateAiProviderUI);
     if (restartBtn) {
       restartBtn.addEventListener('click', function () {
         state.answers = new Array(QUIZ.questions.length).fill(null);

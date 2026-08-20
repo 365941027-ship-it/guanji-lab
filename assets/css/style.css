@@ -1032,6 +1032,11 @@ button{font-family:inherit}
 .ai-key-hint{font-size:12.5px;color:var(--cyan);margin-bottom:12px}
 .ai-keep{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:10px 0}
 .ai-keep input{accent-color:var(--gold)}
+.ai-modal-card select{
+  width:100%;background:rgba(10,17,34,.6);border:1px solid var(--line);border-radius:10px;
+  color:var(--text);padding:11px 12px;font-size:14px;font-family:var(--sans);
+}
+.ai-modal-card select:focus{outline:none;border-color:var(--line-gold)}
 .ai-warn{font-size:11.5px;color:var(--muted-2);line-height:1.7;margin-bottom:14px}
 .ai-modal-actions{display:flex;gap:10px;justify-content:flex-end}
 .deep-reading{margin:0 40px 30px}
