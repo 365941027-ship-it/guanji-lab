@@ -199,7 +199,17 @@
     if (QUIZ.scoring === 'sum' || QUIZ.scoring === 'swls' || QUIZ.scoring === 'ucla') return computeSum();
     if (QUIZ.scoring === 'inneros') return computeInnerOS();
     var scores = {};
-    Object.keys(QUIZ.results).forEach(function (k) { scores[k] = 0; });
+    var resultKeys = Object.keys(QUIZ.results || {});
+    if (!resultKeys.length) {
+      // 复合型测试（results 为空）：从题目选项收集所有计分维度
+      QUIZ.questions.forEach(function (q) {
+        (q.options || []).forEach(function (o) {
+          Object.keys(o.score || {}).forEach(function (k) { if (!(k in scores)) scores[k] = 0; });
+        });
+      });
+    } else {
+      resultKeys.forEach(function (k) { scores[k] = 0; });
+    }
     state.answers.forEach(function (a, qi) {
       if (!a || a.option === undefined) return;
       var opt = QUIZ.questions[qi].options[a.option];
@@ -294,7 +304,9 @@
     resultEl.classList.remove('hidden');
     resultEl.innerHTML = '';
 
-    if (QUIZ.isBigFive) {
+    if (QUIZ.key === 'guan_who') {
+      renderWho();
+    } else if (QUIZ.isBigFive) {
       renderBigFive();
     } else if (QUIZ.isStandard) {
       renderStandardSum();
@@ -304,6 +316,58 @@
       renderStandard();
     }
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  var WHO_TEXT = {
+    proto: {
+      '探索者': ['你与世界相处的方式，是「出发」——新的人、新的地方、新的可能，是你的氧气。你不是逃避，你是在用移动寻找答案。', '你的原型是探索者：你身上那股「想去看看」的劲，是很多人羡慕的自由。'],
+      '创造者': ['你与世界相处的方式，是「创造」——想法在你手里会变成真的。你不是空想家，你是那个让世界多出一点东西的人。', '你的原型是创造者：你把「我想要」变成「我做到了」，这是你最扎实的底气。'],
+      '觉知者': ['你与世界相处的方式，是「觉察」——你能看见别人看不见的细节，听懂没说出口的话。你的敏感不是负担，是你的天线。', '你的原型是觉知者：你看得深、听得懂，这份细腻让你与很多人的灵魂相连。'],
+      '重构者': ['你与世界相处的方式，是「重构」——当旧的东西不再成立，你是那个敢拆掉重来的人。你的清醒，常常在别人还犹豫时已经看见了答案。', '你的原型是重构者：你敢于对旧生活说不，这份决断让你在动荡里反而最稳。'],
+      '守护者': ['你与世界相处的方式，是「守护」——你让身边的人感到安心，你的温柔是很多人回家的理由。', '你的原型是守护者：你天生会照顾人，而当你也照顾自己，这份温柔会更有力量。']
+    },
+    stage: {
+      '探索期': '你正处在探索期——别急着交卷，方向是试出来的，不是想出来的。',
+      '重构期': '你正处在重构期——旧的地基在换，慢一点没关系，先稳住自己。',
+      '积累期': '你正处在积累期——你在扎根，很多看不见的努力，正在悄悄变深。',
+      '转型期': '你正处在转型期——旧路快到尽头了，新的方向正在酝酿，别怕。'
+    },
+    val: {
+      '自由': '你最看重自由——它提醒你：为生活留一点「我说了算」的空间。',
+      '联结': '你最看重联结——它提醒你：重要的不是数量，是那几个懂你的人。',
+      '创造': '你最看重创造——它提醒你：你来到这世上，是想留下点什么。',
+      '安定': '你最看重安定——它提醒你：稳定的生活不是平淡，是让你敢出发的基地。'
+    },
+    id: {
+      '探索身份': '关于「你是谁」，你还在探索——这不是空白，是你在用心画自己的地图。',
+      '角色身份': '关于「你是谁」，你较多通过角色定义自己——角色给了你位置，也别忘了角色之外的你。',
+      '流动身份': '关于「你是谁」，你比较流动——你的丰富让你在不同场景都鲜活，试着找一个核心感受当锚。',
+      '整合身份': '关于「你是谁」，你已经比较整合——你清楚自己要什么，这是长期探索的果实。'
+    }
+  };
+
+  function renderWho() {
+    var r = computeResult();
+    var m = QUIZ._map(r);
+    var html = resultCardHTML(starSVG(), '你如何成为我', '一份四维的自我画像', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你的四维自我画像</h4>' +
+      '<p><strong style="color:var(--gold-bright)">原型：</strong>' + WHO_TEXT.proto[m.proto][0] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">阶段：</strong>' + WHO_TEXT.stage[m.stage] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">价值：</strong>' + WHO_TEXT.val[m.val] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">身份：</strong>' + WHO_TEXT.id[m.id] + '</p></div>';
+    html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
+      '所以，此刻的你可以被这样理解：你是一个以「' + m.proto + '」姿态与世界相处的人，正处在' + m.stage + '，心里最放不下的是「' + m.val + '」，而关于「我是谁」，你' +
+      (m.id === '整合身份' ? '已经相当清楚。' : m.id === '探索身份' ? '还在慢慢探索。' : m.id === '角色身份' ? '更多通过角色认识自己。' : '处于一种流动之中。') +
+      '这四个维度不是四个标签，而是你此刻生命的一幅快照——它们会变，而你也在变。</p></div>';
+    html += '<div class="result-block wide"><h4>给你的第一句话</h4><p>' +
+      WHO_TEXT.proto[m.proto][1] + ' ' + WHO_TEXT.stage[m.stage].replace('你正处在', '你正处在') + ' ' + WHO_TEXT.val[m.val].replace('它提醒你：', '它提醒你：') + '</p></div>';
+    html += '</div>';
+    html += actionsHTML('who', m.proto + ' · ' + m.stage + ' · ' + m.val, '');
+    resultEl.innerHTML = html;
+    var label = m.proto + ' · ' + m.stage + ' · ' + m.val;
+    window.guanSet(QUIZ.key, label);
+    bindResultActions(shareText(QUIZ.title, label, '我的四维自我画像'));
   }
 
   function renderBigFive() {

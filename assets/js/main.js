@@ -198,51 +198,19 @@
 
   // Show recent quiz results on the tests hub
   var resultKeys = {
-    guan_archetype: '人生原型测试',
-    guan_stage: '人生阶段探索报告',
-    guan_inneros: '内在操作系统测试',
-    guan_relationship: '关系模式探索',
-    guan_energy: '能量状态自察',
-    guan_values: '价值观罗盘',
-    guan_learning: '学习风格探索',
-    guan_academic: '学业压力自察',
-    guan_burnout: '职业倦怠深度',
-    guan_pivot: '转行决策仪',
-    guan_drain: '内耗根源',
-    guan_attachment: '依恋风格',
-    guan_pleasing: '讨好模式',
-    guan_boundary: '边界感',
-    guan_selfcare: '你如何对待自己',
-    guan_night: '深夜里的你',
-    guan_exam: '临场前的那阵风',
-    guan_procrastination: '我不是懒，是卡住了',
-    guan_drive: '什么让你起得来床',
-    guan_communication: '话到嘴边',
-    guan_selfworth: '你配得上什么',
-    guan_emotions: '你的情绪语言'
-    ,
-    guan_majorfit: '我属于哪间教室',
-    guan_attention: '我的注意力去了哪里',
-    guan_family: '从家出发',
-    guan_flow: '什么让我忘记时间',
-    guan_confidence: '我相信自己能做到什么',
-    guan_workvalues: '工作对你意味着什么',
-    guan_careergap: '停下来之后的自己',
-    guan_identity: '我是谁',
-    guan_resilience: '弯而不折的你',
-    guan_conflictrepair: '吵架之后',
-    guan_goodbye: '告别之后',
-    guan_gad7: '最近两周的焦虑',
-    guan_phq9: '最近两周的情绪',
-    guan_swls: '我对生活的满意程度',
-    guan_ucla: '孤独感自察',
-    guan_bigfive: '大五人格'
+    guan_who: '我如何成为我',
+    guan_energy_map: '我的能量地图',
+    guan_relation_map: '我在关系里的位置',
+    guan_talent: '我的天赋信号',
+    guan_pressure: '我正被什么压着',
+    guan_life_want: '我真正想要的生活'
   };
   Object.keys(resultKeys).forEach(function (key) {
-    var val = window.guanGet ? window.guanGet(key) : localStorage.getItem(key);
+    // 账户命名空间优先，兼容旧的裸 localStorage
+    var val = (window.guanGet ? window.guanGet(key) : null) || localStorage.getItem(key);
     var el = document.querySelector('[data-result-for="' + key + '"]');
     if (val && el) {
-      el.textContent = '最近结果：' + val;
+      el.textContent = '最近一次：' + val.slice(0, 40);
       el.classList.add('show');
     }
   });
