@@ -2,6 +2,53 @@
   'use strict';
 
   var KEY = 'guan_profile';
+  var EDIT_LIMIT = 3;
+  var LOCK_KEY = 'guan_profile_lock';
+
+  function monthKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function lockState() {
+    try {
+      var lock = JSON.parse(localStorage.getItem(LOCK_KEY) || '{}');
+      if (lock.month !== monthKey()) {
+        lock = { month: monthKey(), count: 0 };
+        localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
+      }
+      return lock;
+    } catch (e) {
+      return { month: monthKey(), count: 0 };
+    }
+  }
+
+  function renderLockUI() {
+    var lock = lockState();
+    var remaining = EDIT_LIMIT - lock.count;
+    var note = document.getElementById('profileLockNote');
+    var upd = document.getElementById('updateProfile');
+    var save = document.getElementById('saveProfile');
+    if (lock.count > 0) {
+      document.querySelectorAll('.profile-form input, .profile-form select, .profile-form textarea, #pAvatarFile').forEach(function (el) {
+        el.disabled = true;
+      });
+      save.style.display = 'none';
+      upd.style.display = 'block';
+      upd.textContent = remaining > 0 ? '更新档案（本月剩余 ' + remaining + ' 次）' : '本月更新次数已用完，下月 1 日恢复';
+      upd.disabled = remaining <= 0;
+      note.textContent = '档案已锁定：本月已保存 ' + lock.count + ' 次（每月最多 3 次）。如需修改，请点「更新档案」。';
+    }
+  }
+
+  function unlockForm() {
+    document.querySelectorAll('.profile-form input, .profile-form select, .profile-form textarea, #pAvatarFile').forEach(function (el) {
+      el.disabled = false;
+    });
+    document.getElementById('saveProfile').style.display = 'block';
+    document.getElementById('updateProfile').style.display = 'none';
+    document.getElementById('profileLockNote').textContent = '';
+  }
 
   function read() {
     try {
@@ -63,6 +110,8 @@
 
     var p = {
       nickname: document.getElementById('pNick').value.trim(),
+      gender: document.getElementById('pGender').value,
+      job: document.getElementById('pJob').value.trim(),
       avatar: avatar,
       birth: birthText,
       hour: document.getElementById('pHour').value,
@@ -110,6 +159,8 @@
     lines.push(['星座', p.zodiac || '未填写']);
     lines.push(['出生时辰', p.hour || '未填写']);
     lines.push(['头像', p.avatar || '🌙']);
+    if (p.gender) lines.push(['性别', p.gender]);
+    if (p.job) lines.push(['职业 / 身份', p.job]);
     if (p.mbti) lines.push(['MBTI', p.mbti]);
     if (p.ennea) lines.push(['九型人格', p.ennea]);
     if (p.bazi) lines.push(['八字（近似）', p.bazi]);
@@ -125,10 +176,28 @@
   }
 
   document.getElementById('saveProfile').addEventListener('click', function () {
+    var lock = lockState();
+    if (lock.count >= EDIT_LIMIT) {
+      window.guanToast('本月更新次数已用完，下月 1 日恢复');
+      return;
+    }
     var p = collect();
     window.guanSet(KEY, JSON.stringify(p));
     renderPreview(p);
+    lock.count += 1;
+    localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
+    renderLockUI();
     window.guanToast('档案已保存，之后的设计与模拟会参考它');
+  });
+
+  document.getElementById('updateProfile').addEventListener('click', function () {
+    var lock = lockState();
+    if (lock.count >= EDIT_LIMIT) {
+      window.guanToast('本月更新次数已用完，下月 1 日恢复');
+      return;
+    }
+    unlockForm();
+    window.guanToast('档案已解锁，改完后点「保存我的档案」生效');
   });
 
   // Avatar upload
@@ -230,6 +299,8 @@
   var existing = read();
   if (existing && Object.keys(existing).length && existing.birth) {
     document.getElementById('pNick').value = existing.nickname || '';
+    document.getElementById('pGender').value = existing.gender || '';
+    document.getElementById('pJob').value = existing.job || '';
     if (existing.avatar && existing.avatar.length <= 8) setAvatar(existing.avatar);
     else if (existing.avatar && existing.avatar.length > 8) avatar = existing.avatar;
     document.getElementById('pBirth').value = existing.birth || '';
@@ -243,4 +314,5 @@
     renderPreview(existing);
     renderCharts();
   }
+  renderLockUI();
 })();

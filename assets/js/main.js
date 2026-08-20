@@ -222,7 +222,8 @@
     guan_emotions: '你的情绪语言'
     ,
     guan_majorfit: '我属于哪间教室',
-    guan_attention: '我的注意力去了哪里'
+    guan_attention: '我的注意力去了哪里',
+    guan_family: '从家出发'
   };
   Object.keys(resultKeys).forEach(function (key) {
     var val = window.guanGet ? window.guanGet(key) : localStorage.getItem(key);

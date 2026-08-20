@@ -721,6 +721,48 @@ button{font-family:inherit}
 }
 .habit-banner strong{font-family:var(--serif);font-size:16px;color:var(--gold-bright);letter-spacing:.06em}
 .habit-banner span{font-size:13px;color:var(--muted)}
+
+/* Companion */
+.companion-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:26px;margin-top:36px;align-items:start}
+.companion-stage{
+  border:1px solid var(--line-gold);border-radius:18px;padding:30px;text-align:center;
+  background:radial-gradient(500px 240px at 50% -10%,rgba(201,168,106,.14),transparent 65%),var(--panel);
+}
+.companion-avatar{padding:16px 0 8px}
+.companion-sprite{font-size:88px;line-height:1.2;transition:.3s}
+.companion-name{font-family:var(--serif);font-size:17px;color:var(--gold-bright);letter-spacing:.08em;margin-top:8px}
+.companion-stage-name{font-size:12px;color:var(--muted-2);letter-spacing:.18em;margin-top:4px}
+.companion-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 12px}
+.cstat{border:1px solid var(--line);border-radius:10px;padding:10px 4px;background:rgba(10,15,28,.4)}
+.cstat b{display:block;font-family:var(--serif);font-size:16px;color:var(--gold-bright)}
+.cstat span{font-size:10.5px;color:var(--muted-2)}
+.exp-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin-bottom:14px}
+.exp-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright));transition:width .5s}
+.companion-goal{border:1px dashed var(--line-gold);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--muted);background:rgba(10,15,28,.35)}
+.companion-goal b{color:var(--gold-bright);font-family:var(--serif)}
+.companion-panel{border:1px solid var(--line);border-radius:18px;padding:28px;background:var(--panel)}
+.companion-panel h3{font-family:var(--serif);font-size:19px;letter-spacing:.08em;margin-bottom:8px}
+.companion-tip{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:16px}
+.companion-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+.comp-tab{background:none;border:none;color:var(--muted);font-size:13.5px;padding:7px 14px;border-radius:8px;cursor:pointer;transition:.2s}
+.comp-tab:hover{color:var(--text)}
+.comp-tab.active{color:var(--gold-bright);background:rgba(201,168,106,.12)}
+.comp-note{font-size:12.5px;color:var(--muted-2);line-height:1.8;margin-top:12px}
+.shop-list{display:grid;gap:10px}
+.shop-item{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(10,15,28,.35)}
+.shop-item.owned{border-color:var(--line-gold)}
+.shop-icon{font-size:30px;flex:none}
+.shop-info{flex:1}
+.shop-info b{font-family:var(--serif);font-size:14px;color:var(--text)}
+.shop-info p{font-size:12px;color:var(--muted);line-height:1.6}
+.shop-actions{display:flex;gap:6px;flex-direction:column;align-items:flex-end}
+.owned-tag{font-size:12px;color:var(--gold-bright)}
+.goal-box{border:1px solid var(--line-gold);border-radius:12px;padding:18px;background:rgba(201,168,106,.06);margin-bottom:12px}
+.goal-box b{font-family:var(--serif);color:var(--gold-bright);font-size:14px}
+.goal-box p{font-size:14px;color:var(--muted);line-height:1.9;margin-top:8px}
+@media (max-width:960px){
+  .companion-grid{grid-template-columns:1fr}
+}
 .calendar-box{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;background:rgba(10,15,28,.35)}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .cal-title{font-family:var(--serif);font-size:14px;color:var(--text);letter-spacing:.08em}

@@ -122,6 +122,8 @@
       items.push(entry);
     }
     save(items);
+    if (window.guanCompanionFeed) window.guanCompanionFeed();
+    if (window.guanCompanionAddCoins) window.guanCompanionAddCoins(1);
     document.getElementById('dayNote').value = '';
     document.querySelectorAll('#dayMoods .mood-btn').forEach(function (b) { b.classList.remove('on'); });
     mood = null;

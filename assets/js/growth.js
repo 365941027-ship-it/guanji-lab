@@ -183,6 +183,8 @@
     });
     save(items);
     checkAchievements(items);
+    if (window.guanCompanionFeed) window.guanCompanionFeed();
+    if (window.guanCompanionAddCoins) window.guanCompanionAddCoins(1);
     noteEl.value = '';
     designEl.value = '';
     document.querySelectorAll('#moodRow .mood-btn, #energyRow button').forEach(function (b) { b.classList.remove('on'); });

@@ -91,6 +91,7 @@
     guan_emotions: '情绪粒度研究 · 情绪功能观',
     guan_majorfit: '霍兰德职业兴趣理论（RIASEC）',
     guan_attention: '注意力研究 · 心流理论（Csikszentmihalyi）',
+    guan_family: '原生家庭心理学 · 依恋与代际传递研究',
     guan_custom: '整合你的档案、测试与记录'
   };
   var stepEl = document.getElementById('quizStep');

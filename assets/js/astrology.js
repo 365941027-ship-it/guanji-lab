@@ -5,12 +5,10 @@
   var ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
   var ZODIACS = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'];
 
-  // 节气（公历近似日期）：立春、惊蛰、清明、立夏、芒种、小暑、立秋、白露、寒露、立冬、大雪、小寒
-  var SOLAR_TERMS = [
-    { m: 2, d: 4 }, { m: 3, d: 6 }, { m: 4, d: 5 }, { m: 5, d: 6 },
-    { m: 6, d: 6 }, { m: 7, d: 7 }, { m: 8, d: 7 }, { m: 9, d: 8 },
-    { m: 10, d: 8 }, { m: 11, d: 7 }, { m: 12, d: 7 }, { m: 1, d: 6 }
-  ];
+  // 节气黄经：立春315°、惊蛰345°、清明15°、立夏45°、芒种75°、小暑105°、
+  // 立秋135°、白露165°、寒露195°、立冬225°、大雪255°、小寒285°
+  var TERM_LONGS = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285];
+  var TERM_NAMES = ['立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪', '小寒'];
 
   // 主要城市经纬度（用于上升星座近似排盘）
   var CITIES = {
@@ -48,38 +46,81 @@
     return d < bounds[m - 1] ? ZODIACS[m - 1] : ZODIACS[m % 12];
   }
 
-  // 八字：近似排盘（立春分年、节气表分月）
+  function rad(deg) { return deg * Math.PI / 180; }
+
+  function julianDay(y, m, d, ut) {
+    // 儒略日（公历）
+    var Y = y, M = m;
+    if (M <= 2) { Y -= 1; M += 12; }
+    var A = Math.floor(Y / 100);
+    var B = 2 - A + Math.floor(A / 4);
+    return Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + d + B - 1524.5 + (ut || 0) / 24.0;
+  }
+
+  // 求太阳到达指定黄经的儒略日：在当年内扫描 + 线性插值（可靠，精度约分钟级）
+  function julianForSolarLongitude(targetLon, y, m, d) {
+    var startJd = julianDay(y, 1, 1, 0);
+    var endJd = julianDay(y + 1, 1, 1, 0);
+    var prev = startJd;
+    var prevLon = solarLongitudeRaw(prev);
+    var step = 0.5; // 半天步长，插值后精度足够
+    for (var t = startJd + step; t <= endJd + step; t += step) {
+      var lon = solarLongitudeRaw(t);
+      // 判断是否跨越目标黄经（处理 0° 环绕）
+      var d1 = mod(lon - targetLon + 180, 360) - 180;
+      var d0 = mod(prevLon - targetLon + 180, 360) - 180;
+      if (d0 * d1 < 0 || (Math.abs(d1) < 0.005)) {
+        // 线性插值
+        var frac = Math.abs(d0) / (Math.abs(d0) + Math.abs(d1) || 1);
+        return prev + frac * step;
+      }
+      prev = t;
+      prevLon = lon;
+    }
+    return julianDay(y, m, d, 12);
+  }
+
+  function solarLongitudeRaw(jd) {
+    var T = (jd - 2451545.0) / 36525.0;
+    var L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+    var M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+    var C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(rad(M)) +
+      (0.019993 - 0.000101 * T) * Math.sin(rad(2 * M)) + 0.000289 * Math.sin(rad(3 * M));
+    var trueLon = L0 + C - 0.00569 - 0.00478 * Math.sin(rad(125.04 - 1934.136 * T));
+    return mod(trueLon, 360);
+  }
+
+  // 给定公历日期，判断太阳是否已越过某节气黄经（用于月柱）
+  function passedTerm(jd, targetLon, y, m, d) {
+    var termJd = julianForSolarLongitude(targetLon, y, m, d);
+    return jd >= termJd;
+  }
+
+  // 八字：以太阳黄经节气为准（准确性显著提升）
   function baziPillars(y, m, d, hour) {
     var yy = y;
-    // 立春近似（2月4日）前算上一年
-    if (m < 2 || (m === 2 && d < 4)) yy -= 1;
+    var jd = julianDay(y, m, d, hour === null ? 12 : hour);
+    // 年柱：立春（黄经315°）分界
+    if (!passedTerm(jd, 315, y, m, d)) yy -= 1;
     var yearGan = GAN[mod(yy - 4, 10)];
     var yearZhi = ZHI[mod(yy - 4, 12)];
 
-    // 月支：按节气近似。1月6日小寒后为丑月；2月4日立春后为寅月……
-    var monthZhiIdx = -1;
-    if (m === 1) monthZhiIdx = d >= 6 ? 1 : 0; // 丑 or 子
-    else if (m === 2) monthZhiIdx = d >= 4 ? 2 : 1;
-    else if (m === 3) monthZhiIdx = d >= 6 ? 3 : 2;
-    else if (m === 4) monthZhiIdx = d >= 5 ? 4 : 3;
-    else if (m === 5) monthZhiIdx = d >= 6 ? 5 : 4;
-    else if (m === 6) monthZhiIdx = d >= 6 ? 6 : 5;
-    else if (m === 7) monthZhiIdx = d >= 7 ? 7 : 6;
-    else if (m === 8) monthZhiIdx = d >= 7 ? 8 : 7;
-    else if (m === 9) monthZhiIdx = d >= 8 ? 9 : 8;
-    else if (m === 10) monthZhiIdx = d >= 8 ? 10 : 9;
-    else if (m === 11) monthZhiIdx = d >= 7 ? 11 : 10;
-    else if (m === 12) monthZhiIdx = d >= 7 ? 0 : 11; // 大雪后为子月
+    // 月柱：由太阳黄经连续映射，大雪255°=子月起（一年连续，无分支错误）
+    var sunLon = solarLongitudeRaw(jd);
+    var monthIndex = Math.floor(mod(sunLon - 255, 360) / 30); // 0=子
+    var monthZhiIdx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11][monthIndex];
 
     // 月干（五虎遁）：甲己年丙寅起
     var ganIdx = mod(yy - 4, 10);
     var monthStemStart = [2, 4, 6, 8, 0][ganIdx % 5]; // 甲己丙、乙庚戊、丙辛庚、丁壬壬、戊癸甲
-    var monthGan = GAN[mod(monthStemStart + monthZhiIdx, 10)];
+    // 寅月为起点，月干偏移 = 月支距寅的偏移
+    var offset = mod(monthZhiIdx - 2, 12);
+    var monthGan = GAN[mod(monthStemStart + offset, 10)];
     var monthZhi = ZHI[monthZhiIdx];
 
     // 日柱：以 2000-01-01（戊午，序 54）为基准
-    var base = Date.UTC(2000, 0, 1);
-    var days = Math.floor((Date.UTC(y, m - 1, d) - base) / 86400000);
+    var base = julianDay(2000, 1, 1, 12);
+    var days = Math.round(jd - base);
     var dayIdx = mod(days + 54, 60);
     var dayGan = GAN[dayIdx % 10];
     var dayZhi = ZHI[dayIdx % 12];
@@ -103,22 +144,38 @@
 
   // 月亮星座：平均黄经近似（忽略摄动，标注近似）
   function moonZodiac(y, m, d) {
-    var days = (Date.UTC(y, m - 1, d) - Date.UTC(2000, 0, 1)) / 86400000;
-    var lon = 218.316 + 13.176396 * days;
+    var days = julianDay(y, m, d, 12) - 2451545.0;
+    // 主要摄动项（Meeus 方法，精度 ~0.3°）
+    var Lp = 218.3164477 + 481267.88123421 * days / 36525.0;
+    var D = 297.8501921 + 445267.1114034 * days / 36525.0;
+    var M = 357.5291092 + 35999.0502909 * days / 36525.0;
+    var Mp = 134.9633964 + 477198.8675055 * days / 36525.0;
+    var F = 93.2720950 + 483202.0175233 * days / 36525.0;
+    var lon = Lp
+      + 6.288774 * Math.sin(rad(Mp))
+      + 1.274027 * Math.sin(rad(2 * D - Mp))
+      + 0.658314 * Math.sin(rad(2 * D))
+      + 0.213618 * Math.sin(rad(2 * Mp))
+      - 0.185116 * Math.sin(rad(M))
+      - 0.114332 * Math.sin(rad(2 * F))
+      + 0.058793 * Math.sin(rad(2 * D - 2 * Mp))
+      + 0.057066 * Math.sin(rad(2 * D - M - Mp))
+      + 0.053322 * Math.sin(rad(2 * D + Mp));
     var idx = Math.floor(mod(lon, 360) / 30);
     return ZODIACS[idx];
   }
 
-  // 上升星座：简化公式，需要城市经纬度与出生时刻
+  // 上升星座：更精确的 GMST 公式（IAU 1982）
   function risingZodiac(y, m, d, hour, city) {
     var loc = city ? CITIES[city.trim()] : null;
     if (!loc) return { ok: false, reason: '未提供出生城市，无法精确排上升星座' };
     if (hour === null) return { ok: false, reason: '未提供出生时辰，无法排上升星座' };
     var lon = loc[0], lat = loc[1];
-    // 儒略日（近似）
-    var jd = (Date.UTC(y, m - 1, d, hour) / 86400000) + 2440587.5;
-    // 格林尼治恒星时（度）
-    var gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0);
+    var jd = julianDay(y, m, d, hour);
+    var T = (jd - 2451545.0) / 36525.0;
+    // IAU 1982 GMST（度）
+    var gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) +
+      0.000387933 * T * T - T * T * T / 38710000.0;
     var lst = mod(gmst + lon, 360) * Math.PI / 180;
     var eps = 23.4393 * Math.PI / 180;
     var phi = lat * Math.PI / 180;
