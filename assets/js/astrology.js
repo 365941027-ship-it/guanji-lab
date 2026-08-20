@@ -98,6 +98,46 @@
     return list;
   }
 
+  // 星盘宫位：上升点（ASC）与中天（MC）用专业恒星时，宫位用等宫制（每宫30°）
+  function chartHouses(y, m, d, hour, lon, lat) {
+    if (globalThis.Astronomy && Astronomy.SiderealTime) {
+      try {
+        var jd = julianDay(y, m, d, hour);
+        var t = Astronomy.MakeTime(new Date((jd - 2440587.5) * 86400000));
+        var gmst = Astronomy.SiderealTime(t);
+        // 地方恒星时
+        var lst = mod(gmst + (lon || 0), 360);
+        var lstRad = lst * Math.PI / 180;
+        var eps = 23.4393 * Math.PI / 180;
+        var phi = (lat || 0) * Math.PI / 180;
+        // 上升点黄经
+        var asc = Math.atan2(
+          -Math.cos(lstRad),
+          Math.sin(lstRad) * Math.cos(eps) + Math.tan(phi) * Math.sin(eps)
+        );
+        var ascDeg = mod(asc * 180 / Math.PI, 360);
+        // 中天黄经
+        var mc = Math.atan2(Math.sin(lstRad), Math.cos(lstRad) * Math.cos(eps));
+        var mcDeg = mod(mc * 180 / Math.PI, 360);
+        // 等宫制：从 ASC 起每 30° 一宫
+        var houses = [];
+        for (var i = 0; i < 12; i++) {
+          houses.push(mod(ascDeg + i * 30, 360));
+        }
+        return {
+          asc: ascDeg,
+          mc: mcDeg,
+          houses: houses,
+          ascZodiac: ZODIACS[Math.floor(ascDeg / 30)],
+          mcZodiac: ZODIACS[Math.floor(mcDeg / 30)]
+        };
+      } catch (e) {
+        // fall through
+      }
+    }
+    return null;
+  }
+
   function parseBirth(text) {
     if (!text) return null;
     var m = text.match(/(\d{4})[-\/年.](\d{1,2})[-\/月.](\d{1,2})日?/);
@@ -151,6 +191,16 @@
   }
 
   function solarLongitudeRaw(jd) {
+    if (globalThis.Astronomy && Astronomy.MakeTime && Astronomy.SunPosition) {
+      try {
+        var d = new Date((jd - 2440587.5) * 86400000);
+        var t = Astronomy.MakeTime(d);
+        var sp = Astronomy.SunPosition(t);
+        return mod(sp.elon, 360);
+      } catch (e) {
+        // fall through
+      }
+    }
     var T = (jd - 2451545.0) / 36525.0;
     var L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
     var M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
@@ -214,6 +264,18 @@
 
   // 月亮星座：平均黄经近似（忽略摄动，标注近似）
   function moonZodiac(y, m, d) {
+    if (globalThis.Astronomy && Astronomy.GeoMoon && Astronomy.EquatorFromVector && Astronomy.Ecliptic) {
+      try {
+        var dd = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+        var tt = Astronomy.MakeTime(dd);
+        var vec = Astronomy.GeoMoon(tt);
+        var eq = Astronomy.EquatorFromVector(vec);
+        var ecl = Astronomy.Ecliptic(eq);
+        return ZODIACS[Math.floor(mod(ecl.elon, 360) / 30)];
+      } catch (e) {
+        // fall through
+      }
+    }
     var days = julianDay(y, m, d, 12) - 2451545.0;
     // 主要摄动项（Meeus 方法，精度 ~0.3°）
     var Lp = 218.3164477 + 481267.88123421 * days / 36525.0;
@@ -274,6 +336,7 @@
     WUXING: WUXING,
     ZHI_WUXING: ZHI_WUXING,
     ZHI_MAIN: ZHI_MAIN,
-    dayun: dayun
+    dayun: dayun,
+    chartHouses: chartHouses
   };
 })();

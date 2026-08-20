@@ -436,6 +436,13 @@ button{font-family:inherit}
 .dy-cell{display:inline-block;border:1px solid var(--line-gold);border-radius:10px;padding:10px 14px;margin-right:10px;margin-bottom:10px;text-align:center;background:rgba(201,168,106,.06)}
 .dy-cell b{font-family:var(--serif);font-size:18px;color:var(--gold-bright);display:block}
 .dy-cell span{font-size:11px;color:var(--muted)}
+.asc-mc{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.asc-mc span{border:1px solid var(--line-gold);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--gold-bright);background:rgba(201,168,106,.06)}
+.houses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.house-cell{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:rgba(10,15,28,.35)}
+.house-cell b{display:block;font-size:11px;color:var(--muted-2);letter-spacing:.08em}
+.house-cell span{font-size:12px;color:var(--muted)}
+@media (max-width:680px){.houses-grid{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:760px){
   .chart-grid{grid-template-columns:1fr}
   .pillars-row{grid-template-columns:repeat(2,1fr)}
@@ -948,6 +955,18 @@ button{font-family:inherit}
 .theory-badge{
   margin:0 48px 4px;display:inline-block;border:1px solid var(--line);border-radius:999px;
   padding:5px 14px;font-size:11.5px;color:var(--muted-2);letter-spacing:.06em;
+}
+.bigfive-bars{display:grid;gap:12px}
+.bf-row{display:flex;align-items:center;gap:12px}
+.bf-head{width:120px;flex:none}
+.bf-head b{display:block;font-family:var(--serif);font-size:14px;color:var(--text)}
+.bf-head span{font-size:11px;color:var(--muted-2)}
+.bf-bar{flex:1;height:10px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.bf-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-deep),var(--gold-bright),#7fa8d9);transition:width .6s}
+.bf-row em{width:40px;text-align:right;font-style:normal;font-size:12px;color:var(--gold-bright)}
+@media (max-width:600px){
+  .bf-row{flex-wrap:wrap}
+  .bf-head{width:100%}
 }
 .next-steps h4{font-family:var(--serif);font-size:15px;color:var(--gold-bright);letter-spacing:.1em;margin-bottom:12px}
 .next-links{display:grid;grid-template-columns:1fr 1fr;gap:10px}

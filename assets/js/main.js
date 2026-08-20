@@ -235,7 +235,8 @@
     guan_gad7: '最近两周的焦虑',
     guan_phq9: '最近两周的情绪',
     guan_swls: '我对生活的满意程度',
-    guan_ucla: '孤独感自察'
+    guan_ucla: '孤独感自察',
+    guan_bigfive: '大五人格'
   };
   Object.keys(resultKeys).forEach(function (key) {
     var val = window.guanGet ? window.guanGet(key) : localStorage.getItem(key);

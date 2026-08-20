@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  var ZODIAC_NAMES = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'];
+
   var prof;
   try {
     prof = JSON.parse(window.guanGet('guan_profile') || '{}');
@@ -61,4 +63,18 @@
     var parts = d.split(' ');
     return '<div class="dy-cell"><b>' + parts[0] + '</b><span>' + parts[1] + '</span></div>';
   }).join('');
+
+  // 星盘宫位
+  if (loc) {
+    var houses = A.chartHouses(birth.y, birth.m, birth.d, hour, loc[0], loc[1]);
+    if (houses) {
+      var houseHtml = '<div class="chart-card wide" style="grid-column:1/-1"><h3>星盘宫位</h3>' +
+        '<div class="asc-mc"><span>上升点（ASC）：' + houses.ascZodiac + ' ' + Math.round(houses.asc % 30) + '°</span>' +
+        '<span>中天（MC）：' + houses.mcZodiac + ' ' + Math.round(houses.mc % 30) + '°</span></div>' +
+        '<div class="houses-grid">' + houses.houses.map(function (h, i) {
+          return '<div class="house-cell"><b>第' + (i + 1) + '宫</b><span>' + ZODIAC_NAMES[Math.floor(h / 30)] + ' ' + Math.round(h % 30) + '°</span></div>';
+        }).join('') + '</div></div>';
+      document.getElementById('chartGrid').insertAdjacentHTML('beforeend', houseHtml);
+    }
+  }
 })();

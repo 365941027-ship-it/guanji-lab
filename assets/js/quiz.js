@@ -91,6 +91,7 @@
     guan_phq9: 'PHQ-9 抑郁筛查量表（Kroenke 等）',
     guan_swls: '生活满意度量表 SWLS（Diener 等）',
     guan_ucla: 'UCLA 孤独感量表（Russell）',
+    guan_bigfive: '大五人格模型（Costa & McCrae）· IPIP-NEO 公开量表',
     guan_custom: '整合你的档案、测试与记录'
   };
   var stepEl = document.getElementById('quizStep');
@@ -112,13 +113,16 @@
     var q = QUIZ.questions[state.index];
     titleEl.textContent = (state.index + 1) + '. ' + q.q;
     optionsEl.innerHTML = '';
-    q.options.forEach(function (opt, i) {
+    var opts = q.options || (QUIZ.isBigFive ? [1,2,3,4,5].map(function (v) {
+      return { text: ['非常不同意','不同意','中立','同意','非常同意'][v-1], value: v };
+    }) : []);
+    opts.forEach(function (opt, i) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'option';
       var picked = state.answers[state.index] === i;
       if (picked) btn.classList.add('on');
-      var html = '<span>' + letters[i] + ' · ' + opt.text + '</span>';
+      var html = '<span>' + (opt.text || opt) + '</span>';
       if (opt.tag) html += '<span class="opt-tag">' + softenTag(opt.tag) + '</span>';
       btn.innerHTML = html;
       btn.addEventListener('click', function () {
@@ -191,6 +195,7 @@
   }
 
   function computeResult() {
+    if (QUIZ.isBigFive) return computeBigFive();
     if (QUIZ.scoring === 'sum' || QUIZ.scoring === 'swls' || QUIZ.scoring === 'ucla') return computeSum();
     if (QUIZ.scoring === 'inneros') return computeInnerOS();
     var scores = {};
@@ -205,6 +210,25 @@
     var primary = sorted[0];
     var secondary = sorted[1] || null;
     return { primary: primary, secondary: secondary, scores: scores };
+  }
+
+  function computeBigFive() {
+    var dims = { O: 0, C: 0, E: 0, A: 0, N: 0 };
+    var counts = { O: 0, C: 0, E: 0, A: 0, N: 0 };
+    state.answers.forEach(function (a, qi) {
+      if (a && a.option !== undefined) {
+        var q = QUIZ.questions[qi];
+        var v = a.option + 1;
+        if (q.rev) v = 6 - v;
+        dims[q.dim] += v;
+        counts[q.dim]++;
+      }
+    });
+    var avg = {};
+    Object.keys(dims).forEach(function (k) {
+      avg[k] = dims[k] / (counts[k] || 1);
+    });
+    return avg;
   }
 
   function computeSum() {
@@ -270,7 +294,9 @@
     resultEl.classList.remove('hidden');
     resultEl.innerHTML = '';
 
-    if (QUIZ.isStandard) {
+    if (QUIZ.isBigFive) {
+      renderBigFive();
+    } else if (QUIZ.isStandard) {
       renderStandardSum();
     } else if (QUIZ.scoring === 'inneros') {
       renderInnerOS();
@@ -278,6 +304,36 @@
       renderStandard();
     }
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderBigFive() {
+    var avg = computeResult();
+    var html = resultCardHTML(starSVG(), '你的人格剖面', 'Big Five · 五维地图', '', '');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>五维人格剖面</h4><div class="bigfive-bars">' +
+      QUIZ.dimensions.map(function (d) {
+        var v = avg[d.key];
+        var pct = Math.round((v - 1) / 4 * 100);
+        var desc = v >= 3.7 ? '偏高' : v <= 2.3 ? '偏低' : '中等';
+        return '<div class="bf-row"><div class="bf-head"><b>' + d.name + '</b><span>' + d.en + ' · ' + desc + '</span></div>' +
+          '<div class="bf-bar"><i style="width:' + pct + '%"></i></div>' +
+          '<em>' + v.toFixed(1) + '/5</em></div>';
+      }).join('') + '</div></div>';
+    html += '<div class="result-block wide"><h4>这意味着什么</h4><p>' +
+      QUIZ.dimensions.map(function (d) {
+        var v = avg[d.key];
+        var word = v >= 3.7 ? '你在「' + d.name + '」这一面比较突出' : v <= 2.3 ? '你在「' + d.name + '」这一面偏内敛' : '你在「' + d.name + '」这一面比较均衡';
+        return word + '：' + d.desc;
+      }).join('</p><p>') + '</p></div>';
+    html += '<div class="result-block wide"><h4>请记得</h4><p>大五人格不是标签，而是一张地图——它没有「好坏」，只有「特点」。每个维度的高与低，都对应不同的优势与需要留意的部分。</p></div>';
+    html += '</div>';
+    html += actionsHTML('bigfive', '人格剖面', '');
+    resultEl.innerHTML = html;
+    var label = QUIZ.dimensions.map(function (d) {
+      return d.name + (avg[d.key] >= 3.7 ? '偏高' : avg[d.key] <= 2.3 ? '偏低' : '中等');
+    }).join(' · ');
+    window.guanSet(QUIZ.key, label);
+    bindResultActions(shareText(QUIZ.title, label, '我的大五人格剖面'));
   }
 
   function renderStandardSum() {
