@@ -603,10 +603,13 @@
     return '' +
       '<div class="result-actions">' +
       '  <button type="button" class="btn btn-gold" data-share>分享这一刻</button>' +
+      '  <button type="button" class="btn btn-ai" data-ai-deep>✨ AI 深度解读</button>' +
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
       keepTalkingHTML() +
+      '<div class="deep-reading" id="deepReading" style="display:none"></div>' +
+      aiKeyModalHTML() +
       (label && label !== 'inneros' ? '<div class="share-modal" id="shareModal">' +
       '  <div class="share-card" id="shareCard">' +
       '    <div class="share-logo">' + (window.guanProfile && window.guanProfile().nickname ? window.guanProfile().nickname : '观己者') + ' · ' + QUIZ.title + '</div>' +
@@ -620,6 +623,25 @@
       '  </div>' +
       '</div>' : '') +
       (QUIZ.category ? crisisHTML(QUIZ.category) : '');
+  }
+
+  function aiKeyModalHTML() {
+    var has = !!localStorage.getItem('guan_ai_key');
+    return '<div class="ai-modal" id="aiKeyModal" style="display:none">' +
+      '  <div class="ai-modal-card">' +
+      '    <h4>开启 AI 深度解读</h4>' +
+      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，由 AI 为你一个人生成。API Key 只保存在这台设备的浏览器里。</p>' +
+      (has ? '<p class="ai-key-hint">已保存一个 Key（<span id="aiKeyMask"></span>），你可以继续使用或更换。</p>' : '') +
+      '    <div class="form-field"><label>OpenAI API Key</label>' +
+      '      <input type="password" id="aiKeyInput" placeholder="sk-..." autocomplete="off"></div>' +
+      '    <label class="ai-keep"><input type="checkbox" id="aiKeyKeep" checked> 记住在这台设备上</label>' +
+      '    <p class="ai-warn">个人使用验证：Key 仅存本机、仅用于本次请求。正式产品应改用服务端代理。建议使用低额度 Key。</p>' +
+      '    <div class="ai-modal-actions">' +
+      '      <button type="button" class="btn btn-gold btn-sm" data-ai-confirm>开始解读</button>' +
+      '      <button type="button" class="btn btn-sm" data-ai-cancel>取消</button>' +
+      '    </div>' +
+      '  </div>' +
+      '</div>';
   }
 
   // 结果后「继续对话」：基于结果精准推荐 1 个相关测试 + 追问（替代全部推荐）
@@ -706,6 +728,153 @@
     return map[QUIZ.key] || ['这个问题没有标准答案，但它值得你给自己十分钟。'];
   }
 
+  // ---------- AI 深度解读 ----------
+  function openAiDeep() {
+    var modal = resultEl.querySelector('#aiKeyModal');
+    var mask = resultEl.querySelector('#aiKeyMask');
+    var saved = localStorage.getItem('guan_ai_key') || '';
+    if (mask) mask.textContent = saved ? saved.slice(0, 8) + '…' + saved.slice(-4) : '';
+    var input = resultEl.querySelector('#aiKeyInput');
+    if (input) {
+      input.value = saved;
+      input.placeholder = saved ? '已保存，可直接开始' : 'sk-...';
+    }
+    modal.style.display = 'flex';
+  }
+
+  function runAiDeep() {
+    var input = resultEl.querySelector('#aiKeyInput');
+    var keep = resultEl.querySelector('#aiKeyKeep');
+    var key = (input && input.value.trim()) || localStorage.getItem('guan_ai_key') || '';
+    if (!key) {
+      window.guanToast('请先填入你的 API Key');
+      return;
+    }
+    if (keep && keep.checked) {
+      localStorage.setItem('guan_ai_key', key);
+    }
+    resultEl.querySelector('#aiKeyModal').style.display = 'none';
+
+    var readingBox = resultEl.querySelector('#deepReading');
+    readingBox.style.display = 'block';
+    readingBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>正在倾听你的故事…</h4><p>AI 正在读你刚才的每一个回答，并把它和你的人生地图放在一起看。</p></div>';
+    readingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    var prompt = buildAiPrompt();
+    callChat(key, prompt).then(function (text) {
+      renderDeepReading(text);
+    }).catch(function (err) {
+      readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + (err && err.message ? err.message : '网络或服务异常，请稍后重试。') + '</p>' +
+        '<p class="deep-error-hint">如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。</p></div>';
+    });
+  }
+
+  function buildAiPrompt() {
+    var prof = profileData();
+    // 收集用户的真实回答（题目 + 选项原文）
+    var answers = [];
+    state.answers.forEach(function (a, qi) {
+      if (!a) return;
+      var q = QUIZ.questions[qi];
+      if (a.option !== undefined && q && q.options && q.options[a.option]) {
+        answers.push('Q' + (qi + 1) + '「' + q.q + '」→ 我选了「' + q.options[a.option].text + '」');
+      } else if (a.other) {
+        answers.push('Q' + (qi + 1) + '「' + q.q + '」→ 我自己写了「' + a.other + '」');
+      }
+    });
+    var profLines = [];
+    if (prof.nickname) profLines.push('称呼：' + prof.nickname);
+    if (prof.zodiac) profLines.push('星座：' + prof.zodiac);
+    if (prof.bazi) profLines.push('八字（近似）：' + prof.bazi);
+    if (prof.moon) profLines.push('月亮星座（近似）：' + prof.moon);
+    if (prof.stage) profLines.push('人生阶段：' + prof.stage);
+    if (prof.selfDesc) profLines.push('TA对自己的描述：' + prof.selfDesc);
+    if (prof.focus) profLines.push('TA想探索的议题：' + prof.focus);
+
+    return {
+      role: 'system',
+      content: '你是「观己实验室」的深度解读者。你融合东方智慧、哲学与心理学的视角，但不是算命师、不是心理治疗师、更不是说教者。你的任务：基于用户刚刚在「' + QUIZ.title + '」中给出的每一个真实回答，以及TA的档案信息，写一段真正属于TA的深度解读。' +
+        '要求：1）至少引用 2-3 个用户的具体回答原文，让TA感到被听见；2）把星座/八字等作为「象征语言」而非命运断言，与TA的回答交织在一起谈；3）不贴标签、不武断下结论；4）语言温暖、有画面、有共鸣，像一位懂TA的老朋友在深夜慢慢说话；5）给出 1-2 个具体、轻柔、可做的下一步，不命令；6）全文 800-1200 字，用中文，分 4-6 段。'
+    };
+  }
+
+  function callChat(key, sysPrompt) {
+    var userText = buildAiUserText();
+    return fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + key
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          sysPrompt,
+          { role: 'user', content: userText }
+        ],
+        max_tokens: 1600,
+        temperature: 0.8
+      })
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().then(function (data) {
+          var msg = (data && data.error && data.error.message) || ('请求失败（' + res.status + '）');
+          throw new Error(msg);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (!text) throw new Error('没有收到解读内容，请重试。');
+      return text.trim();
+    });
+  }
+
+  function buildAiUserText() {
+    var prof = profileData();
+    var lines = ['我刚刚完成了「' + QUIZ.title + '」这个测试。以下是我对每一题的诚实回答：', ''];
+    state.answers.forEach(function (a, qi) {
+      if (!a) return;
+      var q = QUIZ.questions[qi];
+      if (a.option !== undefined && q && q.options && q.options[a.option]) {
+        lines.push((qi + 1) + '. ' + q.q + ' → 我选了：「' + q.options[a.option].text + '」');
+      } else if (a.other) {
+        lines.push((qi + 1) + '. ' + q.q + ' → 我自己写了：「' + a.other + '」');
+      }
+    });
+    lines.push('', '关于我自己的一些信息：');
+    if (prof.nickname) lines.push('- 可以叫我：' + prof.nickname);
+    if (prof.zodiac) lines.push('- 星座：' + prof.zodiac);
+    if (prof.bazi) lines.push('- 八字（近似）：' + prof.bazi);
+    if (prof.moon) lines.push('- 月亮星座（近似）：' + prof.moon);
+    if (prof.stage) lines.push('- 我处在：' + prof.stage);
+    if (prof.selfDesc) lines.push('- 我对自己说：' + prof.selfDesc);
+    if (prof.focus) lines.push('- 我最想探索：' + prof.focus);
+    lines.push('', '请根据以上内容，给我一段只属于我的深度解读。');
+    return lines.join('\n');
+  }
+
+  function renderDeepReading(text) {
+    var box = resultEl.querySelector('#deepReading');
+    var paras = text.split(/\n{2,}/).map(function (p) {
+      return '<p>' + p.replace(/^[-*]\s+/g, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
+    }).join('');
+    box.innerHTML = '<div class="deep-result">' +
+      '<div class="deep-head"><h4>你的专属深度解读</h4><span>由 AI 基于你的回答生成 · 仅供参考</span></div>' +
+      '<div class="deep-body">' + paras + '</div>' +
+      '<div class="deep-actions"><button type="button" class="btn btn-gold btn-sm" data-deep-copy>复制这段解读</button>' +
+      '<a class="btn btn-sm" href="growth.html">记入成长轨迹</a></div>' +
+      '<p class="deep-note">解读由 AI 生成，观点不构成专业建议。如果它让你感到被理解，很好；如果哪里说得不对，请相信你自己的感受。</p>' +
+      '</div>';
+    var copyBtn = box.querySelector('[data-deep-copy]');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      window.guanCopy(text, function (ok) {
+        window.guanToast(ok ? '解读已复制' : '复制失败');
+      });
+    });
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function crisisHTML(cat) {
     var note = '';
     if (cat === 'relation') {
@@ -766,6 +935,15 @@
           '<p style="margin-top:10px"><a class="btn btn-gold btn-sm" href="growth.html">把答案记下来 →</a></p>';
         box.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
+    });
+    // AI 深度解读
+    var aiBtn = resultEl.querySelector('[data-ai-deep]');
+    if (aiBtn) aiBtn.addEventListener('click', openAiDeep);
+    var aiConfirm = resultEl.querySelector('[data-ai-confirm]');
+    if (aiConfirm) aiConfirm.addEventListener('click', runAiDeep);
+    var aiCancel = resultEl.querySelector('[data-ai-cancel]');
+    if (aiCancel) aiCancel.addEventListener('click', function () {
+      resultEl.querySelector('#aiKeyModal').style.display = 'none';
     });
     if (restartBtn) {
       restartBtn.addEventListener('click', function () {
