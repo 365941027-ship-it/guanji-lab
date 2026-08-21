@@ -1,6 +1,18 @@
 (function () {
   'use strict';
 
+  // 服务端解读代理（免用户 Key）
+  // 部署代理后，把 GUAN_PROXY_DEFAULT 改为完整 URL，例如 'https://your-app.vercel.app/api/interpret'
+  // 个人调试可用 localStorage.setItem('guan_proxy_url', '...') 覆盖
+  var GUAN_PROXY_DEFAULT = '';
+  window.GUAN_PROXY_URL = (function () {
+    try {
+      return localStorage.getItem('guan_proxy_url') || GUAN_PROXY_DEFAULT || '';
+    } catch (e) {
+      return GUAN_PROXY_DEFAULT || '';
+    }
+  })();
+
   // Mobile nav
   var toggle = document.getElementById('navToggle');
   var nav = document.getElementById('siteNav');

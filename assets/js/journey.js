@@ -35,6 +35,28 @@
   }
 
   function callAiDaily(prompt) {
+    var proxyUrl = window.GUAN_PROXY_URL || '';
+    if (proxyUrl) {
+      return fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'deepseek',
+          messages: [
+            { role: 'system', content: prompt.sys },
+            { role: 'user', content: prompt.user }
+          ],
+          max_tokens: 300,
+          temperature: 0.9
+        })
+      }).then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      }).then(function (data) {
+        var text = data && data.text;
+        return text ? text.trim().slice(0, 120) : null;
+      }).catch(function () { return null; });
+    }
     var provider = availableKey();
     if (!provider) return Promise.resolve(null);
     var key = localStorage.getItem('guan_ai_key_' + provider);

@@ -974,7 +974,7 @@
     return '' +
       '<div class="result-actions">' +
       '  <button type="button" class="btn btn-gold" data-share>分享这一刻</button>' +
-      '  <button type="button" class="btn btn-ai" data-ai-deep>✨ AI 深度解读</button>' +
+      '  <button type="button" class="btn btn-ai" data-ai-deep>✨ 深度解读</button>' +
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
@@ -997,21 +997,23 @@
   }
 
   function aiKeyModalHTML() {
+    var proxyReady = !!(window.GUAN_PROXY_URL);
     return '<div class="ai-modal" id="aiKeyModal" style="display:none">' +
       '  <div class="ai-modal-card">' +
-      '    <h4>开启 AI 深度解读</h4>' +
-      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，由 AI 为你一个人生成。选择一家你已有 Key 的服务，Key 只保存在这台设备。</p>' +
-      '    <div class="form-field"><label>选择 AI 服务</label>' +
+      '    <h4>开启深度解读</h4>' +
+      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，为你一个人生成。' + (proxyReady ? '本站已内置解读通道，无需填写 Key，直接开始即可。' : '填写你自己的 Key（仅保存在这台设备），或等内置通道就绪。') + '</p>' +
+      (proxyReady ? '<p class="ai-proxy-status">● 内置解读通道已连接</p>' : '<p class="ai-proxy-status ai-proxy-off">○ 内置解读通道未配置，可用自己的 Key</p>') +
+      '    <div class="form-field"><label>选择模型服务</label>' +
       '      <select id="aiProvider">' +
+      '        <option value="deepseek">DeepSeek（默认）</option>' +
       '        <option value="openai">OpenAI（需付费额度）</option>' +
       '        <option value="gemini">Google Gemini（有免费额度）</option>' +
-      '        <option value="deepseek">DeepSeek（价格低）</option>' +
       '      </select></div>' +
       '    <div class="form-field"><label id="aiKeyLabel">API Key</label>' +
-      '      <input type="password" id="aiKeyInput" placeholder="sk-..." autocomplete="off"></div>' +
+      '      <input type="password" id="aiKeyInput" placeholder="' + (proxyReady ? '可选：不填也能解读' : 'sk-...') + '" autocomplete="off"></div>' +
       '    <p class="ai-key-hint" id="aiKeyHint">如何获取：</p>' +
-      '    <label class="ai-keep"><input type="checkbox" id="aiKeyKeep" checked> 记住在这台设备上</label>' +
-      '    <p class="ai-warn">Key 仅存本机、仅用于本次请求。正式产品应改用服务端代理。</p>' +
+      '    <label class="ai-keep"><input type="checkbox" id="aiKeyKeep" checked> 记住在这台设备上（填了才需要）</label>' +
+      '    <p class="ai-warn">你的回答与档案只用于生成这一次解读，不会保存到服务器。</p>' +
       '    <div class="ai-modal-actions">' +
       '      <button type="button" class="btn btn-gold btn-sm" data-ai-confirm>开始解读</button>' +
       '      <button type="button" class="btn btn-sm" data-ai-cancel>取消</button>' +
@@ -1130,10 +1132,14 @@
   function openAiDeep() {
     var modal = resultEl.querySelector('#aiKeyModal');
     var providerSel = resultEl.querySelector('#aiProvider');
+    if (providerSel && providerSel.value === 'openai' && !aiKeyFor('openai')) {
+      providerSel.value = 'deepseek';
+    }
     var saved = aiKeyFor(providerSel.value);
     var input = resultEl.querySelector('#aiKeyInput');
     if (input) {
       input.value = saved;
+      input.placeholder = window.GUAN_PROXY_URL ? '可选：不填也能解读' : (saved ? '已保存，可直接开始（' + saved.slice(0, 6) + '…）' : 'sk-...');
     }
     updateAiProviderUI();
     modal.style.display = 'flex';
@@ -1159,7 +1165,8 @@
     var input = resultEl.querySelector('#aiKeyInput');
     var keep = resultEl.querySelector('#aiKeyKeep');
     var key = (input && input.value.trim()) || aiKeyFor(provider) || '';
-    if (!key) {
+    var proxyReady = !!(window.GUAN_PROXY_URL);
+    if (!key && !proxyReady) {
       window.guanToast('请先填入你的 API Key');
       return;
     }
@@ -1170,7 +1177,7 @@
 
     var readingBox = resultEl.querySelector('#deepReading');
     readingBox.style.display = 'block';
-    readingBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>正在倾听你的故事…</h4><p>AI 正在读你刚才的每一个回答，并把它和你的人生地图放在一起看。</p></div>';
+    readingBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>正在倾听你的故事…</h4><p>正在读你刚才的每一个回答，并把它和你的人生地图放在一起看。</p></div>';
     readingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     var prompt = buildAiPrompt();
@@ -1178,41 +1185,39 @@
       renderDeepReading(text);
     }).catch(function (err) {
       readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + (err && err.message ? err.message : '网络或服务异常，请稍后重试。') + '</p>' +
-        '<p class="deep-error-hint">如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。</p></div>';
+        '<p class="deep-error-hint">' + (proxyReady ? '可以稍后再试，或填入你自己的 Key 作为备选。' : '如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。') + '</p></div>';
     });
   }
 
   function buildAiPrompt() {
-    var prof = profileData();
-    // 收集用户的真实回答（题目 + 选项原文）
-    var answers = [];
-    state.answers.forEach(function (a, qi) {
-      if (!a) return;
-      var q = QUIZ.questions[qi];
-      if (a.option !== undefined && q && q.options && q.options[a.option]) {
-        answers.push('Q' + (qi + 1) + '「' + q.q + '」→ 我选了「' + q.options[a.option].text + '」');
-      } else if (a.other) {
-        answers.push('Q' + (qi + 1) + '「' + q.q + '」→ 我自己写了「' + a.other + '」');
-      }
-    });
-    var profLines = [];
-    if (prof.nickname) profLines.push('称呼：' + prof.nickname);
-    if (prof.zodiac) profLines.push('星座：' + prof.zodiac);
-    if (prof.bazi) profLines.push('八字（近似）：' + prof.bazi);
-    if (prof.moon) profLines.push('月亮星座（近似）：' + prof.moon);
-    if (prof.stage) profLines.push('人生阶段：' + prof.stage);
-    if (prof.selfDesc) profLines.push('TA对自己的描述：' + prof.selfDesc);
-    if (prof.focus) profLines.push('TA想探索的议题：' + prof.focus);
-
     return {
       role: 'system',
-      content: '你是「观己实验室」的深度解读者。你融合东方智慧、哲学与心理学的视角，但不是算命师、不是心理治疗师、更不是说教者。你的任务：基于用户刚刚在「' + QUIZ.title + '」中给出的每一个真实回答，以及TA的档案信息，写一段真正属于TA的深度解读。' +
-        '要求：1）至少引用 2-3 个用户的具体回答原文，让TA感到被听见；2）把星座/八字等作为「象征语言」而非命运断言，与TA的回答交织在一起谈；3）不贴标签、不武断下结论；4）语言温暖、有画面、有共鸣，像一位懂TA的老朋友在深夜慢慢说话；5）给出 1-2 个具体、轻柔、可做的下一步，不命令；6）全文 800-1200 字，用中文，分 4-6 段。'
+      content: '你是「观己实验室」的深度解读者。此刻你同时以四种身份与这位用户对话：心理咨询师（温柔、专业、不评判）、塔罗占卜师（用象征语言打开新的可能）、八字命理师（把传统命理当作一种古老的自我观察语言，而非宿命）、职业规划师（务实、可落地）。请把四种视角融合成一篇完整、连贯、有呼吸感的解读，不要分列成「心理咨询师说 / 塔罗师说 / 命理师说」这样的模式化板块。\n' +
+        '你的任务：基于用户刚刚在「' + QUIZ.title + '」中给出的每一个真实回答，以及TA完整的信息档案（出生日期、城市、性别、星座排盘、上升与月亮、八字四柱、MBTI、九型人格、人生阶段、自我描述、探索议题、其他测试结果），深度分析TA的内在自我与天赋，并给出真诚的建议。\n' +
+        '要求：\n' +
+        '1）至少引用 2-3 个用户的具体回答原文，让TA感到被听见；把TA的选择与档案信息交织在一起分析，形成只有TA才有的解读，不要重复用户原话的关键词后空泛展开；\n' +
+        '2）星座、八字、MBTI等一律作为「象征语言」而非命运断言，不贴标签、不武断下结论；\n' +
+        '3）语言温暖、有画面、有共鸣，像一位懂TA的老朋友在深夜慢慢说话；\n' +
+        '4）客观理性与情感体察兼备：既帮助TA看见自己的模式与天赋，也接住TA的情绪；\n' +
+        '5）建议真诚、具体但轻柔，不命令、不推着TA做任务，全文只给 1-2 条下一步；\n' +
+        '6）全文约 3000 字，用中文，分 8-10 段，每段有一个清晰主题，句式自然多变，避免重复句式、套话和空洞总结。'
     };
   }
 
   function callChat(provider, key, sysPrompt) {
     var userText = buildAiUserText();
+    var proxyUrl = window.GUAN_PROXY_URL || '';
+    if (proxyUrl) {
+      return callProxy(proxyUrl, provider, sysPrompt.content, userText).catch(function (err) {
+        // 服务端未配置密钥或通道失败：回退到用户自己的 Key
+        if (key) {
+          if (provider === 'gemini') return callGemini(key, sysPrompt.content, userText);
+          if (provider === 'deepseek') return callDeepSeek(key, sysPrompt.content, userText);
+          return callOpenAI(key, sysPrompt.content, userText);
+        }
+        throw err;
+      });
+    }
     if (provider === 'gemini') {
       return callGemini(key, sysPrompt.content, userText);
     }
@@ -1220,6 +1225,35 @@
       return callDeepSeek(key, sysPrompt.content, userText);
     }
     return callOpenAI(key, sysPrompt.content, userText);
+  }
+
+  function callProxy(url, provider, sys, user) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: provider,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: user }
+        ],
+        max_tokens: 5000,
+        temperature: 0.8
+      })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) {
+          var code = data && data.error && data.error.code;
+          var msg = (data && data.error && data.error.message) || ('请求失败（' + res.status + '）');
+          var err = new Error(msg);
+          err.code = code;
+          throw err;
+        }
+        var text = data && data.text;
+        if (!text) throw new Error('没有收到解读内容，请重试。');
+        return text.trim();
+      });
+    });
   }
 
   function callOpenAI(key, sys, user) {
@@ -1235,7 +1269,7 @@
           { role: 'system', content: sys },
           { role: 'user', content: user }
         ],
-        max_tokens: 1600,
+        max_tokens: 5000,
         temperature: 0.8
       })
     }).then(function (res) {
@@ -1261,7 +1295,7 @@
         contents: [
           { role: 'user', parts: [{ text: sys + '\n\n以下是用户的回答：\n' + user }] }
         ],
-        generationConfig: { maxOutputTokens: 1600, temperature: 0.8 }
+        generationConfig: { maxOutputTokens: 5000, temperature: 0.8 }
       })
     }).then(function (res) {
       if (!res.ok) {
@@ -1292,7 +1326,7 @@
           { role: 'system', content: sys },
           { role: 'user', content: user }
         ],
-        max_tokens: 1600,
+        max_tokens: 5000,
         temperature: 0.8
       })
     }).then(function (res) {
@@ -1312,6 +1346,32 @@
 
   function buildAiUserText() {
     var prof = profileData();
+    var profLines = [];
+    if (prof.nickname) profLines.push('- 可以叫我：' + prof.nickname);
+    if (prof.gender) profLines.push('- 性别：' + prof.gender);
+    if (prof.job) profLines.push('- 职业 / 身份：' + prof.job);
+    if (prof.birth) profLines.push('- 出生日期：' + prof.birth + (prof.hour ? ' ' + prof.hour : ''));
+    if (prof.city) profLines.push('- 出生城市：' + prof.city);
+    if (prof.zodiac) profLines.push('- 星座：' + prof.zodiac);
+    if (prof.rising) profLines.push('- 上升星座（近似）：' + prof.rising);
+    if (prof.moon) profLines.push('- 月亮星座（近似）：' + prof.moon);
+    if (prof.bazi) profLines.push('- 八字四柱（近似）：' + prof.bazi);
+    if (prof.mbti) profLines.push('- MBTI：' + prof.mbti);
+    if (prof.ennea) profLines.push('- 九型人格：' + prof.ennea);
+    if (prof.stage) profLines.push('- 我处在：' + prof.stage);
+    if (prof.selfDesc) profLines.push('- 我对自己说：' + prof.selfDesc);
+    if (prof.focus) profLines.push('- 我最想探索：' + prof.focus);
+
+    // 过往测试结果（不重复当前测试）
+    var prevKeys = ['guan_who', 'guan_energy_map', 'guan_relation_map', 'guan_talent', 'guan_pressure', 'guan_life_want'];
+    var prev = [];
+    prevKeys.forEach(function (k) {
+      if (k === QUIZ.key) return;
+      var v = (window.guanGet ? window.guanGet(k) : null) || localStorage.getItem(k);
+      if (v) prev.push(v);
+    });
+    if (prev.length) profLines.push('- 我在其他探索里的结果：' + prev.join('；'));
+
     var lines = ['我刚刚完成了「' + QUIZ.title + '」这个测试。以下是我对每一题的诚实回答：', ''];
     state.answers.forEach(function (a, qi) {
       if (!a) return;
@@ -1323,13 +1383,8 @@
       }
     });
     lines.push('', '关于我自己的一些信息：');
-    if (prof.nickname) lines.push('- 可以叫我：' + prof.nickname);
-    if (prof.zodiac) lines.push('- 星座：' + prof.zodiac);
-    if (prof.bazi) lines.push('- 八字（近似）：' + prof.bazi);
-    if (prof.moon) lines.push('- 月亮星座（近似）：' + prof.moon);
-    if (prof.stage) lines.push('- 我处在：' + prof.stage);
-    if (prof.selfDesc) lines.push('- 我对自己说：' + prof.selfDesc);
-    if (prof.focus) lines.push('- 我最想探索：' + prof.focus);
+    if (!profLines.length) profLines.push('- （尚未填写个人档案，可去「首页 → 我的档案」补充，解读会更贴近你）');
+    profLines.forEach(function (l) { lines.push(l); });
     lines.push('', '请根据以上内容，给我一段只属于我的深度解读。');
     return lines.join('\n');
   }
@@ -1340,11 +1395,11 @@
       return '<p>' + p.replace(/^[-*]\s+/g, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
     }).join('');
     box.innerHTML = '<div class="deep-result">' +
-      '<div class="deep-head"><h4>你的专属深度解读</h4><span>由 AI 基于你的回答生成 · 仅供参考</span></div>' +
+      '<div class="deep-head"><h4>你的专属深度解读</h4><span>基于你的回答生成 · 仅供参考</span></div>' +
       '<div class="deep-body">' + paras + '</div>' +
       '<div class="deep-actions"><button type="button" class="btn btn-gold btn-sm" data-deep-copy>复制这段解读</button>' +
       '<a class="btn btn-sm" href="growth.html">记入成长轨迹</a></div>' +
-      '<p class="deep-note">解读由 AI 生成，观点不构成专业建议。如果它让你感到被理解，很好；如果哪里说得不对，请相信你自己的感受。</p>' +
+      '<p class="deep-note">解读是为你一个人生成的参考，不构成专业建议。如果它让你感到被理解，很好；如果哪里说得不对，请相信你自己的感受。</p>' +
       '</div>';
     var copyBtn = box.querySelector('[data-deep-copy]');
     if (copyBtn) copyBtn.addEventListener('click', function () {
