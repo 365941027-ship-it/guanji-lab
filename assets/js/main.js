@@ -208,6 +208,25 @@
     localStorage.removeItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
 
+  // 兼容转换：把旧版本写入的内部缩写（如「依安全 · 边健康」）显示成人话
+  var RELATION_PRETTY = {
+    '依安全': '安全型靠近', '依焦虑': '焦虑型靠近', '依回避': '回避型靠近', '依混乱': '矛盾型靠近',
+    '讨习惯': '习惯性付出', '讨怕冲': '怕冲突而让步', '讨求认': '依赖认可', '讨低值': '容易低估自己',
+    '边模糊': '边界偏模糊', '边僵硬': '边界偏硬', '边健康': '边界健康', '边成长': '边界正在成形',
+    '冲靠近': '冲突后主动靠近', '冲冷静': '冲突后需要冷静', '冲回避': '冲突后倾向回避', '冲内省': '冲突后反复思量',
+    '告反刍': '告别后反复回想', '告麻木': '告别后有些麻木', '告波动': '告别后情绪起伏', '告愈合': '告别后正在愈合'
+  };
+  window.guanPrettyResult = function (key, raw) {
+    if (!raw) return raw;
+    if (key === 'guan_relation_map') {
+      return String(raw).split(/[·、,，]/).map(function (part) {
+        var p = part.trim();
+        return RELATION_PRETTY[p] || p;
+      }).join(' · ');
+    }
+    return raw;
+  };
+
   // Show recent quiz results on the tests hub
   var resultKeys = {
     guan_who: '我如何成为我',
@@ -222,7 +241,7 @@
     var val = (window.guanGet ? window.guanGet(key) : null) || localStorage.getItem(key);
     var el = document.querySelector('[data-result-for="' + key + '"]');
     if (val && el) {
-      el.textContent = '最近一次：' + val.slice(0, 40);
+      el.textContent = '最近一次：' + window.guanPrettyResult(key, val).slice(0, 40);
       el.classList.add('show');
     }
   });

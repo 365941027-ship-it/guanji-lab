@@ -1479,7 +1479,8 @@
     var prev = [];
     hist.forEach(function (it) {
       if (it.key === QUIZ.key) return;
-      if (it.title) prev.push('「' + it.title + '」（' + (it.date || '') + '）：' + (it.result || '已记录'));
+      var pretty = (window.guanPrettyResult && it.key) ? window.guanPrettyResult(it.key, it.result) : it.result;
+      if (it.title) prev.push('「' + it.title + '」（' + (it.date || '') + '）：' + (pretty || '已记录'));
       var deep = window.guanGet && window.guanGet('guan_deep_' + it.key);
       if (deep) prev.push('「' + it.title + '」的深度解读节选：' + deep.slice(0, 500));
     });

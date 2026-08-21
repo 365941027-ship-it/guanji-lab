@@ -70,10 +70,11 @@
     }
     el.innerHTML = list.map(function (it) {
       var href = it.url || 'tests.html';
+      var result = (window.guanPrettyResult && it.key) ? window.guanPrettyResult(it.key, it.result) : it.result;
       return '<div class="test-history-item">' +
         '<div class="th-main"><b>' + (it.title || '一次探索') + '</b>' +
         '<span class="th-date">' + (it.date || '') + ' ' + (it.time || '') + '</span></div>' +
-        '<div class="th-result">' + (it.result || '已记录') + '</div>' +
+        '<div class="th-result">' + (result || '已记录') + '</div>' +
         '<a class="btn btn-sm" href="' + href + '">重新探索</a>' +
         '</div>';
     }).join('');
