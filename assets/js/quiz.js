@@ -312,7 +312,7 @@
     } else if (QUIZ.key === 'guan_talent') {
       renderTalent();
     } else if (QUIZ.key === 'guan_pressure') {
-      renderPressure();
+      renderRegrow();
     } else if (QUIZ.key === 'guan_life_want') {
       renderLifeWant();
     } else if (QUIZ.isBigFive) {
@@ -451,59 +451,59 @@
     bindResultActions(shareText(QUIZ.title, TALENT_TEXT.flow[m.flow] + ' · ' + TALENT_TEXT.trait[m.trait], '我的天赋信号'));
   }
 
-  var PRESSURE_TEXT = {
-    burn: {
-      '倦耗竭': '你正在被「透支」压着——身体和心都在喊停，最需要的是真的休息。',
-      '倦疏离': '你正在被「麻木」压着——对人和事提不起感觉，那是心在节能。',
-      '倦无义': '你正在被「无意义」压着——做得再多也感觉不到价值，这是最重的消耗。',
-      '倦觉醒': '你正在被「想改变却未动」压着——你已经知道旧路不对，只是还没迈出那一步。'
+  var REGROW_TEXT = {
+    heal: {
+      '复行动': '你靠「动起来」回血——身体一旦运转，你的心也跟着活过来。',
+      '复安顿': '你靠「安顿」回血——把眼前的事一点点整理好，心就顺了。',
+      '复休息': '你靠「停下来」回血——真正的休息对你不是奢侈，是必需品。',
+      '复联结': '你靠「联结」回血——和人的温度，是你最重要的能量来源。'
     },
-    anxiety: {
-      '焦低': '焦虑暂时不是你的主要压力源——你更多是被别的东西压着。',
-      '焦中低': '你有一定焦虑——偶尔担心、难以放松，但还没占据生活。',
-      '焦中高': '焦虑在你的生活里占了不小空间——需要留意它是否在影响睡眠和专注。',
-      '焦高': '焦虑明显压着你——几乎每天担心、难以放松。请认真照顾自己，必要时寻求专业帮助。'
+    resource: {
+      '资经历': '你最深的支撑来自经历——你知道自己熬过更难的时候。',
+      '资信念': '你最深的支撑来自信念——你心里有一句一直相信的话。',
+      '资关系': '你最深的支撑来自关系——你知道有人会接住你。',
+      '资自我': '你最深的支撑来自自我——你相信自己的判断和力量。'
     },
-    gap: {
-      '空探索': '你还处在「方向未定」的停滞感里——它不是空白，是方向正在成形。',
-      '空重整': '你还在「整理旧物」的阶段——有些旧东西没收拾完，新的还没安放。',
-      '空积累': '你在「积累但发闷」——努力在持续，但意义感暂时掉队了。',
-      '空转型': '你在「酝酿却不敢动」——想变的心很真实，只差一个开始。'
+    grow: {
+      '长探索': '你正在向外生长——在尝试、在试探，世界正在展开。',
+      '长扎根': '你正在向下扎根——把基础打牢，是你在积蓄真正的厚度。',
+      '长蜕变': '你正在蜕变——旧的一层正在脱落，疼，但挡不住。',
+      '长蓄力': '你正在蓄力——看起来没怎么长，其实能量正在聚拢。'
     },
-    meaning: {
-      '义充足': '你心里有明确的意义感——这是你最有力的支撑。',
-      '义偶失': '你偶尔会怀疑意义——这很正常，是你在认真对待生活。',
-      '义常失': '你常常觉得「做了又怎样」——意义感正在流失，需要被重新连接。',
-      '义迷失': '你正在经历意义迷失——这不是消极，是你在追问更深的东西。'
+    life: {
+      '命创造': '你最有生命力的时候，是在创造——做出点什么，让你觉得自己活着。',
+      '命联结': '你最有生命力的时候，是在联结——和人的深处相遇，让你觉得自己活着。',
+      '命自由': '你最有生命力的时候，是在自由里——不被拴住，让你觉得自己活着。',
+      '命意义': '你最有生命力的时候，是在意义里——知道自己在为什么而做，让你觉得自己活着。'
     }
   };
 
-  function renderPressure() {
+  function renderRegrow() {
     var r = computeResult();
     var m = QUIZ._map(r);
-    var html = resultCardHTML(starSVG(), '你正被什么压着', '四维压力画像', '', '');
+    var html = resultCardHTML(starSVG(), '我如何重新生长', '四维生长地图', '', '');
     html += '<div class="result-sections">';
-    html += '<div class="result-block wide"><h4>你的压力画像</h4>' +
-      '<p><strong style="color:var(--gold-bright)">倦怠：</strong>' + PRESSURE_TEXT.burn[m.burn] + '</p>' +
-      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">焦虑：</strong>' + PRESSURE_TEXT.anxiety[m.anxiety] + '</p>' +
-      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">停滞：</strong>' + PRESSURE_TEXT.gap[m.gap] + '</p>' +
-      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">意义：</strong>' + PRESSURE_TEXT.meaning[m.meaning] + '</p></div>';
-    html += '<div class="result-block wide"><h4>哪一样最重</h4><p>' +
-      '综合来看，此刻最压着你的，是「' + m.burn + '」这一块，而它的底色是「' + m.meaning + '」。' +
-      (m.burn === '倦耗竭' ? '所以你现在最需要的不是「想开点」，是先让自己真的歇下来。' :
-       m.burn === '倦疏离' ? '所以你最需要的不是「恢复热情」，是先让感觉慢慢回来。' :
-       m.burn === '倦无义' ? '所以你最需要的不是「更努力」，是先重新找到这件事的意义。' :
-       '所以你最需要的不是「再等等」，是先迈出很小的一步。') +
+    html += '<div class="result-block wide"><h4>你的生长地图</h4>' +
+      '<p><strong style="color:var(--gold-bright)">我如何回血：</strong>' + REGROW_TEXT.heal[m.heal] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">我靠什么撑住：</strong>' + REGROW_TEXT.resource[m.resource] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">我正在怎么长：</strong>' + REGROW_TEXT.grow[m.grow] + '</p>' +
+      '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">我的生命力来自：</strong>' + REGROW_TEXT.life[m.life] + '</p></div>';
+    html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
+      '你靠「' + m.heal + '」回血，用「' + m.resource + '」撑住自己，此刻正在「' + m.grow + '」的路上——而这一切，最终都通向你的生命力：「' + m.life + '」。' +
+      (m.grow === '长探索' ? '你正处在向外打开的阶段，多给自己一点允许：允许不确定，允许试错，新的地图就是在试探里画出来的。' :
+       m.grow === '长扎根' ? '你正处在深耕的阶段，别急着开花——你现在做的每一件小事，都是在为未来的厚度打地基。' :
+       m.grow === '长蜕变' ? '你正处在蜕变的阶段，会有一点疼是正常的——那不是倒退，是旧的你在为新你腾出空间。' :
+       '你正处在蓄力的阶段，安静不是停滞——你只是在为下一步认真攒能量。') +
       '</p></div>';
     html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
-      '你扛着的东西是真的，你的累也是真的。请别急着「解决」它——先承认它压着你，然后从最小的一件照顾自己的事开始。' +
-      (m.anxiety === '焦高' || m.anxiety === '焦中高' ? ' 你的焦虑水平不低，如果它持续影响你，请考虑寻求专业帮助。' : '') +
-      '</p></div>';
+      '你已经走过了很多难走的路，才成为今天这个会「' + m.heal + '」、能「' + m.resource + '」的人。接下来的生长，不必着急——' +
+      '顺着你生命力最旺盛的方向，' + (m.life === '命创造' ? '去创造一点什么' : m.life === '命联结' ? '去靠近一个你在意的人' : m.life === '命自由' ? '去给自己留一块自由的空间' : '去做一件你觉得有意义的事') +
+      '，哪怕只是很小的一步。</p></div>';
     html += '</div>';
-    html += actionsHTML('pressure', m.burn + ' · ' + m.meaning, '');
+    html += actionsHTML('regrow', m.grow + ' · ' + m.life, '');
     resultEl.innerHTML = html;
-    window.guanSet(QUIZ.key, m.burn + ' · ' + m.meaning);
-    bindResultActions(shareText(QUIZ.title, m.burn + ' · ' + m.meaning, '我的压力画像'));
+    window.guanSet(QUIZ.key, m.grow + ' · ' + m.life);
+    bindResultActions(shareText(QUIZ.title, m.grow + ' · ' + m.life, '我的生长地图'));
   }
 
   var LIFEWANT_TEXT = {

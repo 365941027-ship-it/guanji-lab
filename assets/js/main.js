@@ -214,7 +214,7 @@
     guan_energy_map: '我的能量地图',
     guan_relation_map: '我在关系里的位置',
     guan_talent: '我的天赋信号',
-    guan_pressure: '我正被什么压着',
+    guan_pressure: '我如何重新生长',
     guan_life_want: '我真正想要的生活'
   };
   Object.keys(resultKeys).forEach(function (key) {
