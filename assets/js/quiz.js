@@ -920,12 +920,65 @@
     return '<p style="margin-bottom:12px">' + text + '</p>';
   }
 
+  // 模板变体：同一段落在不同测试/板块之间用不同措辞，避免跨测试重复
+  var PERSON_VARIANTS = {
+    picks: [
+      function (picks, kind) {
+        return '你在作答时选择了「' + picks.join('」「') + '」——这和你' + (kind === 'conflict' ? '内在的拉扯' : kind === 'growth' ? '想去的方向' : '本来的样子') + '是连在一起的：它不是随手的勾选，而是你心里早已有过的声音。';
+      },
+      function (picks, kind) {
+        return '我特别留意到你选了「' + picks.join('」「') + '」。这些选项不是偶然落在那里，它们和你的' + (kind === 'conflict' ? '冲突' : kind === 'growth' ? '成长方向' : '核心特征') + '之间，有一条只有你自己知道的路。';
+      },
+      function (picks, kind) {
+        return '回看你的选择，「' + picks.join('」「') + '」被你自己点亮了。它看似是几行选项，其实是你心里早就写好、只是很少被说出口的答案——和你的' + (kind === 'conflict' ? '内在冲突' : kind === 'growth' ? '成长方向' : '核心特质') + '紧紧相连。';
+      }
+    ],
+    zodiac: [
+      function (z) { return '你出生在' + z + '的时节。星座不是命运，但它像一门古老的语言，帮你辨认自己身上本来就有的质地——而这份质地，和上面的描述暗暗呼应。'; },
+      function (z) { return '出生在' + z + '的这段时间，古人会把它当作一种季节的隐喻。不必当真，但可以当作镜子：你身上有一些和它相似的光，正在被这里照见。'; },
+      function (z) { return '你的星盘上写着' + z + '——把它当作一种象征语言，不替你做决定，只是提醒你：你带着自己独特的季节出生，也带着它走到今天。'; }
+    ],
+    selfDesc: [
+      function (s) { return '你在档案里写道：「' + s + '」。这份诚实，恰恰是理解这个冲突最好的钥匙——它说明你已经准备好面对它了。'; },
+      function (s) { return '你对自己说过一句很真的话：「' + s + '」。冲突往往不是突然出现的，它早就藏在你的自我描述里——你能写下它，就已经站在了问题旁边。'; },
+      function (s) { return '「' + s + '」——这是你自己写给自己的话。它比任何外部评价都更接近真相，也正因如此，它是解开这个内在拉扯的第一把钥匙。'; }
+    ],
+    bazi: [
+      function (b) { return '你的八字排盘是「' + b + '」。命理不替你决定方向，但它提醒你：你带着自己的时区走到今天。成长不必追上别人的季节，按你自己的时区来就好。'; },
+      function (b) { return '排盘显示你的四柱是「' + b + '」。古人用它读人生节律，我们更愿意把它读成一种提醒：你的成长有自己的历法，不必对照别人的年月。'; },
+      function (b) { return '你的八字「' + b + '」是一张很老的地图。它不预言你的未来，只是轻轻说：你已经走了很长的路，接下来的季节，由你自己命名。'; }
+    ],
+    stage: [
+      function (st) { return '你正在' + st + '——这个阶段的功课，不是和别的阶段比速度，而是完成这个阶段该完成的事。'; },
+      function (st) { return '现在的你正处在' + st + '。每个阶段都有自己的节奏，你不必急着跳到下一站——先把这个季节的雨淋完，树才长得牢。'; },
+      function (st) { return '你给自己的人生阶段写下的是：' + st + '。它不是终局，只是一个坐标——知道自己站在哪里，下一步才不会踩空。'; }
+    ],
+    focus: [
+      function (f) { return '你写下的探索议题是「' + f + '」——上面说的成长方向，恰好可以成为这个议题的第一步落点。'; },
+      function (f) { return '你在档案里最想探索的是「' + f + '」。把上面说的成长方向放进去，它就不再是抽象的建议，而是为你这个议题铺下的一级台阶。'; },
+      function (f) { return '「' + f + '」是你亲自选出的探索方向。成长不需要一次到位，你只需要顺着这个方向，走很小的一步，就足够了。'; }
+    ],
+    other: [
+      function (o) { return '你还写下了自己的答案：「' + o + '」。这句话比任何选项都更接近真实的你——上面的成长方向，就是顺着这句话展开的。'; },
+      function (o) { return '你亲手写下的那句「' + o + '」，是这份结果里最重的内容。它不来自任何选项，只来自你——所以下面的成长方向，也优先为你这句话而写。'; },
+      function (o) { return '比起选项，你更愿意自己说：「' + o + '」。这是最珍贵的信号——你已经有答案的方向了，只是还需要有人陪你把路走出来。'; }
+    ]
+  };
+
+  function variant(quizKey, kind, slot, args) {
+    var list = PERSON_VARIANTS[slot];
+    if (!list || !list.length) return '';
+    var seed = (quizKey + '|' + kind + '|' + slot).split('').reduce(function (n, ch) { return n + ch.charCodeAt(0); }, 0);
+    return list[seed % list.length].apply(null, args);
+  }
+
   // 个性化结果：每个板块 = 该结果独有的文本 + 基于你的选择与档案的呼应（不与其他测试雷同）
   function personBlock(kind, p) {
     var prof = profileData();
     var paras = [];
     var text = kind === 'core' ? p.core : kind === 'conflict' ? p.conflict : p.growth;
     paras.push(text);
+    var quizKey = QUIZ.key || '';
 
     // 呼应用户的真实选择（从答案里挑一两个）
     var picks = [];
@@ -936,30 +989,30 @@
       }
     });
     if (picks.length) {
-      paras.push('你在作答时选择了「' + picks.join('」「') + '」——这和你' + (kind === 'conflict' ? '内在的拉扯' : kind === 'growth' ? '想去的方向' : '本来的样子') + '是连在一起的：它不是随手的勾选，而是你心里早已有过的声音。');
+      paras.push(variant(quizKey, kind, 'picks', [picks, kind]));
     }
     // 引用用户自定义输入（若有）
     state.answers.forEach(function (a) {
       if (a && a.other && kind === 'growth') {
-        paras.push('你还写下了自己的答案：「' + a.other + '」。这句话比任何选项都更接近真实的你——上面的成长方向，就是顺着这句话展开的。');
+        paras.push(variant(quizKey, kind, 'other', [a.other]));
       }
     });
 
     // 融入档案（星座/八字/阶段/自我描述）
     if (kind === 'core' && prof.zodiac) {
-      paras.push('你出生在' + prof.zodiac + '的时节。星座不是命运，但它像一门古老的语言，帮你辨认自己身上本来就有的质地——而这份质地，和上面的描述暗暗呼应。');
+      paras.push(variant(quizKey, kind, 'zodiac', [prof.zodiac]));
     }
     if (kind === 'conflict' && prof.selfDesc) {
-      paras.push('你在档案里写道：「' + prof.selfDesc.slice(0, 30) + (prof.selfDesc.length > 30 ? '…' : '') + '」。这份诚实，恰恰是理解这个冲突最好的钥匙——它说明你已经准备好面对它了。');
+      paras.push(variant(quizKey, kind, 'selfDesc', [prof.selfDesc.slice(0, 30) + (prof.selfDesc.length > 30 ? '…' : '')]));
     }
     if (kind === 'growth' && prof.bazi) {
-      paras.push('你的八字排盘是「' + prof.bazi + '」。命理不替你决定方向，但它提醒你：你带着自己的时区走到今天。成长不必追上别人的季节，按你自己的时区来就好。');
+      paras.push(variant(quizKey, kind, 'bazi', [prof.bazi]));
     }
     if (kind === 'growth' && prof.stage) {
-      paras.push('你正在' + prof.stage.split(' · ')[0] + '——这个阶段的功课，不是和别的阶段比速度，而是完成这个阶段该完成的事。');
+      paras.push(variant(quizKey, kind, 'stage', [prof.stage.split(' · ')[0]]));
     }
     if (prof.focus && kind === 'growth') {
-      paras.push('你写下的探索议题是「' + prof.focus + '」——上面说的成长方向，恰好可以成为这个议题的第一步落点。');
+      paras.push(variant(quizKey, kind, 'focus', [prof.focus]));
     }
     return paras.map(deepParagraph).join('');
   }
@@ -1039,29 +1092,42 @@
   }
 
   var RELATED = {
-    guan_archetype: [
-      { key: '探索者', test: 'guan_stage', href: 'test-life-stage.html', label: '你现在走到的季节', reason: '看见了自己的原型，下一步值得看看自己正处在哪个季节' },
-      { key: '创造者', test: 'guan_flow', href: 'test-flow.html', label: '什么让我忘记时间', reason: '创造者的能量，需要知道它流向哪里' },
-      { key: '觉知者', test: 'guan_emotions', href: 'test-emotions.html', label: '你的情绪语言', reason: '觉知者的敏感，需要用情绪语言来安放' },
-      { key: '重构者', test: 'guan_burnout', href: 'test-burnout.html', label: '当工作开始抽干你', reason: '重构者的疲惫，常常来自旧结构的拉扯' },
-      { key: '守护者', test: 'guan_boundary', href: 'test-boundary.html', label: '你的门与墙', reason: '守护者最需要学习的，是边界' }
+    guan_who: [
+      { key: '探索者', test: 'guan_energy_map', href: 'test-energy-map.html', label: '我的能量地图', reason: '看见了自己与世界相遇的姿态，下一步值得看看能量在哪里悄悄漏掉' },
+      { key: '创造者', test: 'guan_talent', href: 'test-talent.html', label: '我的天赋信号', reason: '创造者的能量，值得被放进天赋地图里看看流向哪里' },
+      { key: '觉知者', test: 'guan_energy_map', href: 'test-energy-map.html', label: '我的能量地图', reason: '觉知者的敏感，需要用能量地图来安放' },
+      { key: '重构者', test: 'guan_pressure', href: 'test-pressure.html', label: '我如何重新生长', reason: '重构者的疲惫，往往来自旧结构的拉扯——看看自己如何重新生长' },
+      { key: '守护者', test: 'guan_relation_map', href: 'test-relation-map.html', label: '我在关系里的位置', reason: '守护者最需要学习的，是关系里的边界与平衡' }
     ],
-    guan_drain: [
-      { key: '反刍型', test: 'guan_goodbye', href: 'test-goodbye.html', label: '告别之后', reason: '反复回想，往往和没有完成的告别有关' },
-      { key: '比较型', test: 'guan_confidence', href: 'test-confidence.html', label: '我相信自己能做到什么', reason: '比较的背后，是自信地图上的一块暗区' },
-      { key: '完美型', test: 'guan_selfcare', href: 'test-selfcare.html', label: '你如何对待自己', reason: '完美主义的钥匙，藏在你对自己的话里' },
-      { key: '讨好型', test: 'guan_pleasing', href: 'test-pleasing.html', label: '不必讨好也值得被爱', reason: '讨好的模式，值得单独被看见' }
+    guan_energy_map: [
+      { key: '反刍耗', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '能量常被过去占据，下一步值得看看自己是如何成为今天的你' },
+      { key: '比较耗', test: 'guan_talent', href: 'test-talent.html', label: '我的天赋信号', reason: '比较的背后，是还没被看见的天赋——去天赋地图里找到它' },
+      { key: '标准耗', test: 'guan_pressure', href: 'test-pressure.html', label: '我如何重新生长', reason: '对自己要求很高，下一步值得看看自己靠什么重新生长' },
+      { key: '讨好耗', test: 'guan_relation_map', href: 'test-relation-map.html', label: '我在关系里的位置', reason: '讨好的模式，值得在关系地图里单独被看见' }
     ],
-    guan_burnout: [
-      { key: '疲惫耗竭', test: 'guan_energy', href: 'test-energy.html', label: '今天的电量', reason: '先看看你的电量还剩多少' },
-      { key: '冷漠疏离', test: 'guan_selfcare', href: 'test-selfcare.html', label: '你如何对待自己', reason: '麻木的时候，最需要听见对自己的话' },
-      { key: '意义失落', test: 'guan_workvalues', href: 'test-workvalues.html', label: '工作对你意味着什么', reason: '意义感的丢失，和工作的坐标有关' },
-      { key: '觉醒转型', test: 'guan_pivot', href: 'test-pivot.html', label: '换一条路之前', reason: '觉醒期最需要的，是换路前的准备' }
+    guan_relation_map: [
+      { key: '依焦虑', test: 'guan_energy_map', href: 'test-energy-map.html', label: '我的能量地图', reason: '关系里的不安，往往先消耗的是能量——去能量地图里看看' },
+      { key: '依回避', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '回避的背后，藏着你和世界相处的方式——去看看自己如何成为我' },
+      { key: '讨低值', test: 'guan_pressure', href: 'test-pressure.html', label: '我如何重新生长', reason: '觉得自己不配，恰恰是重新生长最需要松动的部分' },
+      { key: '边成长', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '边界正在形成，下一步值得看看自己正处在哪个季节' }
     ],
-    guan_attachment: [
-      { key: '焦虑型', test: 'guan_selfworth', href: 'test-selfworth.html', label: '你配得上什么', reason: '焦虑的底层，常常是「我配吗」' },
-      { key: '回避型', test: 'guan_boundary', href: 'test-boundary.html', label: '你的门与墙', reason: '回避的背后，是一堵很高的墙' },
-      { key: '恐惧回避', test: 'guan_pleasing', href: 'test-pleasing.html', label: '不必讨好也值得被爱', reason: '既想靠近又怕受伤，和讨好模式常常交织' }
+    guan_talent: [
+      { key: '心匠人', test: 'guan_life_want', href: 'test-life-want.html', label: '我真正想要的生活', reason: '你的天赋在「做」——下一步值得看看什么生活能让它一直做下去' },
+      { key: '心解题', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '你的天赋在「解」——下一步值得看看自己真正想要什么' },
+      { key: '心创造', test: 'guan_life_want', href: 'test-life-want.html', label: '我真正想要的生活', reason: '你的天赋在「创」——下一步值得看看什么生活容得下这份创造' },
+      { key: '心联结', test: 'guan_relation_map', href: 'test-relation-map.html', label: '我在关系里的位置', reason: '你的天赋在「人」——下一步值得看看自己在关系里的位置' }
+    ],
+    guan_pressure: [
+      { key: '长探索', test: 'guan_life_want', href: 'test-life-want.html', label: '我真正想要的生活', reason: '你正在向外打开——下一步值得看看自己真正想去的地方' },
+      { key: '长扎根', test: 'guan_talent', href: 'test-talent.html', label: '我的天赋信号', reason: '你正在向下扎根——下一步值得看看自己最擅长的方向在哪' },
+      { key: '长蜕变', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '你正在经历转变——下一步值得重新认识「我如何成为我」' },
+      { key: '长蓄力', test: 'guan_energy_map', href: 'test-energy-map.html', label: '我的能量地图', reason: '你正在蓄力——下一步值得看看能量从哪里来、到哪里去' }
+    ],
+    guan_life_want: [
+      { key: '欲自由', test: 'guan_who', href: 'test-who.html', label: '我如何成为我', reason: '你渴望自由——下一步值得看看这个渴望如何塑造了现在的你' },
+      { key: '欲创造', test: 'guan_talent', href: 'test-talent.html', label: '我的天赋信号', reason: '你渴望创造——下一步值得找到那股创造力的信号源' },
+      { key: '欲真实', test: 'guan_relation_map', href: 'test-relation-map.html', label: '我在关系里的位置', reason: '你渴望真实——下一步值得看看在关系里如何做真实的自己' },
+      { key: '欲安定', test: 'guan_energy_map', href: 'test-energy-map.html', label: '我的能量地图', reason: '你渴望安定——下一步值得看看自己的能量如何安放' }
     ]
   };
 
@@ -1074,10 +1140,12 @@
 
   function followupsFor(quizKey, resultKey) {
     var map = {
-      guan_archetype: ['「我这样的姿态，最早是从什么时候开始的？」', '「如果换一种姿态，我会先失去什么？」', '「我最想把这个原型用在哪个场景里？」'],
-      guan_drain: ['「这个声音，最早是谁对我说的？」', '「如果今天允许自己松手一样东西，会是什么？」'],
-      guan_burnout: ['「如果休息不是逃避，我敢不敢先停下来一天？」', '「这份工作里，还有什么是值得留下的？」'],
-      guan_attachment: ['「我最早在谁身上学会了这样靠近？」', '「如果我允许自己慢慢来，最怕发生什么？」']
+      guan_who: ['「我这样的姿态，最早是从什么时候开始的？」', '「如果换一种姿态，我会先失去什么？」', '「我最想把这个原型用在哪个场景里？」'],
+      guan_energy_map: ['「这个消耗我的声音，最早是谁对我说的？」', '「如果今天允许自己松手一样东西，会是什么？」'],
+      guan_relation_map: ['「我最早在谁身上学会了这样靠近？」', '「如果我允许自己慢慢来，最怕发生什么？」'],
+      guan_talent: ['「我上一次忘记时间，是在做什么？」', '「如果明天就去做那件事，第一步是什么？」'],
+      guan_pressure: ['「我最近一次感到「活过来了」，是因为什么？」', '「如果今天给自己留半小时，我会做什么？」'],
+      guan_life_want: ['「如果只能挪一步，我会先挪哪里？」', '「我真正想要的，和现在的生活差在哪？」']
     };
     return map[quizKey] || ['「这个结果里，最戳中我的是哪一句？」'];
   }
@@ -1172,20 +1240,49 @@
     if (keep && keep.checked) {
       localStorage.setItem('guan_ai_key_' + provider, key);
     }
-    resultEl.querySelector('#aiKeyModal').style.display = 'none';
+    var modal = resultEl.querySelector('#aiKeyModal');
+    if (modal) modal.style.display = 'none';
+    startDeepReading(provider, key, true);
+  }
 
+  function startDeepReading(provider, key, doScroll) {
     var readingBox = resultEl.querySelector('#deepReading');
+    if (!readingBox) return;
     readingBox.style.display = 'block';
     readingBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>正在倾听你的故事…</h4><p>正在读你刚才的每一个回答，并把它和你的人生地图放在一起看。</p></div>';
-    readingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
+    if (doScroll) readingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     var prompt = buildAiPrompt();
     callChat(provider, key, prompt).then(function (text) {
-      renderDeepReading(text);
+      renderDeepReading(text, doScroll);
     }).catch(function (err) {
-      readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + (err && err.message ? err.message : '网络或服务异常，请稍后重试。') + '</p>' +
-        '<p class="deep-error-hint">' + (proxyReady ? '可以稍后再试，或填入你自己的 Key 作为备选。' : '如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。') + '</p></div>';
+      var msg = err && err.message ? err.message : '网络或服务异常，请稍后重试。';
+      var proxyReady = !!(window.GUAN_PROXY_URL);
+      readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + msg + '</p>' +
+        '<p class="deep-error-hint">' + (proxyReady ? '可以稍后再试，或填入你自己的 Key 作为备选。' : '如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。') + '</p>' +
+        (proxyReady ? '' : '<button type="button" class="btn btn-sm" data-ai-deep-retry>填写 Key 重试</button>') +
+        '</div>';
+      var retry = readingBox.querySelector('[data-ai-deep-retry]');
+      if (retry) retry.addEventListener('click', openAiDeep);
     });
+  }
+
+  // 结果页自动生成深度解读：不弹窗，直接在结果下方展开
+  function autoDeepReading() {
+    var readingBox = resultEl.querySelector('#deepReading');
+    if (!readingBox || readingBox.getAttribute('data-auto-started')) return;
+    var provider = 'deepseek';
+    var key = aiKeyFor(provider) || '';
+    var proxyReady = !!(window.GUAN_PROXY_URL);
+    if (!proxyReady && !key) {
+      readingBox.style.display = 'block';
+      readingBox.innerHTML = '<div class="deep-hint">' +
+        '<h4>你的专属深度解读</h4>' +
+        '<p>完成测试后，这里会自动生成一段只属于你的深度解读。当前解读通道尚未就绪，你可以点击「深度解读」，填入自己的 Key 后生成。</p>' +
+        '</div>';
+      return;
+    }
+    readingBox.setAttribute('data-auto-started', '1');
+    startDeepReading(provider, key, false);
   }
 
   function buildAiPrompt() {
@@ -1388,7 +1485,7 @@
     return lines.join('\n');
   }
 
-  function renderDeepReading(text) {
+  function renderDeepReading(text, doScroll) {
     var box = resultEl.querySelector('#deepReading');
     var paras = text.split(/\n{2,}/).map(function (p) {
       return '<p>' + p.replace(/^[-*]\s+/g, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
@@ -1406,7 +1503,7 @@
         window.guanToast(ok ? '解读已复制' : '复制失败');
       });
     });
-    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (doScroll !== false) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function crisisHTML(cat) {
@@ -1488,6 +1585,8 @@
         renderQuestion();
       });
     }
+    // 结果页自动展开深度解读（不弹窗）
+    autoDeepReading();
   }
 
   function shareText(label, name, core) {
