@@ -142,8 +142,12 @@
     otherBtn.type = 'button';
     otherBtn.className = 'btn btn-sm other-btn';
     otherBtn.textContent = '写下我的答案';
+    var otherHint = document.createElement('p');
+    otherHint.className = 'other-hint';
+    otherHint.textContent = '如果这些选项都不太像你，在这里写下你自己的版本——你的原话，会成为解读里最重的那一句。';
     otherRow.appendChild(otherInput);
     otherRow.appendChild(otherBtn);
+    otherRow.appendChild(otherHint);
     optionsEl.appendChild(otherRow);
     otherEl = otherInput;
     otherInput.addEventListener('keydown', function (e) {
@@ -386,9 +390,43 @@
     }
   };
 
+  var RELATION_LABEL = {
+    attach: {
+      '依安全': '安全型靠近',
+      '依焦虑': '焦虑型靠近',
+      '依回避': '回避型靠近',
+      '依混乱': '矛盾型靠近'
+    },
+    please: {
+      '讨习惯': '习惯性付出',
+      '讨怕冲': '怕冲突而让步',
+      '讨求认': '依赖认可',
+      '讨低值': '容易低估自己'
+    },
+    bound: {
+      '边模糊': '边界偏模糊',
+      '边僵硬': '边界偏硬',
+      '边健康': '边界健康',
+      '边成长': '边界正在成形'
+    },
+    conflict: {
+      '冲靠近': '冲突后主动靠近',
+      '冲冷静': '冲突后需要冷静',
+      '冲回避': '冲突后倾向回避',
+      '冲内省': '冲突后反复思量'
+    },
+    goodbye: {
+      '告反刍': '告别后反复回想',
+      '告麻木': '告别后有些麻木',
+      '告波动': '告别后情绪起伏',
+      '告愈合': '告别后正在愈合'
+    }
+  };
+
   function renderRelationMap() {
     var r = computeResult();
     var m = QUIZ._map(r);
+    function label(dim, key) { return RELATION_LABEL[dim][key] || key; }
     var html = resultCardHTML(starSVG(), '你在关系里的位置', '五维关系姿态', '', '');
     html += '<div class="result-sections">';
     html += '<div class="result-block wide"><h4>你的关系姿态</h4>' +
@@ -398,15 +436,15 @@
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">冲突后：</strong>' + RELATION_TEXT.conflict[m.conflict] + '</p>' +
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">告别后：</strong>' + RELATION_TEXT.goodbye[m.goodbye] + '</p></div>';
     html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
-      '你在关系里的位置，可以这样理解：你靠近人的方式是「' + m.attach + '」，付出的方式是「' + m.please + '」，边界是「' + m.bound + '」，冲突后你倾向「' + m.conflict + '」，告别后你「' + m.goodbye + '」。' +
+      '你在关系里的位置，可以这样理解：你靠近人的方式是「' + label('attach', m.attach) + '」，付出的方式是「' + label('please', m.please) + '」，边界是「' + label('bound', m.bound) + '」，冲突后你倾向「' + label('conflict', m.conflict) + '」，告别后你「' + label('goodbye', m.goodbye) + '」。' +
       '这五个维度不是你的判决书，而是你在关系里反复出现的姿态——看清它们，你才有机会选择新的姿态。</p></div>';
     html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
       RELATION_TEXT.attach[m.attach] + ' ' + RELATION_TEXT.please[m.please] + ' 从一件很小的事开始，试着换一种方式靠近。</p></div>';
     html += '</div>';
-    html += actionsHTML('relation_map', m.attach + ' · ' + m.bound, '');
+    html += actionsHTML('relation_map', label('attach', m.attach) + ' · ' + label('bound', m.bound), '');
     resultEl.innerHTML = html;
-    window.guanSet(QUIZ.key, m.attach + ' · ' + m.bound);
-    bindResultActions(shareText(QUIZ.title, m.attach + ' · ' + m.bound, '我的关系姿态'));
+    window.guanSet(QUIZ.key, label('attach', m.attach) + ' · ' + label('bound', m.bound));
+    bindResultActions(shareText(QUIZ.title, label('attach', m.attach) + ' · ' + label('bound', m.bound), '我的关系姿态'));
   }
 
   var TALENT_TEXT = {
@@ -1017,6 +1055,18 @@
     return paras.map(deepParagraph).join('');
   }
 
+  // 用户自己写下的答案：统一出现在结果页顶部，成为最重的线索
+  function otherVoiceHTML() {
+    var texts = [];
+    state.answers.forEach(function (a) {
+      if (a && a.other && a.other.trim()) texts.push(a.other.trim());
+    });
+    if (!texts.length) return '';
+    var joined = texts.slice(0, 2).map(function (t) { return '「' + t + '」'; }).join('，');
+    return '<div class="result-block wide" data-other-voice><h4>你自己写下的那句话</h4>' +
+      '<p>' + joined + '——这句不是从任何选项里选的，它只来自你。接下来的解读，会把它当作最重要的线索之一。</p></div>';
+  }
+
   function listHTML(items) {
     if (!items || !items.length) return '';
     return '<ul>' + items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>';
@@ -1032,7 +1082,6 @@
       '</div>' +
       keepTalkingHTML() +
       '<div class="deep-reading" id="deepReading" style="display:none"></div>' +
-      aiKeyModalHTML() +
       (label && label !== 'inneros' ? '<div class="share-modal" id="shareModal">' +
       '  <div class="share-card" id="shareCard">' +
       '    <div class="share-logo">' + (window.guanProfile && window.guanProfile().nickname ? window.guanProfile().nickname : '观己者') + ' · ' + QUIZ.title + '</div>' +
@@ -1046,32 +1095,6 @@
       '  </div>' +
       '</div>' : '') +
       (QUIZ.category ? crisisHTML(QUIZ.category) : '');
-  }
-
-  function aiKeyModalHTML() {
-    var proxyReady = !!(window.GUAN_PROXY_URL);
-    return '<div class="ai-modal" id="aiKeyModal" style="display:none">' +
-      '  <div class="ai-modal-card">' +
-      '    <h4>开启深度解读</h4>' +
-      '    <p class="ai-modal-desc">解读会基于你刚刚的全部回答、你的档案与命盘，为你一个人生成。' + (proxyReady ? '本站已内置解读通道，无需填写 Key，直接开始即可。' : '填写你自己的 Key（仅保存在这台设备），或等内置通道就绪。') + '</p>' +
-      (proxyReady ? '<p class="ai-proxy-status">● 内置解读通道已连接</p>' : '<p class="ai-proxy-status ai-proxy-off">○ 内置解读通道未配置，可用自己的 Key</p>') +
-      '    <div class="form-field"><label>选择模型服务</label>' +
-      '      <select id="aiProvider">' +
-      '        <option value="deepseek">DeepSeek（默认）</option>' +
-      '        <option value="openai">OpenAI（需付费额度）</option>' +
-      '        <option value="gemini">Google Gemini（有免费额度）</option>' +
-      '      </select></div>' +
-      '    <div class="form-field"><label id="aiKeyLabel">API Key</label>' +
-      '      <input type="password" id="aiKeyInput" placeholder="' + (proxyReady ? '可选：不填也能解读' : 'sk-...') + '" autocomplete="off"></div>' +
-      '    <p class="ai-key-hint" id="aiKeyHint">如何获取：</p>' +
-      '    <label class="ai-keep"><input type="checkbox" id="aiKeyKeep" checked> 记住在这台设备上（填了才需要）</label>' +
-      '    <p class="ai-warn">你的回答与档案只用于生成这一次解读，不会保存到服务器。</p>' +
-      '    <div class="ai-modal-actions">' +
-      '      <button type="button" class="btn btn-gold btn-sm" data-ai-confirm>开始解读</button>' +
-      '      <button type="button" class="btn btn-sm" data-ai-cancel>取消</button>' +
-      '    </div>' +
-      '  </div>' +
-      '</div>';
   }
 
   // 结果后「继续对话」：基于结果精准推荐 1 个相关测试 + 追问（替代全部推荐）
@@ -1196,53 +1219,43 @@
     return localStorage.getItem('guan_ai_key_' + provider) || '';
   }
 
-  function openAiDeep() {
-    var modal = resultEl.querySelector('#aiKeyModal');
-    var providerSel = resultEl.querySelector('#aiProvider');
-    if (providerSel && providerSel.value === 'openai' && !aiKeyFor('openai')) {
-      providerSel.value = 'deepseek';
-    }
-    var saved = aiKeyFor(providerSel.value);
-    var input = resultEl.querySelector('#aiKeyInput');
-    if (input) {
-      input.value = saved;
-      input.placeholder = window.GUAN_PROXY_URL ? '可选：不填也能解读' : (saved ? '已保存，可直接开始（' + saved.slice(0, 6) + '…）' : 'sk-...');
-    }
-    updateAiProviderUI();
-    modal.style.display = 'flex';
-  }
-
-  function updateAiProviderUI() {
-    var providerSel = resultEl.querySelector('#aiProvider');
-    var p = AI_PROVIDERS[providerSel.value];
-    var input = resultEl.querySelector('#aiKeyInput');
-    var label = resultEl.querySelector('#aiKeyLabel');
-    var hint = resultEl.querySelector('#aiKeyHint');
-    var saved = aiKeyFor(providerSel.value);
-    if (label) label.textContent = p.label + ' API Key';
-    if (input) {
-      input.placeholder = saved ? '已保存，可直接开始（' + saved.slice(0, 6) + '…）' : p.placeholder;
-    }
-    if (hint) hint.textContent = p.keyHint;
-  }
-
-  function runAiDeep() {
-    var providerSel = resultEl.querySelector('#aiProvider');
-    var provider = providerSel ? providerSel.value : 'openai';
-    var input = resultEl.querySelector('#aiKeyInput');
-    var keep = resultEl.querySelector('#aiKeyKeep');
-    var key = (input && input.value.trim()) || aiKeyFor(provider) || '';
+  // 点击「深度解读」：不弹窗，直接生成；没有通道时才在结果区内联填 Key
+  function runDeepNow() {
+    var provider = 'deepseek';
+    var key = aiKeyFor(provider) || '';
     var proxyReady = !!(window.GUAN_PROXY_URL);
-    if (!key && !proxyReady) {
-      window.guanToast('请先填入你的 API Key');
+    if (!proxyReady && !key) {
+      showInlineKeyPanel();
       return;
     }
-    if (keep && keep.checked) {
-      localStorage.setItem('guan_ai_key_' + provider, key);
-    }
-    var modal = resultEl.querySelector('#aiKeyModal');
-    if (modal) modal.style.display = 'none';
     startDeepReading(provider, key, true);
+  }
+
+  function showInlineKeyPanel() {
+    var box = resultEl.querySelector('#deepReading');
+    if (!box) return;
+    box.style.display = 'block';
+    box.innerHTML = '<div class="deep-hint deep-key-panel">' +
+      '<h4>使用你自己的 Key 生成解读</h4>' +
+      '<p>当前解读通道尚未就绪。你可以填入自己的 DeepSeek API Key（在 platform.deepseek.com 创建），Key 只保存在这台设备。</p>' +
+      '<div class="deep-key-form">' +
+      '<input type="password" id="deepKeyInline" placeholder="sk-..." autocomplete="off">' +
+      '<button type="button" class="btn btn-gold btn-sm" id="deepKeyStart">开始解读</button>' +
+      '</div>' +
+      '</div>';
+    var input = box.querySelector('#deepKeyInline');
+    var btn = box.querySelector('#deepKeyStart');
+    var start = function () {
+      var k = (input && input.value.trim()) || '';
+      if (!k) { window.guanToast('请先填入你的 API Key'); return; }
+      localStorage.setItem('guan_ai_key_deepseek', k);
+      startDeepReading('deepseek', k, true);
+    };
+    if (btn) btn.addEventListener('click', start);
+    if (input) input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); start(); }
+    });
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function startDeepReading(provider, key, doScroll) {
@@ -1259,10 +1272,10 @@
       var proxyReady = !!(window.GUAN_PROXY_URL);
       readingBox.innerHTML = '<div class="deep-error"><h4>解读没有完成</h4><p>' + msg + '</p>' +
         '<p class="deep-error-hint">' + (proxyReady ? '可以稍后再试，或填入你自己的 Key 作为备选。' : '如果是 Key 无效，请检查后重试；如果一直失败，可以稍后再试。') + '</p>' +
-        (proxyReady ? '' : '<button type="button" class="btn btn-sm" data-ai-deep-retry>填写 Key 重试</button>') +
+        '<button type="button" class="btn btn-sm" data-ai-deep-retry>重新生成</button>' +
         '</div>';
       var retry = readingBox.querySelector('[data-ai-deep-retry]');
-      if (retry) retry.addEventListener('click', openAiDeep);
+      if (retry) retry.addEventListener('click', runDeepNow);
     });
   }
 
@@ -1277,7 +1290,7 @@
       readingBox.style.display = 'block';
       readingBox.innerHTML = '<div class="deep-hint">' +
         '<h4>你的专属深度解读</h4>' +
-        '<p>完成测试后，这里会自动生成一段只属于你的深度解读。当前解读通道尚未就绪，你可以点击「深度解读」，填入自己的 Key 后生成。</p>' +
+        '<p>完成测试后，这里会自动生成一段只属于你的深度解读。当前解读通道尚未就绪，你可以点击「深度解读」按钮，用自己的 Key 生成。</p>' +
         '</div>';
       return;
     }
@@ -1521,6 +1534,15 @@
   }
 
   function bindResultActions(share) {
+    var sections = resultEl.querySelector('.result-sections');
+    if (sections && !sections.querySelector('[data-other-voice]')) {
+      var ovHtml = otherVoiceHTML();
+      if (ovHtml) {
+        var ovWrap = document.createElement('div');
+        ovWrap.innerHTML = ovHtml;
+        sections.insertBefore(ovWrap.firstChild, sections.firstChild);
+      }
+    }
     var shareBtn = resultEl.querySelector('[data-share]');
     var restartBtn = resultEl.querySelector('[data-restart]');
     if (shareBtn) {
@@ -1567,17 +1589,9 @@
         box.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     });
-    // AI 深度解读
+    // 深度解读：点击直接生成，不弹窗
     var aiBtn = resultEl.querySelector('[data-ai-deep]');
-    if (aiBtn) aiBtn.addEventListener('click', openAiDeep);
-    var aiConfirm = resultEl.querySelector('[data-ai-confirm]');
-    if (aiConfirm) aiConfirm.addEventListener('click', runAiDeep);
-    var aiCancel = resultEl.querySelector('[data-ai-cancel]');
-    if (aiCancel) aiCancel.addEventListener('click', function () {
-      resultEl.querySelector('#aiKeyModal').style.display = 'none';
-    });
-    var aiProviderSel = resultEl.querySelector('#aiProvider');
-    if (aiProviderSel) aiProviderSel.addEventListener('change', updateAiProviderUI);
+    if (aiBtn) aiBtn.addEventListener('click', runDeepNow);
     if (restartBtn) {
       restartBtn.addEventListener('click', function () {
         state.answers = new Array(QUIZ.questions.length).fill(null);
