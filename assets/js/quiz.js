@@ -123,7 +123,6 @@
       var picked = state.answers[state.index] === i;
       if (picked) btn.classList.add('on');
       var html = '<span>' + (opt.text || opt) + '</span>';
-      if (opt.tag) html += '<span class="opt-tag">' + softenTag(opt.tag) + '</span>';
       btn.innerHTML = html;
       btn.addEventListener('click', function () {
         pick(i);
