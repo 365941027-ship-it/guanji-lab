@@ -34,10 +34,12 @@ vercel --prod
 编辑 `assets/js/main.js` 顶部：
 
 ```js
-var GUAN_PROXY_DEFAULT = 'https://你的项目.vercel.app/api/interpret';
+var GUAN_PROXY_DEFAULT = 'https://guanji-lab.vercel.app/api/interpret';
 ```
 
 提交并推送，GitHub Pages 会自动更新。
+
+> 当前已部署完成，线上地址即 `https://guanji-lab.vercel.app/api/interpret`，`DEEPSEEK_API_KEY` 已配置为生产环境变量（Sensitive）。
 
 ## 4. 验证
 

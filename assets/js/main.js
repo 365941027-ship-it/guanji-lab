@@ -4,7 +4,7 @@
   // 服务端解读代理（免用户 Key）
   // 部署代理后，把 GUAN_PROXY_DEFAULT 改为完整 URL，例如 'https://your-app.vercel.app/api/interpret'
   // 个人调试可用 localStorage.setItem('guan_proxy_url', '...') 覆盖
-  var GUAN_PROXY_DEFAULT = '';
+  var GUAN_PROXY_DEFAULT = 'https://guanji-lab.vercel.app/api/interpret';
   window.GUAN_PROXY_URL = (function () {
     try {
       return localStorage.getItem('guan_proxy_url') || GUAN_PROXY_DEFAULT || '';
