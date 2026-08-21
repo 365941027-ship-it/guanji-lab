@@ -58,6 +58,27 @@
     }
   }
 
+  // 我的测试档案：从历史存档渲染已完成测试
+  function renderTestHistory() {
+    var el = document.getElementById('testHistory');
+    if (!el) return;
+    var list = [];
+    try { list = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { list = []; }
+    if (!list.length) {
+      el.innerHTML = '<p style="opacity:.6">还没有完成过测试。去「探索」做一次，档案会自动留下记录。</p>';
+      return;
+    }
+    el.innerHTML = list.map(function (it) {
+      var href = it.url || 'tests.html';
+      return '<div class="test-history-item">' +
+        '<div class="th-main"><b>' + (it.title || '一次探索') + '</b>' +
+        '<span class="th-date">' + (it.date || '') + ' ' + (it.time || '') + '</span></div>' +
+        '<div class="th-result">' + (it.result || '已记录') + '</div>' +
+        '<a class="btn btn-sm" href="' + href + '">重新探索</a>' +
+        '</div>';
+    }).join('');
+  }
+
   window.guanProfile = read;
 
   var avatar = '🌙';
@@ -338,4 +359,5 @@
     renderCharts();
   }
   renderLockUI();
+  renderTestHistory();
 })();

@@ -1074,6 +1074,7 @@
 
   function actionsHTML(label, summary, core) {
     return '' +
+      '<div class="deep-reading" id="deepReading" style="display:none"></div>' +
       '<div class="result-actions">' +
       '  <button type="button" class="btn btn-gold" data-share>分享这一刻</button>' +
       '  <button type="button" class="btn btn-ai" data-ai-deep>✨ 深度解读</button>' +
@@ -1081,16 +1082,17 @@
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
       keepTalkingHTML() +
-      '<div class="deep-reading" id="deepReading" style="display:none"></div>' +
       (label && label !== 'inneros' ? '<div class="share-modal" id="shareModal">' +
       '  <div class="share-card" id="shareCard">' +
       '    <div class="share-logo">' + (window.guanProfile && window.guanProfile().nickname ? window.guanProfile().nickname : '观己者') + ' · ' + QUIZ.title + '</div>' +
       '    <div class="share-big">' + (typeof label === 'string' && label.indexOf('inneros') > -1 ? summary : (summary || label)) + '</div>' +
       '    <div class="share-quote">理解自己，设计人生</div>' +
+      '    <div class="share-qr"><div id="shareQR"></div><p>扫码打开观己实验室</p></div>' +
       '    <div class="share-foot">观己实验室 · SELF INSIGHT LAB</div>' +
       '  </div>' +
       '  <div class="share-actions">' +
       '    <button type="button" class="btn btn-gold btn-sm" data-share-download>保存卡片</button>' +
+      '    <button type="button" class="btn btn-sm" data-share-full>保存完整结果</button>' +
       '    <button type="button" class="btn btn-sm" data-share-close>关闭</button>' +
       '  </div>' +
       '</div>' : '') +
@@ -1471,15 +1473,25 @@
     if (prof.selfDesc) profLines.push('- 我对自己说：' + prof.selfDesc);
     if (prof.focus) profLines.push('- 我最想探索：' + prof.focus);
 
-    // 过往测试结果（不重复当前测试）
-    var prevKeys = ['guan_who', 'guan_energy_map', 'guan_relation_map', 'guan_talent', 'guan_pressure', 'guan_life_want'];
+    // 过往测试结果（不重复当前测试）：读取历史存档与其他测试的深度解读
+    var hist = [];
+    try { hist = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { hist = []; }
     var prev = [];
-    prevKeys.forEach(function (k) {
-      if (k === QUIZ.key) return;
-      var v = (window.guanGet ? window.guanGet(k) : null) || localStorage.getItem(k);
-      if (v) prev.push(v);
+    hist.forEach(function (it) {
+      if (it.key === QUIZ.key) return;
+      if (it.title) prev.push('「' + it.title + '」（' + (it.date || '') + '）：' + (it.result || '已记录'));
+      var deep = window.guanGet && window.guanGet('guan_deep_' + it.key);
+      if (deep) prev.push('「' + it.title + '」的深度解读节选：' + deep.slice(0, 500));
     });
-    if (prev.length) profLines.push('- 我在其他探索里的结果：' + prev.join('；'));
+    if (!prev.length) {
+      var prevKeys = ['guan_who', 'guan_energy_map', 'guan_relation_map', 'guan_talent', 'guan_pressure', 'guan_life_want'];
+      prevKeys.forEach(function (k) {
+        if (k === QUIZ.key) return;
+        var v = (window.guanGet ? window.guanGet(k) : null) || localStorage.getItem(k);
+        if (v) prev.push(v);
+      });
+    }
+    if (prev.length) profLines.push('- 我在其他探索里的结果与解读：' + prev.join('；'));
 
     var lines = ['我刚刚完成了「' + QUIZ.title + '」这个测试。以下是我对每一题的诚实回答：', ''];
     state.answers.forEach(function (a, qi) {
@@ -1500,6 +1512,10 @@
 
   function renderDeepReading(text, doScroll) {
     var box = resultEl.querySelector('#deepReading');
+    // 存档本次深度解读，供其他测试生成时参考
+    try {
+      if (window.guanSet) window.guanSet('guan_deep_' + QUIZ.key, text.slice(0, 3000));
+    } catch (e) {}
     var paras = text.split(/\n{2,}/).map(function (p) {
       return '<p>' + p.replace(/^[-*]\s+/g, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
     }).join('');
@@ -1548,7 +1564,10 @@
     if (shareBtn) {
       shareBtn.addEventListener('click', function () {
         var modal = resultEl.querySelector('#shareModal');
-        if (modal) modal.classList.add('show');
+        if (modal) {
+          modal.classList.add('show');
+          renderQR(resultEl.querySelector('#shareQR'), 110);
+        }
       });
     }
     var closeBtn = resultEl.querySelector('[data-share-close]');
@@ -1571,6 +1590,10 @@
           window.guanToast(ok ? '已复制分享文字' : '复制失败');
         });
       }
+    });
+    var fullBtn = resultEl.querySelector('[data-share-full]');
+    if (fullBtn) fullBtn.addEventListener('click', function () {
+      captureFullResult(share);
     });
     resultEl.querySelectorAll('[data-followup]').forEach(function (btn, idx) {
       btn.addEventListener('click', function () {
@@ -1626,9 +1649,129 @@
       '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg>';
   }
 
+  // ---- 分享：网站二维码 ----
+  function siteShareUrl() {
+    var p = location.pathname;
+    if (p.indexOf('/guanji-lab') === 0) return location.origin + '/guanji-lab/';
+    return location.origin + '/';
+  }
+
+  var QR_LIB_LOADED = false;
+  function ensureQRLib(cb) {
+    if (window.QRCode) { cb(); return; }
+    if (QR_LIB_LOADED) {
+      var t = setInterval(function () {
+        if (window.QRCode) { clearInterval(t); cb(); }
+      }, 100);
+      return;
+    }
+    QR_LIB_LOADED = true;
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    s.onload = cb;
+    s.onerror = function () { renderQRFallback(); };
+    document.head.appendChild(s);
+  }
+
+  function renderQR(el, size) {
+    if (!el || el.firstChild) return;
+    ensureQRLib(function () {
+      if (el.firstChild) return;
+      try {
+        new QRCode(el, {
+          text: siteShareUrl(),
+          width: size || 110,
+          height: size || 110,
+          colorDark: '#0a0f1c',
+          colorLight: '#f4efe3'
+        });
+      } catch (e) {
+        renderQRFallback();
+      }
+    });
+  }
+
+  function renderQRFallback() {
+    var box = document.getElementById('shareQR');
+    if (!box || box.firstChild) return;
+    box.innerHTML = '<div class="share-qr-fallback">' + siteShareUrl() + '</div>';
+  }
+
+  // 完整结果截图：结果内容 + 二维码（不含深度解读与按钮）
+  function captureFullResult(share) {
+    var sections = resultEl.querySelector('.result-sections');
+    if (!sections) { window.guanToast('没有可截图的内容'); return; }
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:720px;background:#0a0f1c;padding:30px;z-index:-1;';
+    var head = document.createElement('div');
+    head.style.cssText = 'text-align:center;padding-bottom:18px;border-bottom:1px solid rgba(224,192,126,.35);margin-bottom:20px;';
+    head.innerHTML = '<div style="font-family:var(--serif);font-size:24px;color:#e0c07e;letter-spacing:.08em">观己实验室</div>' +
+      '<div style="font-size:11px;color:#8b93a7;letter-spacing:.2em;margin-top:6px">SELF INSIGHT LAB · 理解自己，设计人生</div>';
+    wrap.appendChild(head);
+    wrap.appendChild(sections.cloneNode(true));
+    var qrRow = document.createElement('div');
+    qrRow.style.cssText = 'display:flex;align-items:center;gap:18px;margin-top:24px;padding-top:18px;border-top:1px dashed rgba(224,192,126,.3);';
+    qrRow.innerHTML = '<div id="qrForShot" style="background:#f4efe3;padding:8px;border-radius:8px;flex:none"></div>' +
+      '<div style="font-size:12px;color:#8b93a7;line-height:1.9">扫码打开观己实验室，做一次属于自己的探索<br>' + siteShareUrl() + '</div>';
+    wrap.appendChild(qrRow);
+    document.body.appendChild(wrap);
+    ensureQRLib(function () {
+      var qrBox = wrap.querySelector('#qrForShot');
+      try {
+        new QRCode(qrBox, { text: siteShareUrl(), width: 96, height: 96, colorDark: '#0a0f1c', colorLight: '#f4efe3' });
+      } catch (e) {}
+      setTimeout(function () {
+        if (!window.html2canvas) {
+          wrap.remove();
+          window.guanCopy(share, function (ok) {
+            window.guanToast(ok ? '已复制分享文字' : '复制失败');
+          });
+          return;
+        }
+        window.html2canvas(wrap, { backgroundColor: '#0a0f1c', scale: 2 }).then(function (canvas) {
+          var a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = 'guanji-result.png';
+          a.click();
+          wrap.remove();
+          window.guanToast('完整结果截图已保存');
+        }).catch(function () {
+          wrap.remove();
+          window.guanToast('截图失败，请重试');
+        });
+      }, 150);
+    });
+  }
+
   function finish() {
     if (state.answers.indexOf(null) > -1) return;
     buildResultView();
+    saveTestHistory();
+  }
+
+  // 测试历史：每次完成测试后存档，供档案页回看与其他解读参考
+  function saveTestHistory() {
+    try {
+      var label = (window.guanGet ? window.guanGet(QUIZ.key) : null) || '';
+      var list = [];
+      try { list = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { list = []; }
+      list.unshift({
+        key: QUIZ.key,
+        title: QUIZ.title,
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        result: label,
+        url: (location.pathname.split('/').pop() || 'tests.html')
+      });
+      var seen = {};
+      list = list.filter(function (it) {
+        if (seen[it.key]) return false;
+        seen[it.key] = true;
+        return true;
+      });
+      list = list.slice(0, 50);
+      window.guanSet('guan_test_history', JSON.stringify(list));
+    } catch (e) {}
   }
 
   if (nextBtn) {
