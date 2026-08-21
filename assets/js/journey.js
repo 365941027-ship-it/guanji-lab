@@ -23,7 +23,7 @@
       url: 'https://api.deepseek.com/chat/completions',
       model: 'deepseek-chat',
       headers: function (key) { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key }; },
-      body: function (sys, user) { return { model: 'deepseek-chat', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 200, temperature: 0.9 }; },
+      body: function (sys, user) { return { model: 'deepseek-v4-pro', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 200, temperature: 0.9 }; },
       parse: function (d) { return d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content; }
     }
   };

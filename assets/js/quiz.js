@@ -1417,7 +1417,7 @@
         'Authorization': 'Bearer ' + key
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-pro',
         messages: [
           { role: 'system', content: sys },
           { role: 'user', content: user }

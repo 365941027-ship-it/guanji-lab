@@ -10,7 +10,7 @@ const PROVIDERS = {
     env: 'DEEPSEEK_API_KEY',
     headers: function (key) { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key }; },
     build: function (messages, maxTokens, temperature) {
-      return { model: 'deepseek-chat', messages: messages, max_tokens: maxTokens, temperature: temperature };
+      return { model: 'deepseek-v4-pro', messages: messages, max_tokens: maxTokens, temperature: temperature };
     },
     parse: function (data) {
       return data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
