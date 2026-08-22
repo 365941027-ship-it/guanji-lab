@@ -109,6 +109,16 @@
     return QUIZ.questions.length;
   }
 
+  // 内部缩写 → 人话短词（与 main.js 的 GUAN_PRETTY 共用）
+  function prettyKey(k) {
+    var map = (window.GUAN_PRETTY && window.GUAN_PRETTY[QUIZ.key]) || {};
+    return map[k] || k;
+  }
+
+  function prettySummary(keys) {
+    return keys.map(prettyKey).join(' · ');
+  }
+
   function renderQuestion() {
     var q = QUIZ.questions[state.index];
     titleEl.textContent = (state.index + 1) + '. ' + q.q;
@@ -343,7 +353,7 @@
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">你如何对待自己：</strong>' + ENERGY_TEXT.care[m.care] + '</p>' +
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">深夜的信号：</strong>' + ENERGY_TEXT.night[m.night] + '</p></div>';
     html += '<div class="result-block wide"><h4>一份温柔的能量处方</h4><p>' +
-      '你的能量地图是：' + m.state + ' + ' + m.leak + ' + ' + m.heal + '。' +
+      '你的能量地图是：' + prettyKey(m.state) + ' + ' + prettyKey(m.leak) + ' + ' + prettyKey(m.heal) + '。' +
       '这意味着：你的电量目前' + (m.state === '疲惫' ? '偏低，最需要的是「先停后走」' : m.state === '饱满' ? '充足，适合把力气投向想做的事' : m.state === '萌芽' ? '在生长，适合给新念头留空间' : '平稳，适合按节奏深耕') + '；' +
       '而你最需要留意的，是不要让「' + (m.leak === '反刍耗' ? '反复回想' : m.leak === '比较耗' ? '比较' : m.leak === '标准耗' ? '过高的标准' : '过度照顾别人') + '」继续悄悄拿走你的能量。' +
       '</p></div>';
@@ -351,10 +361,11 @@
       ENERGY_TEXT.heal[m.heal].replace('你现在需要的疗愈，是', '') + ' ' +
       ENERGY_TEXT.night[m.night].replace('你的深夜', '今晚') + ' 试着从一件很小的事开始，把能量慢慢找回来。</p></div>';
     html += '</div>';
-    html += actionsHTML('energy_map', m.state + ' · ' + m.heal, '');
+    var energyLabel = prettySummary([m.state, m.heal]);
+    html += actionsHTML('energy_map', energyLabel, '');
     resultEl.innerHTML = html;
-    window.guanSet(QUIZ.key, m.state + ' · ' + m.heal);
-    bindResultActions(shareText(QUIZ.title, m.state + ' · ' + m.heal, '我的能量处方'));
+    window.guanSet(QUIZ.key, energyLabel);
+    bindResultActions(shareText(QUIZ.title, energyLabel, '我的能量处方'));
   }
 
   var RELATION_TEXT = {
@@ -483,7 +494,8 @@
       (m.flow === '心匠人' ? '亲手做一件实在的东西' : m.flow === '心解题' ? '解决一个让你着迷的问题' : m.flow === '心创造' ? '完成一个小创作' : '好好帮助一个具体的人') +
       '——然后看看，是不是比「什么都做一点」更接近你。</p></div>';
     html += '</div>';
-    html += actionsHTML('talent', m.flow + ' · ' + m.trait, '');
+    var talentLabel = prettySummary([m.flow, m.trait]);
+    html += actionsHTML('talent', talentLabel, '');
     resultEl.innerHTML = html;
     window.guanSet(QUIZ.key, TALENT_TEXT.flow[m.flow] + ' · ' + TALENT_TEXT.trait[m.trait]);
     bindResultActions(shareText(QUIZ.title, TALENT_TEXT.flow[m.flow] + ' · ' + TALENT_TEXT.trait[m.trait], '我的天赋信号'));
@@ -527,21 +539,22 @@
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">我正在怎么长：</strong>' + REGROW_TEXT.grow[m.grow] + '</p>' +
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">我的生命力来自：</strong>' + REGROW_TEXT.life[m.life] + '</p></div>';
     html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
-      '你靠「' + m.heal + '」回血，用「' + m.resource + '」撑住自己，此刻正在「' + m.grow + '」的路上——而这一切，最终都通向你的生命力：「' + m.life + '」。' +
+      '你靠「' + prettyKey(m.heal) + '」回血，用「' + prettyKey(m.resource) + '」撑住自己，此刻正在「' + prettyKey(m.grow) + '」的路上——而这一切，最终都通向你的生命力：「' + prettyKey(m.life) + '」。' +
       (m.grow === '长探索' ? '你正处在向外打开的阶段，多给自己一点允许：允许不确定，允许试错，新的地图就是在试探里画出来的。' :
        m.grow === '长扎根' ? '你正处在深耕的阶段，别急着开花——你现在做的每一件小事，都是在为未来的厚度打地基。' :
        m.grow === '长蜕变' ? '你正处在蜕变的阶段，会有一点疼是正常的——那不是倒退，是旧的你在为新你腾出空间。' :
        '你正处在蓄力的阶段，安静不是停滞——你只是在为下一步认真攒能量。') +
       '</p></div>';
     html += '<div class="result-block wide"><h4>给此刻的你</h4><p>' +
-      '你已经走过了很多难走的路，才成为今天这个会「' + m.heal + '」、能「' + m.resource + '」的人。接下来的生长，不必着急——' +
+      '你已经走过了很多难走的路，才成为今天这个会「' + prettyKey(m.heal) + '」、能「' + prettyKey(m.resource) + '」的人。接下来的生长，不必着急——' +
       '顺着你生命力最旺盛的方向，' + (m.life === '命创造' ? '去创造一点什么' : m.life === '命联结' ? '去靠近一个你在意的人' : m.life === '命自由' ? '去给自己留一块自由的空间' : '去做一件你觉得有意义的事') +
       '，哪怕只是很小的一步。</p></div>';
     html += '</div>';
-    html += actionsHTML('regrow', m.grow + ' · ' + m.life, '');
+    var regrowLabel = prettySummary([m.grow, m.life]);
+    html += actionsHTML('regrow', regrowLabel, '');
     resultEl.innerHTML = html;
-    window.guanSet(QUIZ.key, m.grow + ' · ' + m.life);
-    bindResultActions(shareText(QUIZ.title, m.grow + ' · ' + m.life, '我的生长地图'));
+    window.guanSet(QUIZ.key, regrowLabel);
+    bindResultActions(shareText(QUIZ.title, regrowLabel, '我的生长地图'));
   }
 
   var LIFEWANT_TEXT = {
@@ -581,8 +594,8 @@
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">渴望：</strong>' + LIFEWANT_TEXT.desire[m.desire] + '</p>' +
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">下一步：</strong>' + LIFEWANT_TEXT.next[m.next] + '</p></div>';
     html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
-      '你现在的生活坐标是：工作对你像「' + m.work + '」，你对自己生活的满意度' + (m.sat === '满低' ? '偏低' : m.sat === '满中' ? '中等' : '较高') +
-      '，而心里最深的渴望是「' + m.desire + '」。' +
+      '你现在的生活坐标是：工作对你像「' + prettyKey(m.work) + '」，你对自己生活的满意度' + (m.sat === '满低' ? '偏低' : m.sat === '满中' ? '中等' : '较高') +
+      '，而心里最深的渴望是「' + prettyKey(m.desire) + '」。' +
       (m.sat === '满低' ? '满意度偏低，往往不是因为生活本身不好，而是「你真正渴望的」还没被认真对待。' :
        m.sat === '满中' ? '满意度中等，往往是因为生活「还行」但缺少一点「渴望」的注入。' :
        '满意度较高，是很好的基础——现在可以更有底气地走向渴望。') +
@@ -590,10 +603,11 @@
     html += '<div class="result-block wide"><h4>给你的第一句话</h4><p>' +
       LIFEWANT_TEXT.desire[m.desire] + ' ' + LIFEWANT_TEXT.next[m.next] + ' 从很小的一步开始，把生活往你渴望的方向，挪一点点。</p></div>';
     html += '</div>';
-    html += actionsHTML('life_want', m.desire + ' · ' + m.next, '');
+    var lifeLabel = prettySummary([m.desire, m.next]);
+    html += actionsHTML('life_want', lifeLabel, '');
     resultEl.innerHTML = html;
-    window.guanSet(QUIZ.key, m.desire + ' · ' + m.next);
-    bindResultActions(shareText(QUIZ.title, m.desire + ' · ' + m.next, '我的生活坐标'));
+    window.guanSet(QUIZ.key, lifeLabel);
+    bindResultActions(shareText(QUIZ.title, lifeLabel, '我的生活坐标'));
   }
 
   var WHO_TEXT = {
@@ -701,17 +715,17 @@
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">价值：</strong>' + WHO_TEXT.val[m.val] + '</p>' +
       '<p style="margin-top:10px"><strong style="color:var(--gold-bright)">身份：</strong>' + WHO_TEXT.id[m.id] + '</p></div>';
     html += '<div class="result-block wide"><h4>把它们放在一起</h4><p>' +
-      '所以，此刻的你可以被这样理解：你是一个以「' + m.proto + '」姿态与世界相处的人，正处在' + m.stage + '，心里最放不下的是「' + m.val + '」，而关于「我是谁」，你' +
+      '所以，此刻的你可以被这样理解：你是一个以「' + prettyKey(m.proto) + '」姿态与世界相处的人，正处在' + prettyKey(m.stage) + '，心里最放不下的是「' + prettyKey(m.val) + '」，而关于「我是谁」，你' +
       (m.id === '整合身份' ? '已经相当清楚。' : m.id === '探索身份' ? '还在慢慢探索。' : m.id === '角色身份' ? '更多通过角色认识自己。' : '处于一种流动之中。') +
       '这四个维度不是四个标签，而是你此刻生命的一幅快照——它们会变，而你也在变。</p></div>';
     html += '<div class="result-block wide"><h4>给你的第一句话</h4><p>' +
       WHO_TEXT.proto[m.proto][1] + ' ' + WHO_TEXT.stage[m.stage].replace('你正处在', '你正处在') + ' ' + WHO_TEXT.val[m.val].replace('它提醒你：', '它提醒你：') + '</p></div>';
     html += '</div>';
-    html += actionsHTML('who', m.proto + ' · ' + m.stage + ' · ' + m.val, '');
+    var whoLabel = prettySummary([m.proto, m.stage, m.val]);
+    html += actionsHTML('who', whoLabel, '');
     resultEl.innerHTML = html;
-    var label = m.proto + ' · ' + m.stage + ' · ' + m.val;
-    window.guanSet(QUIZ.key, label);
-    bindResultActions(shareText(QUIZ.title, label, '我的四维自我画像'));
+    window.guanSet(QUIZ.key, whoLabel);
+    bindResultActions(shareText(QUIZ.title, whoLabel, '我的四维自我画像'));
   }
 
   function renderBigFive() {
@@ -1524,6 +1538,7 @@
       '<div class="deep-head"><h4>你的专属深度解读</h4><span>基于你的回答生成 · 仅供参考</span></div>' +
       '<div class="deep-body">' + paras + '</div>' +
       '<div class="deep-actions"><button type="button" class="btn btn-gold btn-sm" data-deep-copy>复制这段解读</button>' +
+      '<button type="button" class="btn btn-gold btn-sm" data-deep-shot>保存解读报告</button>' +
       '<a class="btn btn-sm" href="growth.html">记入成长轨迹</a></div>' +
       '<p class="deep-note">解读是为你一个人生成的参考，不构成专业建议。如果它让你感到被理解，很好；如果哪里说得不对，请相信你自己的感受。</p>' +
       '</div>';
@@ -1533,6 +1548,8 @@
         window.guanToast(ok ? '解读已复制' : '复制失败');
       });
     });
+    var shotBtn = box.querySelector('[data-deep-shot]');
+    if (shotBtn) shotBtn.addEventListener('click', captureDeepReport);
     if (doScroll !== false) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -1736,6 +1753,55 @@
           a.click();
           wrap.remove();
           window.guanToast('完整结果截图已保存');
+        }).catch(function () {
+          wrap.remove();
+          window.guanToast('截图失败，请重试');
+        });
+      }, 150);
+    });
+  }
+
+  // 深度解读报告截图：解读全文 + 网站二维码
+  function captureDeepReport() {
+    var deepBox = resultEl.querySelector('.deep-result');
+    if (!deepBox) { window.guanToast('解读还没生成'); return; }
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:720px;background:#0a0f1c;padding:30px;z-index:-1;';
+    var head = document.createElement('div');
+    head.style.cssText = 'text-align:center;padding-bottom:18px;border-bottom:1px solid rgba(224,192,126,.35);margin-bottom:20px;';
+    head.innerHTML = '<div style="font-family:var(--serif);font-size:24px;color:#e0c07e;letter-spacing:.08em">观己实验室 · 深度解读报告</div>' +
+      '<div style="font-size:11px;color:#8b93a7;letter-spacing:.2em;margin-top:6px">' + QUIZ.title + ' · SELF INSIGHT LAB · 理解自己，设计人生</div>';
+    wrap.appendChild(head);
+    var body = deepBox.cloneNode(true);
+    body.style.cssText = 'text-align:left;color:#b8c0d4;';
+    body.querySelectorAll('.deep-actions').forEach(function (n) { n.remove(); });
+    body.querySelectorAll('.deep-note').forEach(function (n) { n.remove(); });
+    body.querySelectorAll('.deep-head span').forEach(function (n) { n.textContent = '由「观己实验室」为你一人生成'; });
+    wrap.appendChild(body);
+    var qrRow = document.createElement('div');
+    qrRow.style.cssText = 'display:flex;align-items:center;gap:18px;margin-top:24px;padding-top:18px;border-top:1px dashed rgba(224,192,126,.3);';
+    qrRow.innerHTML = '<div id="qrForDeep" style="background:#f4efe3;padding:8px;border-radius:8px;flex:none"></div>' +
+      '<div style="font-size:12px;color:#8b93a7;line-height:1.9">扫码打开观己实验室，做一次属于自己的探索<br>' + siteShareUrl() + '</div>';
+    wrap.appendChild(qrRow);
+    document.body.appendChild(wrap);
+    ensureQRLib(function () {
+      var qrBox = wrap.querySelector('#qrForDeep');
+      try {
+        new QRCode(qrBox, { text: siteShareUrl(), width: 96, height: 96, colorDark: '#0a0f1c', colorLight: '#f4efe3' });
+      } catch (e) {}
+      setTimeout(function () {
+        if (!window.html2canvas) {
+          wrap.remove();
+          window.guanToast('截图组件未就绪，请稍后重试');
+          return;
+        }
+        window.html2canvas(wrap, { backgroundColor: '#0a0f1c', scale: 2, useCORS: true }).then(function (canvas) {
+          var a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = 'guanji-deep-report.png';
+          a.click();
+          wrap.remove();
+          window.guanToast('深度解读报告已保存');
         }).catch(function () {
           wrap.remove();
           window.guanToast('截图失败，请重试');

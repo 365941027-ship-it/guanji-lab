@@ -934,7 +934,7 @@ button{font-family:inherit}
 .option.on{border-color:var(--gold);background:rgba(201,168,106,.12);color:var(--text)}
 .option.on .opt-tag{color:var(--gold-bright)}
 .option .opt-tag{display:block;font-size:11px;color:var(--muted-2);letter-spacing:.14em;margin-top:3px}
-.other-row{display:flex;gap:10px;margin-top:18px;align-items:stretch}
+.other-row{display:flex;gap:10px;margin-top:18px;align-items:stretch;flex-wrap:wrap}
 .other-input{
   flex:1;background:rgba(10,15,28,.5);border:1px solid var(--line);border-radius:12px;
   color:var(--text);padding:13px 16px;font-size:14px;font-family:var(--sans);
