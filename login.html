@@ -84,7 +84,9 @@
           </div>
           <button type="button" class="btn btn-gold btn-block" id="loginBtn">进入</button>
           <p class="login-note" id="loginMsg"></p>
-          <p class="login-privacy">当前为本地账户演示：账号只保存在这台设备的浏览器里。接入真实账号系统（手机号/邮箱登录、跨设备同步）是下一步的开发方向。</p>
+          <button type="button" class="btn btn-sm btn-block" id="findAccount" style="margin-top:10px">忘了昵称？查看本机已注册的账号</button>
+          <div class="login-account-list hidden" id="accountList"></div>
+          <p class="login-privacy">账号只保存在这台设备的浏览器里：清除浏览器数据、更换设备或换浏览器都会导致账号和记录消失，且无法从服务器找回（目前还没有服务器）。建议定期在「我的档案 → 数据与隐私」里备份全部数据。</p>
           <a class="btn btn-sm btn-block" href="index.html" style="margin-top:10px">先不登录，随便逛逛</a>
         </div>
       </div>

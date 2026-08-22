@@ -27,6 +27,11 @@
 
   window.guanSession = session;
 
+  // 找回账号：列出这台设备上已注册的昵称（仅本机，用于提示用户）
+  window.guanLocalAccounts = function () {
+    return Object.keys(readUsers());
+  };
+
   // Per-account data namespace
   window.guanDataKey = function (key) {
     var s = session();
@@ -121,6 +126,24 @@
     setMsg('欢迎回来，' + name + '。', true);
     setTimeout(function () { window.location.href = 'profile.html'; }, 500);
   });
+
+  var findBtn = document.getElementById('findAccount');
+  if (findBtn) {
+    findBtn.addEventListener('click', function () {
+      var list = document.getElementById('accountList');
+      if (!list) return;
+      var names = window.guanLocalAccounts();
+      if (!names.length) {
+        list.innerHTML = '<p class="login-note">这台设备上还没有注册过账号。如果你想用之前的账号，很可能是换了浏览器、设备，或清除了浏览器数据——那些数据只在旧设备上，无法从服务器找回。</p>';
+      } else {
+        list.innerHTML = '<p class="login-note">这台设备上注册过的昵称：' +
+          names.map(function (n) { return '「' + n + '」'; }).join('、') +
+          '。找到你的昵称后，输入注册时设置的口令即可登录。</p>';
+      }
+      list.classList.toggle('hidden');
+      findBtn.textContent = list.classList.contains('hidden') ? '忘了昵称？查看本机已注册的账号' : '收起';
+    });
+  }
 
   // If already logged in, show a notice instead of silently redirecting
   var s = session();

@@ -58,6 +58,12 @@
       splash.classList.add('hide');
       setTimeout(function () { splash.remove(); }, 500);
     });
+    // 点击「读一封来信 / 看思想源头」：先记录已看过开屏，再跳转，避免下一页又弹出
+    splash.querySelectorAll('.splash-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        localStorage.setItem('guan_splash_seen', '1');
+      });
+    });
   }
 
   // Floating help button (crisis support)
