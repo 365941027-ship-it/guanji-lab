@@ -107,37 +107,59 @@
     });
   }
 
-  // Account chip in header
-  var session = null;
-  try {
-    session = JSON.parse(localStorage.getItem('guan_session') || 'null');
-  } catch (e) { session = null; }
-  var headerInner = document.querySelector('.header-inner');
-  if (headerInner) {
-    var chip = document.createElement('a');
-    chip.className = 'account-chip' + (session && session.name ? '' : ' login');
-    chip.style.cssText = 'flex:none';
-    if (session && session.name) {
+  // Account chip in header（支持 Supabase 会话；auth.js 加载后会自动刷新）
+  var chip = null;
+  function renderAccountChip(user) {
+    var headerInner = document.querySelector('.header-inner');
+    if (!headerInner) return;
+    if (!chip) {
+      chip = document.createElement('a');
+      chip.className = 'account-chip';
+      chip.style.cssText = 'flex:none';
+      var navToggle = document.getElementById('navToggle');
+      if (navToggle) headerInner.insertBefore(chip, navToggle);
+      else headerInner.appendChild(chip);
+    }
+    if (user && (user.email || user.name)) {
+      var name = user.name || (user.email || '').split('@')[0] || '我';
       chip.href = 'profile.html';
-      chip.innerHTML = '<span class="av">' + (session.avatar || '🌙') + '</span><span class="name">' + session.name + '</span><span class="logout">退出</span>';
+      chip.className = 'account-chip';
+      chip.innerHTML = '<span class="av">🌙</span><span class="name">' + name + '</span><span class="logout">退出</span>';
       chip.title = '我的档案';
-      chip.addEventListener('click', function (e) {
+      chip.onclick = function (e) {
         if (e.target.classList.contains('logout')) {
           e.preventDefault();
-          localStorage.removeItem('guan_session');
-          window.location.reload();
+          if (window.guanSignOut) window.guanSignOut();
+          else window.location.reload();
         }
-      });
+      };
     } else {
       chip.href = 'login.html';
+      chip.className = 'account-chip login';
       chip.textContent = '登录 / 注册';
+      chip.onclick = null;
     }
-    var navToggle = document.getElementById('navToggle');
-    if (navToggle) {
-      headerInner.insertBefore(chip, navToggle);
-    } else {
-      headerInner.appendChild(chip);
-    }
+  }
+  window.guanRenderAccount = renderAccountChip;
+
+  // 初始化：优先 Supabase 会话，其次本地旧会话
+  var legacySession = null;
+  try {
+    legacySession = JSON.parse(localStorage.getItem('guan_session') || 'null');
+  } catch (e) { legacySession = null; }
+  if (legacySession && legacySession.name) {
+    renderAccountChip({ name: legacySession.name, avatar: legacySession.avatar });
+  } else {
+    renderAccountChip(null);
+  }
+  if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey) {
+    var sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+    sbClient.auth.getSession().then(function (res) {
+      var u = res.data && res.data.session && res.data.session.user;
+      if (u) renderAccountChip({ email: u.email });
+    }).catch(function () {});
   }
 
   // Toast helper

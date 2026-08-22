@@ -58,35 +58,19 @@
             <button type="button" class="login-tab" data-tab="register">注册</button>
           </div>
           <div class="form-field">
-            <label>昵称</label>
-            <input type="text" id="loginName" placeholder="你的昵称">
+            <label>邮箱</label>
+            <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
           </div>
           <div class="form-field">
-            <label>口令</label>
-            <input type="password" id="loginPass" placeholder="你的口令（仅保存在这台设备）">
+            <label>密码</label>
+            <input type="password" id="loginPass" placeholder="至少 6 位" autocomplete="current-password">
           </div>
-          <div class="form-field hidden" id="pass2Field">
-            <label>再输入一次口令</label>
-            <input type="password" id="loginPass2" placeholder="确认口令">
-          </div>
-          <div class="form-field">
-            <label>选一个头像</label>
-            <div class="avatar-row" id="avatarRow">
-              <button type="button" data-avatar="🌙" class="avatar-btn on">🌙</button>
-              <button type="button" data-avatar="🌿" class="avatar-btn">🌿</button>
-              <button type="button" data-avatar="✨" class="avatar-btn">✨</button>
-              <button type="button" data-avatar="🌊" class="avatar-btn">🌊</button>
-              <button type="button" data-avatar="🔥" class="avatar-btn">🔥</button>
-              <button type="button" data-avatar="🕊️" class="avatar-btn">🕊️</button>
-              <button type="button" data-avatar="🌄" class="avatar-btn">🌄</button>
-              <button type="button" data-avatar="🌱" class="avatar-btn">🌱</button>
-            </div>
-          </div>
-          <button type="button" class="btn btn-gold btn-block" id="loginBtn">进入</button>
+          <button type="button" class="btn btn-gold btn-block" id="loginBtn">登录</button>
+          <button type="button" class="btn btn-sm btn-block" id="resetPass" style="margin-top:10px">忘记密码？</button>
+          <div class="login-divider"><span>或</span></div>
+          <button type="button" class="btn btn-block" id="wechatBtn">微信扫码登录</button>
           <p class="login-note" id="loginMsg"></p>
-          <button type="button" class="btn btn-sm btn-block" id="findAccount" style="margin-top:10px">忘了昵称？查看本机已注册的账号</button>
-          <div class="login-account-list hidden" id="accountList"></div>
-          <p class="login-privacy">账号只保存在这台设备的浏览器里：清除浏览器数据、更换设备或换浏览器都会导致账号和记录消失，且无法从服务器找回（目前还没有服务器）。建议定期在「我的档案 → 数据与隐私」里备份全部数据。</p>
+          <p class="login-privacy">账号与数据保存在云端（Supabase 免费档），可跨设备同步；首次登录会自动把本机已有的档案与测试记录同步到你的账号。</p>
           <a class="btn btn-sm btn-block" href="index.html" style="margin-top:10px">先不登录，随便逛逛</a>
         </div>
       </div>
@@ -128,7 +112,10 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
   <script src="assets/js/account.js"></script>
 </body>
 </html>

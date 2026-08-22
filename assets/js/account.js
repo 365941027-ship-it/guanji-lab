@@ -1,71 +1,19 @@
+// 观己实验室 · 登录页逻辑（Supabase 邮箱密码 + 微信预留）
 (function () {
   'use strict';
 
-  var USERS_KEY = 'guan_users';
-  var SESSION_KEY = 'guan_session';
-  var DATA_PREFIX = 'guan_data_';
-
-  function readUsers() {
-    try {
-      return JSON.parse(localStorage.getItem(USERS_KEY) || '{}');
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function saveUsers(users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
-
-  function session() {
-    try {
-      return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    } catch (e) {
-      return null;
-    }
-  }
-
-  window.guanSession = session;
-
-  // 找回账号：列出这台设备上已注册的昵称（仅本机，用于提示用户）
-  window.guanLocalAccounts = function () {
-    return Object.keys(readUsers());
-  };
-
-  // Per-account data namespace
-  window.guanDataKey = function (key) {
-    var s = session();
-    return s && s.name ? DATA_PREFIX + encodeURIComponent(s.name) + '_' + key : key;
-  };
-
-  function migrateLegacyData(name) {
-    // Move the current browser's data to the account namespace on first login
-    var legacy = ['guan_profile', 'guan_growth', 'guan_journal', 'guan_journey', 'guan_archetype', 'guan_stage', 'guan_inneros',
-      'guan_relationship', 'guan_energy', 'guan_values', 'guan_learning', 'guan_academic', 'guan_burnout', 'guan_pivot',
-      'guan_drain', 'guan_attachment', 'guan_pleasing', 'guan_boundary', 'guan_custom', 'guan_sim', 'guan_card', 'guan_garden_comments',
-      'guan_report_generated'];
-    var moved = 0;
-    legacy.forEach(function (k) {
-      var v = localStorage.getItem(k);
-      if (v) {
-        localStorage.setItem(window.guanDataKey(k), v);
-        moved++;
-      }
-    });
-    return moved;
-  }
-
-  function setSession(u) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-  }
-
   var mode = 'login';
-  var avatar = '🌙';
   var msg = document.getElementById('loginMsg');
+  var emailInput = document.getElementById('loginEmail');
+  var passInput = document.getElementById('loginPass');
+  var loginBtn = document.getElementById('loginBtn');
+  var resetBtn = document.getElementById('resetPass');
+  var wechatBtn = document.getElementById('wechatBtn');
 
   function setMsg(text, ok) {
+    if (!msg) return;
     msg.textContent = text || '';
-    msg.style.color = ok ? 'var(--gold-bright)' : 'var(--gold-bright)';
+    msg.style.color = ok ? 'var(--gold-bright)' : '#d98f8f';
   }
 
   document.querySelectorAll('.login-tab').forEach(function (tab) {
@@ -73,91 +21,65 @@
       mode = tab.getAttribute('data-tab');
       document.querySelectorAll('.login-tab').forEach(function (t) { t.classList.remove('active'); });
       tab.classList.add('active');
-      document.getElementById('pass2Field').classList.toggle('hidden', mode === 'login');
-      document.getElementById('loginBtn').textContent = mode === 'login' ? '进入' : '创建我的花园';
+      loginBtn.textContent = mode === 'login' ? '登录' : '创建我的账号';
       setMsg('');
     });
   });
 
-  document.querySelectorAll('.avatar-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.avatar-btn').forEach(function (b) { b.classList.remove('on'); });
-      btn.classList.add('on');
-      avatar = btn.getAttribute('data-avatar');
-    });
-  });
+  function validate() {
+    var email = emailInput.value.trim();
+    var pass = passInput.value;
+    if (!email || email.indexOf('@') < 1) { setMsg('请输入正确的邮箱'); return null; }
+    if (pass.length < 6) { setMsg('密码至少 6 位'); return null; }
+    return { email: email, password: pass };
+  }
 
-  document.getElementById('loginBtn').addEventListener('click', function () {
-    var name = document.getElementById('loginName').value.trim();
-    var pass = document.getElementById('loginPass').value;
-    if (!name) { setMsg('给自己取个昵称吧'); return; }
-    if (pass.length < 4) { setMsg('口令至少 4 位'); return; }
-
-    var users = readUsers();
-    var existing = users[name];
-
-    if (mode === 'register') {
-      var pass2 = document.getElementById('loginPass2').value;
-      if (pass !== pass2) { setMsg('两次输入的口令不一致'); return; }
-      if (existing) {
-        if (existing.pass === pass) {
-          setSession({ name: name, avatar: existing.avatar || '🌙' });
-          window.location.href = 'profile.html';
-          return;
+  loginBtn.addEventListener('click', function () {
+    var v = validate();
+    if (!v) return;
+    setMsg('正在连接…');
+    var p = mode === 'register' ? window.guanSignUp(v.email, v.password) : window.guanSignIn(v.email, v.password);
+    if (p && p.then) {
+      p.then(function (session) {
+        if (session) {
+          setMsg('欢迎回来', true);
+          setTimeout(function () { window.location.href = 'profile.html'; }, 600);
+        } else {
+          var t = (document.querySelector('.toast') || {}).textContent || '';
+          setMsg(t || (mode === 'register' ? '注册未完成，请重试' : '未能登录，请检查邮箱和密码'));
         }
-        setMsg('这个昵称已经有人用了，换一个，或直接登录'); return;
-      }
-      users[name] = { pass: pass, avatar: avatar, created: Date.now() };
-      saveUsers(users);
-      setSession({ name: name, avatar: avatar });
-      migrateLegacyData(name);
-      setMsg('欢迎回来，' + name + '。你的花园已经为你打开。', true);
-      setTimeout(function () { window.location.href = 'profile.html'; }, 600);
-      return;
+      });
     }
-
-    if (!existing) {
-      setMsg('还没有这个昵称——换个「注册」，创建属于你的花园');
-      return;
-    }
-    if (existing.pass !== pass) { setMsg('口令不对，再想想'); return; }
-    setSession({ name: name, avatar: existing.avatar || '🌙' });
-    migrateLegacyData(name);
-    setMsg('欢迎回来，' + name + '。', true);
-    setTimeout(function () { window.location.href = 'profile.html'; }, 500);
   });
 
-  var findBtn = document.getElementById('findAccount');
-  if (findBtn) {
-    findBtn.addEventListener('click', function () {
-      var list = document.getElementById('accountList');
-      if (!list) return;
-      var names = window.guanLocalAccounts();
-      if (!names.length) {
-        list.innerHTML = '<p class="login-note">这台设备上还没有注册过账号。如果你想用之前的账号，很可能是换了浏览器、设备，或清除了浏览器数据——那些数据只在旧设备上，无法从服务器找回。</p>';
-      } else {
-        list.innerHTML = '<p class="login-note">这台设备上注册过的昵称：' +
-          names.map(function (n) { return '「' + n + '」'; }).join('、') +
-          '。找到你的昵称后，输入注册时设置的口令即可登录。</p>';
-      }
-      list.classList.toggle('hidden');
-      findBtn.textContent = list.classList.contains('hidden') ? '忘了昵称？查看本机已注册的账号' : '收起';
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      var email = emailInput.value.trim();
+      if (!email || email.indexOf('@') < 1) { setMsg('先输入注册时的邮箱'); return; }
+      window.guanResetPassword(email);
     });
   }
 
-  // If already logged in, show a notice instead of silently redirecting
-  var s = session();
-  if (s && s.name && window.location.pathname.indexOf('login.html') > -1) {
-    var already = document.getElementById('loginMsg');
-    if (already) {
-      already.textContent = '你已经以「' + s.name + '」的身份在花园里了。';
-      var btn = document.getElementById('loginBtn');
-      if (btn) {
-        btn.textContent = '进入我的花园';
-        btn.addEventListener('click', function () {
-          window.location.href = 'profile.html';
-        });
+  if (wechatBtn) {
+    wechatBtn.addEventListener('click', function () {
+      window.guanWechatLogin();
+    });
+  }
+
+  // 回车提交
+  [emailInput, passInput].forEach(function (el) {
+    if (el) el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') loginBtn.click();
+    });
+  });
+
+  // 已登录则提示
+  if (window.guanSupabaseUser) {
+    window.guanSupabaseUser().then(function (res) {
+      if (res && res.data && res.data.user) {
+        setMsg('你已以 ' + (res.data.user.email || '') + ' 登录', true);
+        loginBtn.textContent = '进入我的花园';
       }
-    }
+    }).catch(function () {});
   }
 })();

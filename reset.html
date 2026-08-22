@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>重置密码 · 观己实验室</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="assets/img/logo.svg" alt="观己实验室标志">
+        <span class="brand-text">
+          <span class="brand-name">观己实验室</span>
+          <span class="brand-en">Self Insight Lab</span>
+        </span>
+      </a>
+    </div>
+  </header>
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="kicker kicker-center">Reset Password</span>
+        <h1>设置新密码</h1>
+        <p>输入你的新密码，完成后即可重新登录。</p>
+      </div>
+    </section>
+    <section class="section" style="padding-top:16px">
+      <div class="container login-wrap">
+        <div class="login-card">
+          <div class="form-field">
+            <label>新密码</label>
+            <input type="password" id="newPass" placeholder="至少 6 位" autocomplete="new-password">
+          </div>
+          <button type="button" class="btn btn-gold btn-block" id="resetConfirm">保存新密码</button>
+          <p class="login-note" id="resetMsg"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    (function () {
+      var btn = document.getElementById('resetConfirm');
+      var input = document.getElementById('newPass');
+      var msg = document.getElementById('resetMsg');
+      btn.addEventListener('click', async function () {
+        var pass = input.value;
+        if (pass.length < 6) { msg.textContent = '密码至少 6 位'; return; }
+        var sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+        var res = await sb.auth.updateUser({ password: pass });
+        if (res.error) { msg.textContent = res.error.message; return; }
+        msg.textContent = '密码已更新，请重新登录';
+        setTimeout(function () { window.location.href = 'login.html'; }, 1200);
+      });
+    })();
+  </script>
+</body>
+</html>

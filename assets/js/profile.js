@@ -58,6 +58,56 @@
     }
   }
 
+  // 云端档案：登录时从 Supabase 拉取，覆盖本地
+  async function loadCloudProfile() {
+    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return;
+    try {
+      var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
+      var sess = await c.auth.getSession();
+      var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+      if (!uid) return;
+      var res = await c.from('profiles').select('data').eq('id', uid).maybeSingle();
+      if (res.data && res.data.data) {
+        window.guanSet(KEY, JSON.stringify(res.data.data));
+        fillForm(res.data.data);
+        renderPreview(res.data.data);
+      }
+    } catch (e) {}
+  }
+
+  // 云端同步：保存档案后同步到 Supabase
+  async function syncProfileToCloud(p) {
+    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return;
+    try {
+      var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
+      var sess = await c.auth.getSession();
+      var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+      if (!uid) return;
+      await c.from('profiles').upsert({ id: uid, data: p, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    } catch (e) {}
+  }
+
+  function fillForm(p) {
+    if (!p) return;
+    document.getElementById('pNick').value = p.nickname || '';
+    document.getElementById('pGender').value = p.gender || '';
+    document.getElementById('pJob').value = p.job || '';
+    if (p.avatar && p.avatar.length <= 8) setAvatar(p.avatar);
+    else if (p.avatar && p.avatar.length > 8) avatar = p.avatar;
+    document.getElementById('pBirth').value = p.birth || '';
+    document.getElementById('pHour').value = p.hour || '';
+    document.getElementById('pCity').value = p.city || '';
+    document.getElementById('pMbti').value = p.mbti || '';
+    document.getElementById('pEnnea').value = p.ennea || '';
+    document.getElementById('pStage').value = p.stage || '';
+    document.getElementById('pSelfDesc').value = p.selfDesc || '';
+    document.getElementById('pFocus').value = p.focus || '';
+  }
+
   // 我的测试档案：从历史存档渲染已完成测试
   function renderTestHistory() {
     var el = document.getElementById('testHistory');
@@ -78,6 +128,14 @@
         '<a class="btn btn-sm" href="' + href + '">重新探索</a>' +
         '</div>';
     }).join('');
+  }
+
+  async function loadCloudTestHistory() {
+    if (!window.guanLoadTestHistory) return;
+    try {
+      var list = await window.guanLoadTestHistory();
+      if (list) renderTestHistory();
+    } catch (e) {}
   }
 
   window.guanProfile = read;
@@ -209,6 +267,7 @@
     }
     var p = collect();
     window.guanSet(KEY, JSON.stringify(p));
+    syncProfileToCloud(p);
     renderPreview(p);
     lock.count += 1;
     localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
@@ -361,4 +420,6 @@
   }
   renderLockUI();
   renderTestHistory();
+  loadCloudProfile();
+  loadCloudTestHistory();
 })();

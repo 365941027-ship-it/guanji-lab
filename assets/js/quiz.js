@@ -1838,6 +1838,7 @@
       });
       list = list.slice(0, 50);
       window.guanSet('guan_test_history', JSON.stringify(list));
+      if (window.guanSyncTestHistory) window.guanSyncTestHistory(list);
     } catch (e) {}
   }
 
