@@ -226,25 +226,23 @@
   };
 
   // Account-aware storage helpers
+  function usingCloudAccount() {
+    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return false;
+    var ref = window.SUPABASE_CONFIG.url.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
+    return !!localStorage.getItem('sb-' + ref + '-auth-token');
+  }
+
   window.guanGet = function (key) {
     // Supabase 云端账号已按用户隔离，直接读裸 key；本地旧账号仍走命名空间
-    if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && localStorage.getItem('sb-' + window.SUPABASE_CONFIG.url.replace(/^https?:\/\//, '').replace(/\W+/g, '-') + '-auth-token')) {
-      return localStorage.getItem(key);
-    }
+    if (usingCloudAccount()) return localStorage.getItem(key);
     return localStorage.getItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
   window.guanSet = function (key, val) {
-    if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && localStorage.getItem('sb-' + window.SUPABASE_CONFIG.url.replace(/^https?:\/\//, '').replace(/\W+/g, '-') + '-auth-token')) {
-      localStorage.setItem(key, val);
-      return;
-    }
+    if (usingCloudAccount()) { localStorage.setItem(key, val); return; }
     localStorage.setItem(window.guanDataKey ? window.guanDataKey(key) : key, val);
   };
   window.guanRemove = function (key) {
-    if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && localStorage.getItem('sb-' + window.SUPABASE_CONFIG.url.replace(/^https?:\/\//, '').replace(/\W+/g, '-') + '-auth-token')) {
-      localStorage.removeItem(key);
-      return;
-    }
+    if (usingCloudAccount()) { localStorage.removeItem(key); return; }
     localStorage.removeItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
 
