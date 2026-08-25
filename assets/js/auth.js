@@ -155,6 +155,34 @@
     return null;
   };
 
+  // 我的探索存档（测试/设计/模拟）同步云端
+  window.guanSyncArchive = async function (list) {
+    var c = client();
+    if (!c) return;
+    var sess = await c.auth.getSession();
+    var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+    if (!uid) return;
+    try {
+      await c.from('growth_records').upsert({ user_id: uid, kind: 'archive', data: list, updated_at: new Date().toISOString() }, { onConflict: 'user_id,kind' });
+    } catch (e) {}
+  };
+
+  window.guanLoadArchive = async function () {
+    var c = client();
+    if (!c) return null;
+    var sess = await c.auth.getSession();
+    var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+    if (!uid) return null;
+    try {
+      var res = await c.from('growth_records').select('data').eq('user_id', uid).eq('kind', 'archive').maybeSingle();
+      if (res.data && res.data.data) {
+        localStorage.setItem('guan_archive', JSON.stringify(res.data.data));
+        return res.data.data;
+      }
+    } catch (e) {}
+    return null;
+  };
+
   // 页面加载时：如果有会话则恢复导航身份显示
   (function init() {
     if (!supabaseReady()) return;

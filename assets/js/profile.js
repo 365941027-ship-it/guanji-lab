@@ -163,6 +163,38 @@
       '<p style="font-size:12px;color:var(--muted-2);margin-top:10px">保存于 ' + (saved.date || '') + ' ' + (saved.time || '') + '。如果想重新生成不同方案，去「设计」页再试一次。</p>';
   }
 
+  // 我的探索存档：测试/设计/模拟汇总
+  function renderExploreArchive() {
+    var el = document.getElementById('exploreArchive');
+    if (!el) return;
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('guan_archive') || '[]'); } catch (e) { list = []; }
+    if (!list.length) {
+      el.innerHTML = '<p style="opacity:.6">还没有保存过任何结果。完成一次测试/设计/模拟后，点「保存到我的档案」即可留档。</p>';
+      return;
+    }
+    var typeNames = { test: '测试', design: '设计', sim: '模拟' };
+    el.innerHTML = list.slice(0, 10).map(function (it) {
+      var href = it.type === 'test' ? 'tests.html' : it.type === 'design' ? 'design.html' : 'simulator.html';
+      var result = (window.guanPrettyResult && it.key) ? window.guanPrettyResult(it.key, it.result) : it.result;
+      return '<div class="test-history-item">' +
+        '<div class="th-main"><b>[' + (typeNames[it.type] || it.type) + '] ' + (it.title || '') + '</b>' +
+        '<span class="th-date">' + (it.date || '') + ' ' + (it.time || '') + '</span></div>' +
+        '<div class="th-result">' + (result || '已记录') + '</div>' +
+        '<a class="btn btn-sm" href="' + href + '">再看看</a>' +
+        '</div>';
+    }).join('') +
+      '<p style="font-size:12px;color:var(--muted-2);margin-top:10px">保存的结果会在你下一次测试/设计/模拟时被参考，帮助生成更准确、更贴合你的内容。</p>';
+  }
+
+  async function loadCloudExploreArchive() {
+    if (!window.guanLoadArchive) return;
+    try {
+      var list = await window.guanLoadArchive();
+      if (list) renderExploreArchive();
+    } catch (e) {}
+  }
+
   window.guanProfile = read;
 
   var avatar = '🌙';
@@ -446,6 +478,8 @@
   renderLockUI();
   renderTestHistory();
   renderDesignArchive();
+  renderExploreArchive();
   loadCloudProfile();
   loadCloudTestHistory();
+  loadCloudExploreArchive();
 })();

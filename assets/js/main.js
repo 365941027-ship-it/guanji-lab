@@ -297,6 +297,39 @@
     }).join(' · ');
   };
 
+  // 统一「保存到我的档案」：测试/设计/模拟共用
+  window.guanSaveToArchive = function (item) {
+    if (!item || !item.type || !item.title) {
+      if (window.guanToast) window.guanToast('保存失败，请重试');
+      return;
+    }
+    try {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('guan_archive') || '[]'); } catch (e) { list = []; }
+      var entry = {
+        type: item.type,
+        key: item.key || '',
+        title: item.title,
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        result: item.result || '',
+        detail: item.detail || {}
+      };
+      // 同类型同 key 只保留最新
+      var dedupKey = entry.type + '|' + entry.key;
+      list = list.filter(function (it) { return (it.type + '|' + it.key) !== dedupKey; });
+      list.unshift(entry);
+      list = list.slice(0, 50);
+      localStorage.setItem('guan_archive', JSON.stringify(list));
+      if (window.guanSyncArchive) window.guanSyncArchive(list);
+      if (window.guanToast) {
+        window.guanToast('已保存到我的档案。之后再做探索时，结果会更懂你、更准确');
+      }
+    } catch (e) {
+      if (window.guanToast) window.guanToast('保存失败，请重试');
+    }
+  };
+
   // Show recent quiz results on the tests hub
   var resultKeys = {
     guan_who: '我如何成为我',

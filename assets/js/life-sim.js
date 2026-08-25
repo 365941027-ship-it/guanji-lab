@@ -907,15 +907,26 @@
   document.getElementById('simSave').addEventListener('click', function () {
     var s = SCENARIOS[state.scenario];
     var dims = dimsOf();
+    var primary = dominantDim();
     var record = {
       scenario: state.scenario,
       title: s.title,
       date: new Date().toISOString(),
       picks: state.picks.map(function (p) { return { text: p.text, tag: p.tag }; }),
       dims: dims,
-      insight: styleOf()
+      insight: styleOf(),
+      primary: primary
     };
     window.guanSet('guan_sim', JSON.stringify(record));
-    window.guanToast('已保存 · 可以带回人生设计页继续推敲');
+    // 统一保存到我的档案
+    var dimLabels = { career: '事业', relation: '关系', energy: '能量', self: '自我' };
+    var summary = '主旋律：' + (dimLabels[primary] || primary) + ' · 选择风格：' + (state.picks[0] ? state.picks[0].tag : '');
+    window.guanSaveToArchive({
+      type: 'sim',
+      key: 'sim_' + state.scenario,
+      title: s.title,
+      result: summary,
+      detail: { scenario: state.scenario, picks: record.picks, dims: dims }
+    });
   });
 })();

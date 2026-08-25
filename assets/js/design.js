@@ -930,7 +930,14 @@
     };
     try {
       window.guanSet('guan_design_saved', JSON.stringify(snapshot));
-      window.guanToast('方案已保存到你的档案');
+      // 统一保存到我的档案
+      window.guanSaveToArchive({
+        type: 'design',
+        key: 'design',
+        title: '人生设计方案',
+        result: (snapshot.routes[0] ? snapshot.routes[0].tag : '') + ' · 参考职业：' + (snapshot.routes[0] && snapshot.routes[0].careers ? snapshot.routes[0].careers.join('、') : ''),
+        detail: snapshot
+      });
       // 同步到云端成长记录（如果已登录）
       if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) {
         (async function () {

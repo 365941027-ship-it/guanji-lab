@@ -1176,6 +1176,7 @@
       '<div class="result-actions">' +
       '  <button type="button" class="btn btn-gold" data-share>分享这一刻</button>' +
       '  <button type="button" class="btn btn-ai" data-ai-deep>✨ 深度解读</button>' +
+      '  <button type="button" class="btn btn-gold" data-save-archive>保存到我的档案</button>' +
       '  <button type="button" class="btn" data-restart>重新测试</button>' +
       '  <a class="btn" href="tests.html">返回测试中心</a>' +
       '</div>' +
@@ -1673,6 +1674,21 @@
     }
     var shareBtn = resultEl.querySelector('[data-share]');
     var restartBtn = resultEl.querySelector('[data-restart]');
+    var saveArchiveBtn = resultEl.querySelector('[data-save-archive]');
+    if (saveArchiveBtn) {
+      saveArchiveBtn.addEventListener('click', function () {
+        var r = computeResult();
+        var label = (window.guanGet ? window.guanGet(QUIZ.key) : null) || '';
+        if (!label && r && r.primary) label = r.primary;
+        window.guanSaveToArchive({
+          type: 'test',
+          key: QUIZ.key,
+          title: QUIZ.title,
+          result: label,
+          detail: { primary: r.primary || '', answers: state.answers.length }
+        });
+      });
+    }
     if (shareBtn) {
       shareBtn.addEventListener('click', function () {
         var modal = resultEl.querySelector('#shareModal');
