@@ -138,6 +138,31 @@
     } catch (e) {}
   }
 
+  // 我的人生设计：从存档渲染已保存的方案
+  function renderDesignArchive() {
+    var el = document.getElementById('designArchive');
+    if (!el) return;
+    var saved = null;
+    try { saved = JSON.parse(window.guanGet('guan_design_saved') || 'null'); } catch (e) { saved = null; }
+    if (!saved || !saved.routes || !saved.routes.length) {
+      el.innerHTML = '<p style="opacity:.6">还没有保存过人生设计方案。去「设计」生成一次，点「保存到我的档案」即可留档。</p>';
+      return;
+    }
+    var careers = saved.routes.slice(0, 3).map(function (r, i) {
+      return '<div class="test-history-item">' +
+        '<div class="th-main"><b>原型 ' + ['A', 'B', 'C'][i] + ' · ' + (r.tag || r.title) + '</b>' +
+        '<span class="th-date">' + (saved.date || '') + ' ' + (saved.time || '') + '</span></div>' +
+        '<div class="th-result">' + (r.careers && r.careers.length ? '参考职业：' + r.careers.join('、') : r.body || '') + '</div>' +
+        '<a class="btn btn-sm" href="design.html">重新查看设计</a>' +
+        '</div>';
+    }).join('');
+    var plan30 = (saved.plan30 || []).length ?
+      '<div class="test-history-item"><div class="th-main"><b>三十天计划</b></div>' +
+      '<div class="th-result">' + saved.plan30.map(function (w) { return w.week + '：' + w.plan; }).join('；').slice(0, 180) + '…</div></div>' : '';
+    el.innerHTML = careers + plan30 +
+      '<p style="font-size:12px;color:var(--muted-2);margin-top:10px">保存于 ' + (saved.date || '') + ' ' + (saved.time || '') + '。如果想重新生成不同方案，去「设计」页再试一次。</p>';
+  }
+
   window.guanProfile = read;
 
   var avatar = '🌙';
@@ -420,6 +445,7 @@
   }
   renderLockUI();
   renderTestHistory();
+  renderDesignArchive();
   loadCloudProfile();
   loadCloudTestHistory();
 })();

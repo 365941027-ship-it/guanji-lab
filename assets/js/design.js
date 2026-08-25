@@ -899,8 +899,59 @@
     });
   }
 
+  // 保存方案到「我的档案」：存一份可回看的快照
+  function savePlanToProfile() {
+    if (!lastPlan) {
+      window.guanToast('还没有生成方案，先生成一次再保存');
+      return;
+    }
+    var it = lastPlan.inputs || {};
+    var snapshot = {
+      date: new Date().toISOString().slice(0, 10),
+      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      pain: lastPlan.pain || '',
+      wish: lastPlan.wish || '',
+      theme: lastPlan.routes && lastPlan.routes[0] ? lastPlan.routes[0].tag : '',
+      routes: (lastPlan.routes || []).map(function (r) {
+        return {
+          tag: r.tag,
+          title: r.title,
+          body: r.body,
+          careers: (r.careers || []).map(function (c) { return c.name; })
+        };
+      }),
+      plan30: (lastPlan.plan30 || []).map(function (w) { return { week: w.week, plan: w.plan }; }),
+      talents: (lastPlan.talents || []).slice(0, 3).map(function (t) { return t.name; }),
+      inputs: {
+        time: it.time || '',
+        money: it.money || '',
+        goal: it.goal || ''
+      }
+    };
+    try {
+      window.guanSet('guan_design_saved', JSON.stringify(snapshot));
+      window.guanToast('方案已保存到你的档案');
+      // 同步到云端成长记录（如果已登录）
+      if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) {
+        (async function () {
+          try {
+            var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+            var sess = await c.auth.getSession();
+            var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+            if (uid) {
+              await c.from('growth_records').upsert({ user_id: uid, kind: 'design', data: snapshot, updated_at: new Date().toISOString() }, { onConflict: 'user_id,kind' });
+            }
+          } catch (e) {}
+        })();
+      }
+    } catch (e) {
+      window.guanToast('保存失败，请重试');
+    }
+  }
+
   document.getElementById('designBtn').addEventListener('click', render);
   document.getElementById('copyDesign').addEventListener('click', copyPlan);
+  document.getElementById('saveDesign').addEventListener('click', savePlanToProfile);
   document.getElementById('redoDesign').addEventListener('click', function () {
     output.classList.remove('show');
     output.scrollIntoView({ behavior: 'smooth', block: 'start' });
