@@ -13,6 +13,65 @@
     }
   })();
 
+  // ---------- 埋点（V0：Supabase REST 上报，未配置则落本地日志） ----------
+  window.guanTrack = function (event, data) {
+    var payload = {
+      event: String(event || ''),
+      quiz_key: (data && data.quiz) || '',
+      page: (data && data.page) || location.pathname.split('/').pop() || '',
+      data: data || {},
+      created_at: new Date().toISOString()
+    };
+    try {
+      var supaUrl = localStorage.getItem('guan_supabase_url') || '';
+      var anonKey = localStorage.getItem('guan_supabase_anon') || '';
+      if (supaUrl && anonKey) {
+        fetch(supaUrl.replace(/\/$/, '') + '/rest/v1/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': 'Bearer ' + anonKey
+          },
+          body: JSON.stringify({
+            event: payload.event,
+            quiz_key: payload.quiz_key,
+            page: payload.page,
+            data: payload.data
+          })
+        }).catch(function () {});
+        return;
+      }
+    } catch (e) {}
+    // 本地兜底日志（最多保留 200 条，便于调试）
+    try {
+      var log = JSON.parse(localStorage.getItem('guan_events_log') || '[]');
+      log.push(payload);
+      if (log.length > 200) log = log.slice(-200);
+      localStorage.setItem('guan_events_log', JSON.stringify(log));
+    } catch (e) {}
+  };
+
+
+  // ---------- 旧测试引导横幅 ----------
+  // 测试中心只保留 6 个核心测试；旧测试页仍在站内，给它们加升级引导
+  var CORE_TEST_PAGES = [
+    'test-who.html', 'test-energy-map.html', 'test-relation-map.html',
+    'test-talent.html', 'test-pressure.html', 'test-life-want.html'
+  ];
+  (function legacyBanner() {
+    var page = location.pathname.split('/').pop() || '';
+    if (page.indexOf('test-') !== 0 || page === 'custom-test.html') return;
+    if (CORE_TEST_PAGES.indexOf(page) > -1) return;
+    var main = document.querySelector('main');
+    if (!main) return;
+    var bar = document.createElement('div');
+    bar.className = 'legacy-bar';
+    bar.innerHTML = '<span>这个页面是早期版本，体验已升级——去全新测试中心看看：</span>' +
+      '<a href="tests.html" class="btn btn-gold btn-sm">进入测试中心 →</a>';
+    main.insertBefore(bar, main.firstChild);
+  })();
+
   // Mobile nav
   var toggle = document.getElementById('navToggle');
   var nav = document.getElementById('siteNav');

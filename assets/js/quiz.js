@@ -1384,6 +1384,15 @@
   function autoDeepReading() {
     var readingBox = resultEl.querySelector('#deepReading');
     if (!readingBox || readingBox.getAttribute('data-auto-started')) return;
+    // 已有存档时直接展示，不再重复调用模型
+    var cached = null;
+    try { cached = window.guanGet ? window.guanGet('guan_deep_' + QUIZ.key) : null; } catch (e) { cached = null; }
+    if (cached) {
+      readingBox.style.display = 'block';
+      readingBox.setAttribute('data-auto-started', '1');
+      renderDeepReading(cached, false);
+      return;
+    }
     var provider = 'deepseek';
     var key = aiKeyFor(provider) || '';
     var proxyReady = !!(window.GUAN_PROXY_URL);
@@ -1580,7 +1589,7 @@
       if (it.key === QUIZ.key) return;
       var pretty = (window.guanPrettyResult && it.key) ? window.guanPrettyResult(it.key, it.result) : it.result;
       if (it.title) prev.push('「' + it.title + '」（' + (it.date || '') + '）：' + (pretty || '已记录'));
-      var deep = window.guanGet && window.guanGet('guan_deep_' + it.key);
+      var deep = it.deep || (window.guanGet && window.guanGet('guan_deep_' + it.key));
       if (deep) prev.push('「' + it.title + '」的深度解读节选：' + deep.slice(0, 500));
     });
     if (!prev.length) {
@@ -1625,6 +1634,7 @@
     // 存档本次深度解读，供其他测试生成时参考
     try {
       if (window.guanSet) window.guanSet('guan_deep_' + QUIZ.key, text.slice(0, 3000));
+      attachDeepToHistory(QUIZ.key, text.slice(0, 3000));
     } catch (e) {}
     var paras = text.split(/\n{2,}/).map(function (p) {
       return '<p>' + p.replace(/^[-*]\s+/g, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
@@ -1646,6 +1656,35 @@
     var shotBtn = box.querySelector('[data-deep-shot]');
     if (shotBtn) shotBtn.addEventListener('click', captureDeepReport);
     if (doScroll !== false) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // 把完整解读文本挂到测试历史的对应条目，随 history 一起同步云端
+  function attachDeepToHistory(key, deepText) {
+    try {
+      var list = [];
+      try { list = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { list = []; }
+      var hit = false;
+      list.forEach(function (it) {
+        if (it.key === key) { it.deep = deepText; hit = true; }
+      });
+      if (hit) {
+        window.guanSet('guan_test_history', JSON.stringify(list));
+        if (window.guanSyncTestHistory) window.guanSyncTestHistory(list);
+      } else {
+        // 历史条目尚未创建（生成太快）：先建一条，保证解读不丢
+        list.unshift({
+          key: key,
+          title: QUIZ.title,
+          date: new Date().toISOString().slice(0, 10),
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          result: (window.guanGet ? window.guanGet(key) : null) || '',
+          url: (location.pathname.split('/').pop() || 'tests.html'),
+          deep: deepText
+        });
+        window.guanSet('guan_test_history', JSON.stringify(list));
+        if (window.guanSyncTestHistory) window.guanSyncTestHistory(list);
+      }
+    } catch (e) {}
   }
 
   function crisisHTML(cat) {
@@ -1750,7 +1789,7 @@
         renderQuestion();
       });
     }
-    // 结果页自动展开深度解读（不弹窗）
+    // 结果页自动生成深度解读（不弹窗、不付费墙）
     autoDeepReading();
   }
 
@@ -1922,6 +1961,7 @@
 
   function finish() {
     if (state.answers.indexOf(null) > -1) return;
+    window.guanTrack && window.guanTrack('quiz_finish', { quiz: QUIZ.key });
     buildResultView();
     saveTestHistory();
   }
@@ -1932,13 +1972,22 @@
       var label = (window.guanGet ? window.guanGet(QUIZ.key) : null) || '';
       var list = [];
       try { list = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { list = []; }
+      // 继承旧条目里的完整解读（防止生成时序导致丢失）
+      var oldDeep = '';
+      list.forEach(function (it) {
+        if (it.key === QUIZ.key && it.deep) oldDeep = it.deep;
+      });
+      if (!oldDeep) {
+        try { oldDeep = window.guanGet('guan_deep_' + QUIZ.key) || ''; } catch (e) {}
+      }
       list.unshift({
         key: QUIZ.key,
         title: QUIZ.title,
         date: new Date().toISOString().slice(0, 10),
         time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         result: label,
-        url: (location.pathname.split('/').pop() || 'tests.html')
+        url: (location.pathname.split('/').pop() || 'tests.html'),
+        deep: oldDeep
       });
       var seen = {};
       list = list.filter(function (it) {
@@ -1986,6 +2035,8 @@
       md.setAttribute('content', QUIZ.title + '：' + clean + '。观己实验室 · 理解自己，设计人生');
     }
   })();
+
+  window.guanTrack && window.guanTrack('quiz_start', { quiz: QUIZ.key });
 
   renderQuestion();
 })();

@@ -22,6 +22,7 @@
 
   function save(items) {
     window.guanSet(STORE_KEY, JSON.stringify(items));
+    if (window.guanSyncGrowth) window.guanSyncGrowth('growth', items);
   }
 
   function dateStr(d) {

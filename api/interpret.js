@@ -52,11 +52,46 @@ const PROVIDERS = {
 };
 
 export default async function handler(req, res) {
-  var origin = req.headers.origin || '*';
+  // 只允许本站与本地调试调用，禁止任意站点白嫖解读通道
+  var ALLOWED_ORIGINS = {
+    'https://guanji-lab.vercel.app': true,
+    'https://365941027-ship-it.github.io': true,
+    'http://localhost:8777': true,
+    'http://127.0.0.1:8777': true,
+    'null': true // 无来源（同源/隐私模式）放行，仍受限流保护
+  };
+  var origin = req.headers.origin || 'null';
+  if (!ALLOWED_ORIGINS[origin]) {
+    return res.status(403).json({ error: { code: 'origin_forbidden', message: '来源不被允许' } });
+  }
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
+
+  // 简单内存限流：每 IP 每小时最多 30 次解读（Vercel 无状态实例，按实例内存计，
+  // 用于挡住最基础的滥用；正式运营建议升级为 Upstash/Vercel KV 限流）
+  var RATE_WINDOW_MS = 60 * 60 * 1000;
+  var RATE_MAX = 30;
+  var rateStore = globalThis.__GUAN_RATE__ || (globalThis.__GUAN_RATE__ = {});
+  function clientIp() {
+    return String(
+      (req.headers['x-forwarded-for'] || '').split(',')[0] ||
+      req.headers['x-real-ip'] ||
+      'unknown'
+    ).trim();
+  }
+  function rateLimited() {
+    var ip = clientIp();
+    var now = Date.now();
+    var rec = rateStore[ip];
+    if (!rec || now - rec.start > RATE_WINDOW_MS) {
+      rateStore[ip] = { start: now, count: 1 };
+      return false;
+    }
+    rec.count += 1;
+    return rec.count > RATE_MAX;
+  }
 
   if (req.method === 'OPTIONS') return res.status(204).end();
 
@@ -71,6 +106,10 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: { code: 'method_not_allowed', message: '仅支持 POST' } });
+  }
+
+  if (rateLimited()) {
+    return res.status(429).json({ error: { code: 'rate_limited', message: '请求过于频繁，请稍后再试' } });
   }
 
   var body;

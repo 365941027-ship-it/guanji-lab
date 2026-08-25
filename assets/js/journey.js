@@ -123,6 +123,7 @@
 
   function save(items) {
     window.guanSet(KEY, JSON.stringify(items));
+    if (window.guanSyncGrowth) window.guanSyncGrowth('journey', items);
   }
 
   function todayStr() {

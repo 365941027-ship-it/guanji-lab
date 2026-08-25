@@ -44,7 +44,7 @@ var GUAN_PROXY_DEFAULT = 'https://guanji-lab.vercel.app/api/interpret';
 ## 4. 验证
 
 - 浏览器访问 `https://你的项目.vercel.app/api/interpret`，应返回 `{"ok":true,"provider":"deepseek","ready":true}`。
-- 打开任一测试 → 完成 → 「✨ 深度解读」→ 弹窗显示「● 内置解读通道已连接」，不填 Key 直接「开始解读」。
+- 打开任一测试 → 完成 → 「✨ 深度解读」→ 不填 Key 直接生成完整解读（结果页自动展开）。
 
 ## 可选
 

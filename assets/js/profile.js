@@ -195,6 +195,43 @@
     } catch (e) {}
   }
 
+  // 我的成长记录：本地 + 云端拉取展示
+  function renderGrowthArchive() {
+    var el = document.getElementById('growthArchive');
+    if (!el) return;
+    var items = [];
+    try { items = JSON.parse(window.guanGet('guan_growth') || '[]'); } catch (e) { items = []; }
+    var journey = [];
+    try { journey = JSON.parse(window.guanGet('guan_journey') || '[]'); } catch (e) { journey = []; }
+    if (!items.length && !journey.length) {
+      el.innerHTML = '<p style="opacity:.6">还没有成长记录。去「轨迹」或「三十天」写第一笔吧。</p>';
+      return;
+    }
+    var list = [];
+    items.slice(-3).reverse().forEach(function (g) {
+      list.push({ title: '轨迹 · ' + (g.date || ''), text: g.note || g.mood || '' });
+    });
+    journey.slice(-3).reverse().forEach(function (j) {
+      list.push({ title: '三十天 · ' + (j.date || ''), text: j.note || j.mood || '' });
+    });
+    el.innerHTML = list.slice(0, 5).map(function (it) {
+      return '<div class="test-history-item">' +
+        '<div class="th-main"><b>' + it.title + '</b></div>' +
+        '<div class="th-result">' + (it.text || '已记录') + '</div>' +
+        '<a class="btn btn-sm" href="growth.html">去记录</a>' +
+        '</div>';
+    }).join('') +
+      '<p style="font-size:12px;color:var(--muted-2);margin-top:10px">记录会自动同步到你的账号（需登录）。</p>';
+  }
+
+  async function loadCloudGrowthArchive() {
+    if (!window.guanLoadGrowth) return;
+    try {
+      var rows = await window.guanLoadGrowth();
+      if (rows) renderGrowthArchive();
+    } catch (e) {}
+  }
+
   window.guanProfile = read;
 
   var avatar = '🌙';
@@ -479,7 +516,9 @@
   renderTestHistory();
   renderDesignArchive();
   renderExploreArchive();
+  renderGrowthArchive();
   loadCloudProfile();
   loadCloudTestHistory();
   loadCloudExploreArchive();
+  loadCloudGrowthArchive();
 })();

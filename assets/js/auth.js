@@ -183,6 +183,38 @@
     return null;
   };
 
+  // 成长记录（轨迹/日记/三十天）同步云端
+  window.guanSyncGrowth = async function (kind, data) {
+    var c = client();
+    if (!c) return;
+    var sess = await c.auth.getSession();
+    var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+    if (!uid) return;
+    try {
+      await c.from('growth_records').upsert({ user_id: uid, kind: kind, data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id,kind' });
+    } catch (e) {}
+  };
+
+  // 从云端拉取成长记录并写回本地
+  window.guanLoadGrowth = async function () {
+    var c = client();
+    if (!c) return null;
+    var sess = await c.auth.getSession();
+    var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+    if (!uid) return null;
+    try {
+      var res = await c.from('growth_records').select('kind,data').eq('user_id', uid);
+      if (res.data && res.data.length) {
+        res.data.forEach(function (row) {
+          var localKey = 'guan_' + row.kind;
+          if (row.data) localStorage.setItem(localKey, JSON.stringify(row.data));
+        });
+        return res.data;
+      }
+    } catch (e) {}
+    return null;
+  };
+
   // 页面加载时：如果有会话则恢复导航身份显示
   (function init() {
     if (!supabaseReady()) return;
