@@ -142,7 +142,7 @@
     }
   };
 
-  var state = { scenario: null, index: 0, picks: [] };
+  var state = { scenario: null, index: 0, picks: [], notes: [] };
   var pickEl = document.getElementById('simPick');
   var cardEl = document.getElementById('simCard');
   var resultEl = document.getElementById('simResult');
@@ -154,6 +154,7 @@
   var countEl = document.getElementById('simCount');
   var dotsEl = document.getElementById('simDots');
   var backBtn = document.getElementById('simBack');
+  var noteInput = document.getElementById('simNoteInput');
 
   function read(key, fb) {
     try {
@@ -557,6 +558,7 @@
     state.scenario = sc.id;
     state.index = 0;
     state.picks = [];
+    state.notes = [];
     SCENARIOS[sc.id] = sc;
     titleEl.textContent = sc.title;
     descEl.textContent = sc.desc;
@@ -586,6 +588,7 @@
     state.scenario = sc.id;
     state.index = 0;
     state.picks = [];
+    state.notes = [];
     SCENARIOS[sc.id] = sc;
     titleEl.textContent = sc.title;
     descEl.textContent = sc.desc;
@@ -614,6 +617,7 @@
     state.scenario = id;
     state.index = 0;
     state.picks = [];
+    state.notes = [];
     var s = SCENARIOS[id];
     titleEl.textContent = s.title;
     descEl.textContent = s.desc;
@@ -647,6 +651,10 @@
     }).join('');
     storyEl.classList.remove('show');
     storyEl.textContent = '';
+    if (noteInput) {
+      noteInput.value = state.notes[state.index] || '';
+      noteInput.setAttribute('data-idx', state.index);
+    }
     backBtn.style.visibility = state.index === 0 ? 'hidden' : 'visible';
     document.getElementById('simRestart').style.visibility = isLast ? 'visible' : 'hidden';
   }
@@ -656,6 +664,10 @@
     var st = s.stages[state.index];
     var opt = st.options[i];
     state.picks[state.index] = { index: i, tag: opt.tag, text: opt.text, effect: opt.effect, story: opt.story };
+    if (noteInput) {
+      var n = noteInput.value.trim();
+      if (n) state.notes[state.index] = n;
+    }
     var btns = optionsEl.querySelectorAll('.sim-option');
     btns.forEach(function (b, idx) { b.classList.toggle('selected', idx === i); });
     storyEl.textContent = opt.story;
@@ -711,6 +723,84 @@
       '<div class="sim-future"><h5>反事实 · 如果换一个关键选择</h5><p>重新点「再试一次」，在第一个分岔口选一个你现实中不会选的方向。那个答案，往往藏着你现在最需要的信号——它不一定告诉你「该选什么」，但会告诉你「你害怕的，可能没有想象中可怕」。</p></div>';
   }
 
+  // 职业规划师确定性解读（规则版）：身份 / 优势 / 局限 / 规避 / 30天第一步
+  function buildPlannerInsight() {
+    var tags = state.picks.map(function (p) { return p.tag; });
+    var notes = state.notes.filter(function (n) { return n; });
+    var s = SCENARIOS[state.scenario];
+    var isRole = state.scenario.indexOf('role_') === 0;
+    var role = '';
+    if (isRole && s.title) role = s.title.replace('成为「', '').replace('」的模拟', '');
+    var profileTxt = (function () {
+      try {
+        var p = JSON.parse(window.guanGet('guan_profile') || '{}');
+        var bits = [];
+        if (p.job) bits.push('职业：' + p.job);
+        if (p.mbti) bits.push('MBTI：' + p.mbti);
+        if (p.stage) bits.push('阶段：' + p.stage);
+        return bits.join('；');
+      } catch (e) { return ''; }
+    })();
+    var paras = [];
+
+    if (isRole && role) {
+      paras.push('【你将扮演的身份】在这条路上，你会是一个「' + role + '」。不是光环里的那个头衔，而是每天面对真实问题、做真实决定的人：你要对结果负责，也要在重复与琐碎里保持方向感。');
+      paras.push('【你能发挥的性格优势】结合你的档案（' + (profileTxt || '暂未填写，建议补充') + '），你在这类职业里最可能被看见的优势是：你' + (tags.indexOf('协作') > -1 || tags.indexOf('求助') > -1 || tags.indexOf('倾诉') > -1 ? '懂得借力与协作，不独自硬扛——这在职业里是成熟的信号' : tags.indexOf('边界') > -1 || tags.indexOf('界限') > -1 ? '边界清晰、能温柔而坚定地守住自己，这让你在高压职业里不易被消耗' : tags.indexOf('专业') > -1 || tags.indexOf('精进') > -1 || tags.indexOf('深耕') > -1 ? '愿意在专业上持续精进，靠谱是你最硬的招牌' : '能在压力下做出选择并承担后果，这是很多岗位最稀缺的品质') + '。');
+      paras.push('【你的局限性】这条路的短板也很具体：' + (tags.indexOf('坚持') > -1 || tags.indexOf('allin') > -1 ? '你倾向投入到底，容易忽略自己的电量，长期可能倦怠' : tags.indexOf('谨慎') > -1 || tags.indexOf('审慎') > -1 || tags.indexOf('观望') > -1 ? '你习惯先看清再走，在需要「先跳再说」的机会面前可能错过窗口' : '你可能高估「只要够努力就能成」，低估了行业周期与运气成分') + '。如果不提前规避，它会成为你三年后最累的部分。');
+      paras.push('【如何规避】① 给这份职业设一个「止损线」：投入多少时间/金钱后必须复盘一次；② 每周保留 2 小时做与职业无关的自己；③ 找一个同行或前辈定期对齐，避免闭门造车。');
+      paras.push('【30 天第一步】' + (role.indexOf('医生') > -1 || role.indexOf('医') > -1 ? '这周先去找一位正在做这份工作的前辈做一次 30 分钟访谈，问 TA「最真实的一天是什么样的」' : role.indexOf('老师') > -1 || role.indexOf('教师') > -1 ? '这周先旁听/体验一次真实的课堂或带一次小课，感受自己是否享受「与人深度互动」' : role.indexOf('翻译') > -1 ? '这周接一个最小的真实任务（或模拟一场），看自己是否享受「在两种语言之间搭桥」' : role.indexOf('律师') > -1 || role.indexOf('法律') > -1 ? '这周读一份真实判例并写下你的分析，或约一位法律从业者聊一次' : role.indexOf('自媒体') > -1 ? '这周完成并发布一条内容，收集 3 个真实反馈' : role.indexOf('工程师') > -1 || role.indexOf('开发') > -1 ? '这周完成一个小项目（哪怕 100 行），让它跑起来' : '这周完成一次与该职业相关的真实小任务') + '。');
+    } else {
+      paras.push('【你将扮演的身份】你目前选择的方向，对应的不是某一个岗位，而是一组能力：' + (tags.indexOf('行动') > -1 || tags.indexOf('尝试') > -1 ? '快速试错、在行动中学习的人' : tags.indexOf('稳') > -1 || tags.indexOf('双轨') > -1 ? '在稳定与探索之间走平衡木的人' : '在自我照顾中慢慢前进的人') + '。这类人在职场里的常见落点是：项目负责人、独立执行者或「能扛事」的专业骨干。');
+      paras.push('【你能发挥的性格优势】' + (tags.indexOf('借力') > -1 ? '你擅长连接资源与伙伴，适合需要协作的位置（产品、运营、咨询）。' : tags.indexOf('独立') > -1 ? '你能独立把事做完，适合需要自驱力的位置（创作者、工程师、顾问）。' : '你在压力下仍能照顾自己，适合长期主义的位置——很多岗位缺的不是聪明，是「不崩」的稳定。'));
+      paras.push('【你的局限性】如果只按这次模拟的选择发展，你可能' + (tags.indexOf('allin') > -1 ? '过度投入单一方向，抗风险能力偏弱' : tags.indexOf('观望') > -1 || tags.indexOf('谨慎') > -1 ? '过于保守，错失需要果断的机会' : '节奏偏慢，容易被外部标准带跑') + '。');
+      paras.push('【如何规避】① 每 30 天做一次「方向体检」：这个方向还让我有能量吗？② 保留 20% 的时间做与主线无关的探索；③ 用「完成一件最小作品」代替「想清楚再动」。');
+      paras.push('【30 天第一步】' + (notes.length ? '结合你写下的「' + notes[notes.length - 1].slice(0, 30) + '…」，本周就做一件与之相关的最小真实动作，做完记录感受。' : '本周做一次与该方向相关的真实小任务（约谈一人 / 完成一个小作品 / 参加一次体验），并记录：这件事让你有能量还是消耗？'));
+    }
+    return paras;
+  }
+
+  function runPlannerLLM(extra) {
+    var body = document.getElementById('simPlannerBody');
+    if (!body) return;
+    var proxyReady = !!(window.GUAN_PROXY_URL);
+    var key = localStorage.getItem('guan_ai_key_deepseek') || '';
+    if (!proxyReady && !key) {
+      window.guanToast('内置解读通道未配置，先展示规则版分析');
+      return;
+    }
+    body.innerHTML = '<div class="deep-loading"><div class="spinner"></div><p>正在以职业规划师视角分析你的选择…</p></div>';
+    var s = SCENARIOS[state.scenario];
+    var picksText = state.picks.map(function (p, i) { return (i + 1) + '. ' + p.text + (state.notes[i] ? '（你的想法：' + state.notes[i] + '）' : ''); }).join('\n');
+    var profileText = '';
+    try {
+      var p = JSON.parse(window.guanGet('guan_profile') || '{}');
+      profileText = JSON.stringify({ job: p.job, mbti: p.mbti, zodiac: p.zodiac, stage: p.stage, selfDesc: p.selfDesc, focus: p.focus });
+    } catch (e) {}
+    var sys = '你是专业的职业规划师。请基于用户的人生模拟选择、补充信息和档案，给出确定性的职业分析，分四段：\n' +
+      '1）【你将扮演的身份】这个选择对应的职业/身份是什么，具体一点（如：自媒体内容创作者、项目经理、独立手作人）。\n' +
+      '2）【你能发挥的优势】结合用户档案中的性格特质，指出哪些优势会在该职业中真正被看见。\n' +
+      '3）【局限与规避】这个选择对用户的具体局限是什么，以及如何规避。\n' +
+      '4）【30 天第一步】给出一个今天就能开始的、具体的行动。\n' +
+      '语言要专业、确定、可执行，不空泛安慰，不夸大保证。';
+    var user = '我的模拟场景：' + (s ? s.title : '') + '\n我的选择轨迹：\n' + picksText + '\n\n我的补充信息：' + (extra || '（无）') + '\n我的档案：' + (profileText || '（无）') + '\n\n请给我确定性的职业规划分析。';
+    var callUrl = window.GUAN_PROXY_URL;
+    if (callUrl) {
+      fetch(callUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'deepseek', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 2000, temperature: 0.7 })
+      }).then(function (res) { return res.json(); }).then(function (data) {
+        if (data && data.text) {
+          body.innerHTML = data.text.split(/\n{2,}/).map(function (para) {
+            return '<p style="margin-bottom:12px;line-height:2">' + para.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
+          }).join('');
+        } else {
+          window.guanToast('生成失败，展示规则版分析');
+        }
+      }).catch(function () { window.guanToast('生成失败，展示规则版分析'); });
+    }
+  }
+
   function finish() {
     cardEl.classList.add('hidden');
     resultEl.classList.remove('hidden');
@@ -735,6 +825,21 @@
     document.getElementById('simInsight').innerHTML = buildDeepInsight(s, style).map(function (p) {
       return '<p style="margin-bottom:12px">' + p + '</p>';
     }).join('');
+
+    // 职业规划师确定性解读（规则版即时展示）
+    var plannerBody = document.getElementById('simPlannerBody');
+    if (plannerBody) {
+      plannerBody.innerHTML = buildPlannerInsight().map(function (p) {
+        return '<p style="margin-bottom:12px;line-height:2">' + p + '</p>';
+      }).join('');
+    }
+    var plannerBtn = document.getElementById('plannerBtn');
+    if (plannerBtn) {
+      plannerBtn.onclick = function () {
+        var extra = (document.getElementById('plannerInput') || {}).value || '';
+        runPlannerLLM(extra);
+      };
+    }
 
     var primary = dominantDim();
     var ordered = Object.keys(dims).sort(function (a, b) { return dims[b] - dims[a]; });

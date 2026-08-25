@@ -174,7 +174,7 @@
   }
 
   function pick(i) {
-    if (state.answers[state.index] && state.answers[state.index].option === i) return;
+    // 返回上一题后，允许重选同一个选项（清除旧答案再推进）
     state.answers[state.index] = { option: i };
     var btns = optionsEl.querySelectorAll('.option');
     btns.forEach(function (b, idx) { b.classList.toggle('on', idx === i); });
@@ -329,6 +329,8 @@
       renderRegrow();
     } else if (QUIZ.key === 'guan_life_want') {
       renderLifeWant();
+    } else if (QUIZ.key === 'guan_custom') {
+      renderCustom();
     } else if (QUIZ.isBigFive) {
       renderBigFive();
     } else if (QUIZ.isStandard) {
@@ -608,6 +610,88 @@
     resultEl.innerHTML = html;
     window.guanSet(QUIZ.key, lifeLabel);
     bindResultActions(shareText(QUIZ.title, lifeLabel, '我的生活坐标'));
+  }
+
+  // 专属自察：三大板块（核心特质 / 内在冲突 / 成长方向）接入 LLM，
+  // 分别扮演心理咨询分析师与职业规划师；生成失败时回退模板。
+  function renderCustom() {
+    var r = computeResult();
+    var p = QUIZ.results[r.primary] || {};
+    var prof = profileData();
+    var nickname = prof.nickname ? prof.nickname + '，' : '';
+    var html = resultCardHTML(starSVG(), p.name || '我的专属自察', 'A Test Made For You', tarotSVG(), '为你一人生成');
+    html += '<div class="result-sections">';
+    html += '<div class="result-block wide"><h4>你刚刚告诉我的</h4>' +
+      '<p>' + nickname + '这份自察来自你的档案、测试与记录。你愿意停下来看看自己，这本身就是认真对待自己的开始。</p>' +
+      '<ul>' + echoPicks().map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul></div>';
+    html += '<div class="result-block wide"><h4>核心特质</h4><div class="llm-block" data-llm-part="core"><div class="deep-loading"><div class="spinner"></div><p>正在为你做心理侧写…</p></div></div></div>';
+    html += '<div class="result-block wide"><h4>内在冲突</h4><div class="llm-block" data-llm-part="conflict"><div class="deep-loading"><div class="spinner"></div><p>正在寻找你被困住的原因…</p></div></div></div>';
+    html += '<div class="result-block wide"><h4>成长方向</h4><div class="llm-block" data-llm-part="growth"><div class="deep-loading"><div class="spinner"></div><p>正在为你生成职业与成长建议…</p></div></div></div>';
+    if (p.possibilities) html += block('新的可能', listHTML(p.possibilities), 'wide');
+    html += '</div>';
+    html += actionsHTML('custom', p.name || '专属自察', p.core || '');
+    resultEl.innerHTML = html;
+    window.guanSet(QUIZ.key, p.name || '专属自察');
+    bindResultActions(shareText('custom', p.name || '我的专属自察', p.core || ''));
+
+    // LLM 生成三大板块
+    runCustomLLM(p);
+  }
+
+  function runCustomLLM(fallback) {
+    var provider = 'deepseek';
+    var key = aiKeyFor(provider) || '';
+    var proxyReady = !!(window.GUAN_PROXY_URL);
+    if (!proxyReady && !key) {
+      // 无通道：直接回退模板
+      fillCustomLLM(fallback, false);
+      return;
+    }
+    var sys = '你是「观己实验室」的专属自察分析师。此刻你同时以两个身份工作：\n' +
+      '1）心理咨询分析师：从用户的个人档案、测试结果与成长记录中，筛选出最有代表性的性格特点与心理侧写，指出TA的矛盾点、目前被困住的原因，帮助用户发现自己、理解自己。\n' +
+      '2）职业规划师：根据用户的成长档案与测试结果，提供客观可靠的成长建议，例如「你的……特质很适合……（职业），或许可以尝试……（职业方向）」。\n' +
+      '请把输出组织成三个部分，用「【核心特质】」「【内在冲突】」「【成长方向】」作为每部分的开头标题：\n' +
+      '【核心特质】300-400字：客观理性地描述用户最有代表性的性格特点、优势与心理侧写，像一份专业的心理评估，不贴标签、不下武断结论。\n' +
+      '【内在冲突】300-400字：指出用户目前的矛盾点与被困住的原因，分析冲突的来源，让用户感到被看懂，同时保有希望。\n' +
+      '【成长方向】300-400字：以职业规划师身份，结合用户特质给出 1-2 个具体可参考的职业/方向，说明优势、可能的短板与如何规避，并给出 30 天内可以做的第一步。\n' +
+      '要求：必须引用用户档案中的具体信息（如星座、MBTI、职业、人生阶段、自我描述）和测试结果；语言专业、温暖、具体，不说空话。';
+    var user = buildAiUserText();
+    callChat(provider, key, { role: 'system', content: sys }).then(function (text) {
+      fillCustomLLMFromText(text, fallback);
+    }).catch(function () {
+      fillCustomLLM(fallback, false);
+    });
+  }
+
+  function fillCustomLLM(fallback, fromText) {
+    var map = {
+      core: fallback.core || '你的自察结果正在成形。完成更多探索后，这里会给出更完整的心理侧写。',
+      conflict: fallback.conflict || '没有人的轨迹是直线。你现在感到的犹豫或不确定，是你在长大的证据。',
+      growth: fallback.growth || '把这份自察带回你的记录里：写下此刻的感受，过几天回看，你会看见自己正在变化。'
+    };
+    ['core', 'conflict', 'growth'].forEach(function (part) {
+      var box = resultEl.querySelector('[data-llm-part="' + part + '"]');
+      if (box) box.innerHTML = '<p style="line-height:1.95">' + map[part] + '</p>';
+    });
+  }
+
+  function fillCustomLLMFromText(text, fallback) {
+    var parts = { core: '', conflict: '', growth: '' };
+    var m = text.match(/【核心特质】([\s\S]*?)(?=【内在冲突】|$)/);
+    if (m) parts.core = m[1].trim();
+    m = text.match(/【内在冲突】([\s\S]*?)(?=【成长方向】|$)/);
+    if (m) parts.conflict = m[1].trim();
+    m = text.match(/【成长方向】([\s\S]*?)$/);
+    if (m) parts.growth = m[1].trim();
+    var hasAny = parts.core || parts.conflict || parts.growth;
+    if (!hasAny) { fillCustomLLM(fallback, false); return; }
+    ['core', 'conflict', 'growth'].forEach(function (part) {
+      var box = resultEl.querySelector('[data-llm-part="' + part + '"]');
+      if (box) {
+        box.innerHTML = parts[part] ? '<p style="line-height:2">' + parts[part].replace(/\n+/g, '</p><p style="line-height:2">') + '</p>' : (fallback[part] || '');
+      }
+    });
+    window.guanToast('你的专属自察已生成');
   }
 
   var WHO_TEXT = {
@@ -1507,6 +1591,16 @@
       });
     }
     if (prev.length) profLines.push('- 我在其他探索里的结果与解读：' + prev.join('；'));
+
+    // 专属自察：额外加入成长记录
+    if (QUIZ.key === 'guan_custom') {
+      var growth = [];
+      try { growth = JSON.parse(window.guanGet('guan_growth') || '[]'); } catch (e) { growth = []; }
+      if (growth.length) {
+        var recentNotes = growth.slice(-5).map(function (g) { return g.note || ''; }).filter(Boolean).join('；');
+        if (recentNotes) profLines.push('- 我最近在成长轨迹里的记录：' + recentNotes.slice(0, 400));
+      }
+    }
 
     var lines = ['我刚刚完成了「' + QUIZ.title + '」这个测试。以下是我对每一题的诚实回答：', ''];
     state.answers.forEach(function (a, qi) {

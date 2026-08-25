@@ -26,6 +26,196 @@
     }
   }
 
+  // 职业规划师对标库：每个主题下三个原型 → 参考职业 + 优势 + 短板 + 转变
+  var CAREER_MAP = {
+    work: [
+      {
+        tag: '原型 A · 把热爱做成事业',
+        title: '在旧路上长出新方向',
+        careers: [
+          { name: '自媒体人 / 内容创作者', why: '你的核心是把「感兴趣的事」持续产出并被人看见——这正是内容创作的工作方式。' },
+          { name: '自由撰稿人 / 专栏作者', why: '你能把一个主题研究透、写出有温度的表达，适合以文字建立个人品牌。' },
+          { name: '手作 / 独立品牌主理人', why: '你重视亲手做出「自己的作品」，小体量品牌让你从 0 到 1 完整走一遍。' }
+        ]
+      },
+      {
+        tag: '原型 B · 敢为方向做决定',
+        title: '向已经在路上的人提问',
+        careers: [
+          { name: '产品经理', why: '你习惯先想清楚方向再行动，擅长在不确定里做决定并推进落地。' },
+          { name: '项目管理 / 运营负责人', why: '你擅长连接人、资源和节奏，把「想清楚」变成「做出来」。' },
+          { name: '创业顾问 / 商业分析', why: '你擅长访谈、拆解真实案例，把别人的路变成可借鉴的方法。' }
+        ]
+      },
+      {
+        tag: '原型 C · 平衡现实与理想',
+        title: '用作品说话',
+        careers: [
+          { name: '设计师 / 创意策划', why: '你既在意表达，也在意落地——设计是把理想装进现实的容器。' },
+          { name: '教师 / 培训师', why: '你擅长把复杂的东西讲清楚，并在稳定的职业框架里保留表达空间。' },
+          { name: '咨询顾问 / 教练', why: '你用作品和对话帮助具体的人，同时保持现实层面的可持续。' }
+        ]
+      }
+    ],
+    create: [
+      {
+        tag: '原型 A · 让创造成为日常',
+        title: '每天留 45 分钟给热爱',
+        careers: [
+          { name: '插画师 / 独立创作者', why: '你的天赋是稳定产出——这是自由创作者最稀缺的能力。' },
+          { name: '设计师 / 视觉传达', why: '你愿意每天打磨手艺，视觉行业奖励持续投入的人。' },
+          { name: '写作者 / 文案策划', why: '你相信日常练习的力量，写作是复利最明显的职业。' }
+        ]
+      },
+      {
+        tag: '原型 B · 让作品被看见',
+        title: '第一次公开发布',
+        careers: [
+          { name: '内容运营 / 自媒体', why: '你敢于把作品放到世界面前，并愿意根据反馈迭代。' },
+          { name: '短视频编导 / 视频创作者', why: '「被看见」本身就是这个职业的日常，你的勇气是入场券。' },
+          { name: '公关 / 品牌传播', why: '你理解「作品如何被接收」，这是传播工作的核心。' }
+        ]
+      },
+      {
+        tag: '原型 C · 让热爱服务他人',
+        title: '用热爱为一个人解决问题',
+        careers: [
+          { name: '自由职业者 / 个人服务', why: '你愿意把能力用在具体的人身上，服务型自由职业正好是这条路。' },
+          { name: '咨询顾问 / 生涯教练', why: '你的共情+创造组合，能让对方感到被理解也被推进。' },
+          { name: '教育者 / 技能导师', why: '你用热爱帮助别人成长，把「我的擅长」变成「别人的能力」。' }
+        ]
+      }
+    ],
+    relation: [
+      {
+        tag: '原型 A · 练习说出真实需要',
+        title: '诚实表达',
+        careers: [
+          { name: '心理咨询师 / 倾听师', why: '你重视真实表达与情感连接，助人工作是这种天赋的自然延伸。' },
+          { name: 'HR / 组织发展', why: '你擅长在人与组织之间搭桥，沟通敏感度高是核心竞争力。' },
+          { name: '教练 / 调解人', why: '你敢于说出别人不敢说的话，调解正是把冲突变成对话。' }
+        ]
+      },
+      {
+        tag: '原型 B · 温柔而坚定地设界',
+        title: '界限练习',
+        careers: [
+          { name: '管理者 / 团队负责人', why: '边界清晰的管理者最能保护团队，也最受信任。' },
+          { name: '律师 / 法务', why: '你在规则里守住底线，正是法律职业的核心素质。' },
+          { name: '创业者 / 独立负责人', why: '创业每天都要说不，你的界限感是长期生存的前提。' }
+        ]
+      },
+      {
+        tag: '原型 C · 深度对话',
+        title: '一次深入的在场',
+        careers: [
+          { name: '教师 / 导师', why: '你擅长让人被看见、被倾听，教育的内核正是深度对话。' },
+          { name: '咨询师 / 社工', why: '你的在场能力让脆弱的人感到安全，这是助人职业的地基。' },
+          { name: '记者 / 访谈类内容', why: '你善于挖掘真实故事，深度访谈是你的表达方式。' }
+        ]
+      }
+    ],
+    freedom: [
+      {
+        tag: '原型 A · 在当下开一扇窗',
+        title: '最小自由',
+        careers: [
+          { name: '自由职业者（先副业后转正）', why: '你需要的不是立刻辞职，而是先拥有「我说了算」的时段——副业是最安全的练习。' },
+          { name: '数字游民类岗位（远程工作）', why: '远程岗位把「地点自由」变成可选项，适合先以现有技能切换。' }
+        ]
+      },
+      {
+        tag: '原型 B · 探索实验',
+        title: '去一个没去过的地方',
+        careers: [
+          { name: '跨领域从业者（如转行）', why: '你的探索本能适合在行业边缘找机会，那里竞争小、可能性大。' },
+          { name: '品牌 / 市场 / 新业务开拓', why: '你愿意接触陌生领域，市场岗位奖励这种「新输入」。' }
+        ]
+      },
+      {
+        tag: '原型 C · 建立基地',
+        title: '先建好出发的营地',
+        careers: [
+          { name: '技术工匠 / 专业纵深岗位', why: '你把基础打牢，专业纵深本身就是最稳的自由基地。' },
+          { name: '财务 / 稳定型专业岗位', why: '你重视安全感，这类岗位能给你「可以随时出发」的底气。' }
+        ]
+      }
+    ],
+    stable: [
+      {
+        tag: '原型 A · 在当下开一扇窗',
+        title: '最小自由',
+        careers: [
+          { name: '稳定平台 + 副业创作者', why: '你在稳定里留一扇窗，把热爱放在下班后的固定时段。' },
+          { name: '事业单位 / 国企 + 兴趣深耕', why: '稳定不是牢笼，配上兴趣就是双引擎。' }
+        ]
+      },
+      {
+        tag: '原型 B · 探索实验',
+        title: '去一个没去过的地方',
+        careers: [
+          { name: '内部转岗 / 新项目负责人', why: '你不必换公司，先在现有平台里探索新的位置。' },
+          { name: '考证 / 进修后转岗', why: '用确定的学习换未来的选择权，是最稳的探索。' }
+        ]
+      },
+      {
+        tag: '原型 C · 建立基地',
+        title: '先建好出发的营地',
+        careers: [
+          { name: '会计 / 审计 / 风控', why: '你的稳健倾向与这类职业高度匹配，越久越值钱。' },
+          { name: '公务员 / 事业单位', why: '你重视可预期性，体制内的长期主义适合你。' }
+        ]
+      }
+    ],
+    growth: [
+      {
+        tag: '原型 A · 把热爱做成事业',
+        title: '在旧路上长出新方向',
+        careers: [
+          { name: '内容创作者 / 自媒体人', why: '成长型的人适合「边学边输出」，内容职业把学习变成资产。' },
+          { name: '知识付费 / 课程设计', why: '你善于把迷茫变成方法论，帮助同样在找方向的人。' }
+        ]
+      },
+      {
+        tag: '原型 B · 敢为方向做决定',
+        title: '向已经在路上的人提问',
+        careers: [
+          { name: '生涯规划师 / 职业顾问', why: '你自己走过探索期，最能帮别人把路看清。' },
+          { name: '行业研究 / 战略分析', why: '你擅长收集真实案例并提炼规律，这是研究工作的本质。' }
+        ]
+      },
+      {
+        tag: '原型 C · 平衡现实与理想',
+        title: '用作品说话',
+        careers: [
+          { name: '产品 / 项目双轨从业者', why: '你既能仰望方向，也能落地执行，正是产品岗位需要的组合。' },
+          { name: '教师 / 导师', why: '你把成长的困惑转化为可教的路径，教育的价值就在于此。' }
+        ]
+      }
+    ]
+  };
+
+  function themeMapKey(theme) {
+    return CAREER_MAP[theme] ? theme : 'growth';
+  }
+
+  function userIdentity() {
+    var p = profile();
+    var job = (p.job || '').trim();
+    if (/学生|在读|研究生|大学生/.test(job)) return 'student';
+    if (/自由|创业者|个体/.test(job)) return 'freelancer';
+    if (job) return 'worker';
+    return '';
+  }
+
+  function identityHint() {
+    var id = userIdentity();
+    if (id === 'student') return '你是学生身份，下面的方案会围绕「学业之外的时间、实习/项目/作品集」展开，不会建议你在学业上冒险。';
+    if (id === 'freelancer') return '你已经有自由职业的底子，方案会把「时间自由」当作既有资源来放大。';
+    if (id === 'worker') return '方案会基于你「在职」的现状设计，先不辞职、用最小实验验证方向。';
+    return '';
+  }
+
   function simResult() {
     try {
       return JSON.parse(window.guanGet('guan_sim') || 'null');
@@ -54,11 +244,13 @@
   function buildRoutes(theme, wish, resource) {
     var routes = [];
     var res = resource ? '用「' + resource + '」作为实验边界' : '用你愿意投入的最小资源作为边界';
+    var cm = CAREER_MAP[themeMapKey(theme)];
     if (theme === 'work' || theme === 'growth') {
       routes.push({
-        tag: '原型 A · 微转型',
+        tag: cm[0].tag,
         title: '在旧路上长出新方向',
         body: '不急着辞职。在现有工作里找出一个你相对有热情的小切口，用 30 天把它做成「你的作品」。',
+        careers: cm[0].careers,
         deep: [
           '「微转型」的意思，不是让你在现状里硬撑，而是让你在旧路上开一扇新窗。很多时候，我们想离开一份工作，不是这份工作完全没有价值，而是我们在这份工作里已经找不到「我还在成长」的证据。而成长的证据，往往不是换一个环境就能获得的——它需要在某个具体的事上，重新被看见。',
           '所以这条思路建议你做的第一件事，不是辞职，而是「找一个切口」：在你现有的工作里，找出一个你相对有热情、有一定自主空间、又能被看见的小方向。它可能是一个一直没人认真做的新项目，可能是一项你想学但一直没机会用的技能，也可能是一个你早就想改进却总被搁置的流程。',
@@ -69,9 +261,10 @@
         ]
       });
       routes.push({
-        tag: '原型 B · 访谈实验',
+        tag: cm[1].tag,
         title: '向已经在路上的人提问',
         body: '列出三位正在做你想做之事的人，每周约谈一位，听真实的故事。',
+        careers: cm[1].careers,
         deep: [
           '在你犹豫是否换一条路的时候，最危险的并不是「不知道」，而是「靠想象知道」。我们很容易把别人的生活想象得很美好，也很容易把自己的未来想象得很可怕——这两种想象，都会让我们做出失真的决定。',
           '访谈实验，就是用真实取代想象。请列出三位正在做你想做之事的人，不一定是大人物，甚至最好是比你早走两三年的普通人：他们离你的位置最近，也最了解这条路上的真实路况。',
@@ -82,9 +275,10 @@
         ]
       });
       routes.push({
-        tag: '原型 C · 作品实验',
+        tag: cm[2].tag,
         title: '用作品说话',
         body: '围绕你的渴望，30 天产出一个最小的公开作品，让世界告诉你下一步。',
+        careers: cm[2].careers,
         deep: [
           '「作品实验」的前提很简单：与其反复问「我能不能行」，不如做出一件东西，让世界回答你。想法在头脑里永远是模糊的，只有被做成作品，它才会第一次以真实的形状出现在你面前——也会第一次收到真实的反馈。',
           '这个作品不需要大，但它需要「完成并被人看见」：可以是一篇你思考了很久的文章，可以是一个小工具、一份分析、一次分享，也可以是你一直想做的某个创作。关键是：它必须是完整的，而不是完美的；它必须被至少一个人看见，而不是只存在你的草稿箱里。',
@@ -96,9 +290,10 @@
       });
     } else if (theme === 'create') {
       routes.push({
-        tag: '原型 A · 每日创造',
+        tag: cm[0].tag,
         title: '让创造成为日常',
         body: '每天留出 45 分钟的创造时间，只做你热爱的产出，30 天不断档。',
+        careers: cm[0].careers,
         deep: [
           '「每日创造」不是逼自己每天都有灵感，而是给创造一个稳定的位置。灵感是客人，它来去不定；但如果你连一张椅子都没有摆好，客人来了也无处可坐。每天 45 分钟，就是在为灵感摆好那张椅子。',
           '这 45 分钟里，你只需要做一件事：在你热爱的方向上持续在场。写作也好，画画也好，做设计也好，做手工也好——重要的不是产出多少，而是你每天都会回到这里。创造最怕的不是慢，是断；断掉一次，重启的心理成本会成倍增加。',
@@ -109,9 +304,10 @@
         ]
       });
       routes.push({
-        tag: '原型 B · 作品发布',
+        tag: cm[1].tag,
         title: '第一次被看见',
         body: '选一个你最满意的作品，公开发布，观察真实反馈。',
+        careers: cm[1].careers,
         deep: [
           '作品如果不被看见，就还只是自我表达；被看见之后，它才开始和世界对话。「第一次被看见」这条思路，是邀请你迈出这一步：选一个你相对满意的作品，公开发布到任何一个平台。',
           '发布之前，请先调整期待：这次发布的使命不是「爆红」，而是「收到真实反馈」。哪怕只有一个人回应，那也是真实世界给你的第一条信息——它比你在内心演练一百遍观众反应更有价值。',
@@ -122,9 +318,10 @@
         ]
       });
       routes.push({
-        tag: '原型 C · 服务实验',
+        tag: cm[2].tag,
         title: '把热爱变成服务',
         body: '找一个真实的人，用你的创造能力为 TA 免费做一件小事。',
+        careers: cm[2].careers,
         deep: [
           '热爱一旦开始为别人服务，它就从「我喜欢」变成了「对你有用」——这是创造走向价值的第一步。「服务实验」邀请你：找一个真实的人，用你的创造能力，免费为 TA 做一件小事。',
           '可以是为朋友写一篇小文章，可以为同事做一页设计，可以帮家人整理一份方案，也可以为一个你想帮助的群体做一个小工具。关键是：这件事要用上你热爱的能力，并且服务于一个真实的人。',
@@ -136,9 +333,10 @@
       });
     } else if (theme === 'relation') {
       routes.push({
-        tag: '原型 A · 诚实表达',
+        tag: cm[0].tag,
         title: '练习说出真实需要',
         body: '每周至少一次，向一个重要的人说出一个真实的感受或需要。',
+        careers: cm[0].careers,
         deep: [
           '关系中许多的「没办法」，其实都不是没办法，而是「说不出口」。我们习惯先猜对方怎么想，习惯把需要咽回去，习惯用沉默和情绪代替语言——直到关系里积满未说出口的话。',
           '「诚实表达」这条路，邀请你做一件很小但很不容易的事：每周至少一次，向一个重要的人，说出一个真实的感受或需要。不需要完美的措辞，不需要选在完美的时机——说出来，本身就是最大的练习。',
@@ -149,9 +347,10 @@
         ]
       });
       routes.push({
-        tag: '原型 B · 界限练习',
+        tag: cm[1].tag,
         title: '温柔而坚定地说不',
         body: '每周练习一次带着善意的拒绝。界限不是关系的敌人，模糊才是。',
+        careers: cm[1].careers,
         deep: [
           '「不」这个字，对很多人来说，是关系里最难说出口的话。我们怕拒绝会伤害关系，怕对方失望，怕自己被评价为自私——于是我们把「不」咽下去，把委屈咽下去，直到某天发现，自己已经在关系里消失很久了。',
           '界限练习邀请你重新认识「不」：它不是关系的敌人，而是让关系长久的基础设施。一个从不说不的人，给出的「是」也会渐渐失去分量；而一个能温柔说不的人，他的「是」才真正有意义。',
@@ -162,9 +361,10 @@
         ]
       });
       routes.push({
-        tag: '原型 C · 深度对话',
+        tag: cm[2].tag,
         title: '一次深入的对话',
         body: '安排一次与重要之人的深度对话，不解决问题，只在场。',
+        careers: cm[2].careers,
         deep: [
           '日常的关系里，我们交换信息，却很少交换真实。我们聊天气、聊工作、聊安排，却很少坐下来问对方：「你最近在经历什么？你最需要的是什么？」——而这两个问题，恰恰是关系最深处的入口。',
           '「深度对话」邀请你：安排一次与重要之人的对话，一到两个小时，没有手机，没有其他安排。它不是一场谈判，不是一次说教，也不是一次审判——它只是两个人，认真地听，认真地讲。',
@@ -175,10 +375,12 @@
         ]
       });
     } else {
+      var fm = CAREER_MAP[themeMapKey(theme)];
       routes.push({
-        tag: '原型 A · 最小自由',
+        tag: fm[0].tag,
         title: '在当下开一扇窗',
         body: '不改变全局，先在生活里制造一个「自由孤岛」。',
+        careers: fm[0].careers,
         deep: [
           '当你感到被生活困住时，改变全局看起来遥不可及——但自由不一定只存在于远方。它也可以是一个很小的孤岛：每周一段完全属于你的时间，一个完全由你决定的决定，一件只为取悦你而做的事。',
           '「最小自由」这条思路，是邀请你先在当下的生活里，开一扇窗。你不需要辞职、不需要远行、不需要推翻一切——你只需要在每天或每周的某个角落，为「我想要」留出一个位置。',
@@ -189,9 +391,10 @@
         ]
       });
       routes.push({
-        tag: '原型 B · 探索实验',
+        tag: fm[1].tag,
         title: '去一个没去过的地方',
         body: '三十天里做三次低成本探索，让新的输入带来新的选择。',
+        careers: fm[1].careers,
         deep: [
           '人不是被环境困住的，是被「已知」困住的：我们反复走同一条路、见同一群人、想同一个问题，然后惊讶于生活没有新意。其实，新的选择很少来自更努力地思考，更多来自新的输入。',
           '「探索实验」邀请你：三十天里做三次低成本的探索。去一个从没去过的街区，参加一个陌生领域的活动，和一位新认识的人聊三十分钟。每一次探索都不需要宏大，只需要「新」。',
@@ -202,9 +405,10 @@
         ]
       });
       routes.push({
-        tag: '原型 C · 建立基地',
+        tag: fm[2].tag,
         title: '先建好出发的营地',
         body: '自由需要基地支撑：先把一项基础打牢。',
+        careers: fm[2].careers,
         deep: [
           '我们常常把自由理解成「没有牵绊」——没有房贷、没有责任、没有必须做的事。但真正的自由，其实是有能力选择自己的牵绊：你可以选择留下，也可以选择出发，而两者都不让你恐惧。这种自由，需要基地。',
           '「建立基地」这条思路，邀请你先打牢一项基础：存款、技能、健康、或住所的稳定。不必全部做到，只选一项，三十天内让它前进一小步。',
@@ -221,15 +425,16 @@
   function buildPrinciples() {
     var list = [];
     var p = profile();
-    var archetype = window.guanGet('guan_archetype');
-    var stage = window.guanGet('guan_stage');
-    var values = window.guanGet('guan_values');
-    var energy = window.guanGet('guan_energy');
-    var burnout = window.guanGet('guan_burnout');
-    var attachment = window.guanGet('guan_attachment');
-    var drain = window.guanGet('guan_drain');
-    var pleasing = window.guanGet('guan_pleasing');
-    var learning = window.guanGet('guan_learning');
+    var who = window.guanGet('guan_who') || '';
+    var archetype = who;
+    var stage = who;
+    var energy = window.guanGet('guan_energy_map') || '';
+    var burnout = window.guanGet('guan_pressure') || '';
+    var attachment = window.guanGet('guan_relation_map') || '';
+    var drain = window.guanGet('guan_energy_map') || '';
+    var pleasing = window.guanGet('guan_relation_map') || '';
+    var learning = window.guanGet('guan_talent') || '';
+    var values = window.guanGet('guan_life_want') || '';
     if (archetype && archetype.indexOf('探索者') > -1) list.push('你的原型倾向是探索者——设计里记得留出「新」的部分，但也要为它配上「留下来深耕」的锚。');
     if (archetype && archetype.indexOf('创造者') > -1) list.push('你的原型倾向是创造者——每次只选一个作品集中完成，比同时开十个头更接近成品。');
     if (archetype && archetype.indexOf('觉知者') > -1) list.push('你的原型倾向是觉知者——把直觉写下来、说出来，让它从感受变成选择。');
@@ -243,24 +448,24 @@
     if (values && values.indexOf('联结') > -1) list.push('你重视联结——把重要的人写进你的计划：你的设计需要同行者，而不是孤独执行。');
     if (values && values.indexOf('创造') > -1) list.push('你重视创造——为每个阶段设定一个「作品」，让过程有可看见的产出。');
     if (values && values.indexOf('安定') > -1) list.push('你重视安定——设计里的每一步都配上「安全垫」，你会因此走得更稳、更远。');
-    if (energy && energy.indexOf('疲惫') > -1) list.push('你最近的能量状态偏疲惫——先执行两周「减半计划」：日程砍半、睡眠补足，再启动原型实验。');
-    if (energy && energy.indexOf('饱满') > -1) list.push('你最近能量饱满——现在适合启动原型实验，把你的创造力集中投给一个方向。');
-    if (energy && energy.indexOf('萌芽') > -1) list.push('你正处在萌芽期——别急着要结果，先为你的新想法安排最小的一步，让它先活着。');
-    if (burnout && burnout.indexOf('疲惫') > -1) list.push('你的倦怠测试显示你处于疲惫耗竭——请把「恢复」写进方案的前两周，日程先减半再谈推进。');
-    if (burnout && burnout.indexOf('冷漠') > -1) list.push('你的倦怠测试显示你在情感上需要节能——请减少消耗性社交，给感受一个慢慢回流的空间。');
-    if (burnout && burnout.indexOf('意义') > -1) list.push('你的倦怠核心是意义失落——请为方案里的每个行动写清「为什么」，意义是你最重要的燃料。');
-    if (burnout && burnout.indexOf('觉醒') > -1) list.push('你的倦怠测试显示你正处在觉醒期——方案请按「双轨实验」设计：保住现状，同时每周固定投入新方向。');
-    if (attachment && attachment.indexOf('焦虑') > -1) list.push('你的依恋风格偏焦虑——执行方案时请找一个「稳定同行者」定期同步，你会因此更有安全感。');
-    if (attachment && attachment.indexOf('回避') > -1) list.push('你的依恋风格偏回避——方案请保留足够的独处空间，但也请每周向一个人同步一次进度。');
-    if (drain && drain.indexOf('反刍') > -1) list.push('你的内耗主要来自反复回放过去——请给方案加一个「复盘截止线」：想清楚学到什么就结束。');
-    if (drain && drain.indexOf('比较') > -1) list.push('你的内耗主要来自比较——执行方案时请只记录「我自己的进度」，不设任何他人参照。');
-    if (drain && drain.indexOf('完美') > -1) list.push('你的内耗主要来自完美主义——方案里的每个行动都设「完成线」而不是「完美线」。');
-    if (drain && drain.indexOf('讨好') > -1) list.push('你的内耗主要来自讨好——执行方案时请每周练习一次「温柔拒绝」，把边界写进你的计划。');
-    if (pleasing && pleasing.indexOf('照顾') > -1) list.push('你的讨好模式偏习惯照顾——方案请把「照顾自己」列为每日固定动作，像照顾别人一样认真。');
-    if (learning && learning.indexOf('直觉') > -1) list.push('你的学习风格是直觉探索型——学习新东西时先看整体、找感觉，再用好奇心驱动深入。');
-    if (learning && learning.indexOf('逻辑') > -1) list.push('你的学习风格是逻辑建构型——学习时先搭框架，但请记得框架到 60% 就开工。');
-    if (learning && learning.indexOf('体验') > -1) list.push('你的学习风格是体验实践型——请把每个目标翻译成一个「立刻能做的小作品」。');
-    if (learning && learning.indexOf('交流') > -1) list.push('你的学习风格是交流输出型——请把方案讲给一个人听，输出会让你的计划更清晰。');
+    if (energy && energy.indexOf('电量偏低') > -1) list.push('你最近的能量状态偏疲惫——先执行两周「减半计划」：日程砍半、睡眠补足，再启动原型实验。');
+    if (energy && energy.indexOf('能量饱满') > -1) list.push('你最近能量饱满——现在适合启动原型实验，把你的创造力集中投给一个方向。');
+    if (energy && energy.indexOf('能量萌芽') > -1) list.push('你正处在萌芽期——别急着要结果，先为你的新想法安排最小的一步，让它先活着。');
+    if (burnout && burnout.indexOf('安静蓄力') > -1) list.push('你的生长测试显示你正在蓄力——方案前两周请以「恢复+准备」为主，不急着冲刺。');
+    if (burnout && burnout.indexOf('蜕变重生') > -1) list.push('你的生长测试显示你正在蜕变——方案请按「双轨实验」设计：保留现有一部分，同时每周固定投入新方向。');
+    if (burnout && burnout.indexOf('向外探索') > -1) list.push('你正在向外探索——请为方案里的每个行动写清「为什么」，探索需要意义感作为燃料。');
+    if (burnout && burnout.indexOf('向下扎根') > -1) list.push('你正在向下扎根——方案请少开新头，把 80% 精力押注在唯一核心方向上。');
+    if (attachment && attachment.indexOf('焦虑型靠近') > -1) list.push('你的依恋风格偏焦虑——执行方案时请找一个「稳定同行者」定期同步，你会因此更有安全感。');
+    if (attachment && attachment.indexOf('回避型靠近') > -1) list.push('你的依恋风格偏回避——方案请保留足够的独处空间，但也请每周向一个人同步一次进度。');
+    if (drain && drain.indexOf('反复回想') > -1) list.push('你的能量常漏在反复回放过去——请给方案加一个「复盘截止线」：想清楚学到什么就结束。');
+    if (drain && drain.indexOf('与人比较') > -1) list.push('你的能量常漏在比较——执行方案时请只记录「我自己的进度」，不设任何他人参照。');
+    if (drain && drain.indexOf('要求过高') > -1) list.push('你的能量常漏在对自己要求太高——方案里的每个行动都设「完成线」而不是「完美线」。');
+    if (drain && drain.indexOf('讨好他人') > -1) list.push('你的能量常漏在照顾别人——执行方案时请每周练习一次「温柔拒绝」，把边界写进你的计划。');
+    if (pleasing && pleasing.indexOf('习惯性付出') > -1) list.push('你的关系模式偏习惯照顾——方案请把「照顾自己」列为每日固定动作，像照顾别人一样认真。');
+    if (learning && learning.indexOf('直觉学习') > -1) list.push('你的学习风格是直觉探索型——学习新东西时先看整体、找感觉，再用好奇心驱动深入。');
+    if (learning && learning.indexOf('逻辑学习') > -1) list.push('你的学习风格是逻辑建构型——学习时先搭框架，但请记得框架到 60% 就开工。');
+    if (learning && learning.indexOf('实践学习') > -1) list.push('你的学习风格是体验实践型——请把每个目标翻译成一个「立刻能做的小作品」。');
+    if (learning && learning.indexOf('交流学习') > -1) list.push('你的学习风格是交流输出型——请把方案讲给一个人听，输出会让你的计划更清晰。');
     if (list.length === 0) {
       list.push('先完成一次自我探索（如人生原型、价值观罗盘），方案会为你的个人特质定制。');
       list.push('无论测试结果如何，都请记住：方案是草稿，你有权随时修改它。');
@@ -343,40 +548,55 @@
   function buildTalents() {
     var list = [];
     function push(result, map) {
-      var key = result.split(' · ')[0];
-      if (map[key]) {
-        list.push({ icon: map[key].icon, name: map[key].name, desc: map[key].desc });
+      // 结果可能是人话短词（如「探索者 · 探索期 · 联结」或「匠人之心 · 开放」）
+      var parts = String(result).split(' · ');
+      for (var i = 0; i < parts.length; i++) {
+        var key = parts[i].trim();
+        if (map[key]) {
+          list.push({ icon: map[key].icon, name: map[key].name, desc: map[key].desc });
+          break;
+        }
       }
     }
-    push(window.guanGet('guan_archetype') || '', {
+    push(window.guanGet('guan_who') || '', {
       '探索者': { icon: '🧭', name: '探索的眼睛', desc: '你对未知天然不设防，总能看到别人看不见的路。这份好奇，会在你迷茫时带你走出新的可能。' },
       '创造者': { icon: '🛠️', name: '造物者的手', desc: '你天生能把想法变成现实。别人还在想象时，你已经做出了第一版。这份落地力，是你最稀缺的天赋。' },
       '觉知者': { icon: '🫧', name: '深海的听者', desc: '你能感知到别人没说出口的情绪和气氛。这份敏感不是负担，是你连接世界的天线。' },
       '重构者': { icon: '🌄', name: '破晓的勇气', desc: '你敢于对旧结构说不，敢于在废墟上重新开始。这份勇气，会在所有人沉默时替你发声。' },
       '守护者': { icon: '🕊️', name: '安心的怀抱', desc: '你的存在本身就让人安心。你天生会照顾人，而当你学会照顾自己，这份温柔会更有力量。' }
     });
-    push(window.guanGet('guan_drain') || '', {
-      '反刍型': { icon: '📖', name: '记忆的整理师', desc: '你能从经历里提炼出别人看不到的领悟。当你不让反刍变成循环，它会成为你最深的智慧。' },
-      '比较型': { icon: '🔭', name: '榜样的翻译者', desc: '你敏锐地看见「好」，也渴望靠近它。当比较转为参照，你会以惊人的速度成长。' },
-      '完美型': { icon: '🪞', name: '质感的雕刻家', desc: '你对「好」有极高的标准，这让你经手的一切都有品质。当标准不再变成枷锁，它是你最好的名片。' },
-      '讨好型': { icon: '💗', name: '温柔的共情者', desc: '你天生能接住别人的情绪，这是许多人渴望的礼物。当这份温柔也流向你自己，你会完整地发光。' }
+    push(window.guanGet('guan_energy_map') || '', {
+      '反复回想': { icon: '📖', name: '记忆的整理师', desc: '你能从经历里提炼出别人看不到的领悟。当你不让反刍变成循环，它会成为你最深的智慧。' },
+      '与人比较': { icon: '🔭', name: '榜样的翻译者', desc: '你敏锐地看见「好」，也渴望靠近它。当比较转为参照，你会以惊人的速度成长。' },
+      '要求过高': { icon: '🪞', name: '质感的雕刻家', desc: '你对「好」有极高的标准，这让你经手的一切都有品质。当标准不再变成枷锁，它是你最好的名片。' },
+      '讨好他人': { icon: '💗', name: '温柔的共情者', desc: '你天生能接住别人的情绪，这是许多人渴望的礼物。当这份温柔也流向你自己，你会完整地发光。' }
     });
-    push(window.guanGet('guan_attachment') || '', {
-      '焦虑型': { icon: '🌊', name: '深情的守望者', desc: '你对关系投入的深度，是很多麻木的人羡慕的。当这份深情配上安全感，它会让身边的人深深被爱。' },
-      '回避型': { icon: '🌿', name: '独立的光', desc: '你不依附、不纠缠，拥有许多人求而不得的独立。当你学会有边界的靠近，你会拥有真正深刻的联结。' },
-      '安全型': { icon: '⚓', name: '安定的锚', desc: '你在关系里自带一种让人安心的稳定。你是那个能接住别人的人——也请记得，偶尔让别人接住你。' }
+    push(window.guanGet('guan_relation_map') || '', {
+      '焦虑型靠近': { icon: '🌊', name: '深情的守望者', desc: '你对关系投入的深度，是很多麻木的人羡慕的。当这份深情配上安全感，它会让身边的人深深被爱。' },
+      '回避型靠近': { icon: '🌿', name: '独立的光', desc: '你不依附、不纠缠，拥有许多人求而不得的独立。当你学会有边界的靠近，你会拥有真正深刻的联结。' },
+      '安全型靠近': { icon: '⚓', name: '安定的锚', desc: '你在关系里自带一种让人安心的稳定。你是那个能接住别人的人——也请记得，偶尔让别人接住你。' }
     });
-    push(window.guanGet('guan_values') || '', {
+    push(window.guanGet('guan_life_want') || '', {
       '自由': { icon: '🌾', name: '旷野的诗人', desc: '你天生向往不被定义的生活。这份对自由的直觉，会让你在人群里始终保持自己的方向。' },
       '联结': { icon: '🌉', name: '人群的桥', desc: '你拥有把陌生人变成同行者的天赋。你的存在，让许多人感到不再孤单。' },
       '创造': { icon: '🎨', name: '新世界的造物主', desc: '你想为世界留下点什么。这份创造欲，是你生命力的重要出口。' },
       '安定': { icon: '🏡', name: '秩序的守护者', desc: '你给身边的人提供珍贵的确定性。在一个动荡的世界里，你的稳定本身就是礼物。' }
     });
-    push(window.guanGet('guan_learning') || '', {
-      '直觉探索型': { icon: '🎈', name: '灵感的接收者', desc: '你先看见整体，再走向细节。你的学习像探险，总能在未知里发现惊喜。' },
-      '逻辑建构型': { icon: '🧱', name: '结构的建筑师', desc: '你把混乱变成秩序的能力，是很多人依靠的底气。你的框架让复杂变得可以理解。' },
-      '体验实践型': { icon: '✋', name: '双手的实践者', desc: '你通过行动理解世界，做出的东西就是你的思考。你的学习成果，总是拿得出手。' },
-      '交流输出型': { icon: '📣', name: '故事的传声者', desc: '你通过表达理解世界，也让好内容流动起来。你是那个让知识活起来的人。' }
+    push(window.guanGet('guan_talent') || '', {
+      '直觉学习': { icon: '🎈', name: '灵感的接收者', desc: '你先看见整体，再走向细节。你的学习像探险，总能在未知里发现惊喜。' },
+      '逻辑学习': { icon: '🧱', name: '结构的建筑师', desc: '你把混乱变成秩序的能力，是很多人依靠的底气。你的框架让复杂变得可以理解。' },
+      '实践学习': { icon: '✋', name: '双手的实践者', desc: '你通过行动理解世界，做出的东西就是你的思考。你的学习成果，总是拿得出手。' },
+      '交流学习': { icon: '📣', name: '故事的传声者', desc: '你通过表达理解世界，也让好内容流动起来。你是那个让知识活起来的人。' }
+    });
+    push(window.guanGet('guan_pressure') || '', {
+      '动起来': { icon: '🏃', name: '行动的回血者', desc: '你靠行动恢复能量——越是困住，越要动起来。这份本能让你在低谷也能快速重启。' },
+      '安顿下来': { icon: '🍵', name: '安顿的整理者', desc: '你靠整理与秩序回血，能把混乱的生活重新理顺。这份能力让身边的人也感到安稳。' },
+      '好好休息': { icon: '🛌', name: '诚实的休养者', desc: '你懂得休息不是浪费，是让身体和心重新蓄电。这份诚实，是长期主义的底气。' },
+      '与人联结': { icon: '🤝', name: '关系的充电者', desc: '你靠联结恢复能量，和人的温度是你的燃料。这份能力让你在低谷时总有依靠。' },
+      '过往经历': { icon: '🏔️', name: '经验的持有者', desc: '你从经历里获得力量——你知道自己熬过更难的时候。这份底气，是别人拿不走的。' },
+      '内心信念': { icon: '✨', name: '信念的守护者', desc: '你心里有一句一直相信的话，它是你风暴中的锚。' },
+      '重要关系': { icon: '🫂', name: '关系的承接者', desc: '你知道有人会接住你——这份安全感，让你敢于走更远。' },
+      '自我信任': { icon: '🪨', name: '自我的磐石', desc: '你相信自己的判断和力量，这是最难培养、也最稳的底气。' }
     });
     var p = profile();
     if (p.mbti) {
@@ -401,19 +621,19 @@
 
   // 根据测试结果判断用户需要的语气：敏感/不自信 -> 更多情绪价值；行动派 -> 更落地
   function buildVoice() {
-    var drain = localStorage.getItem('guan_drain') || '';
-    var selfworth = localStorage.getItem('guan_selfworth') || '';
-    var energy = localStorage.getItem('guan_energy') || '';
-    var drive = localStorage.getItem('guan_drive') || '';
+    var drain = window.guanGet('guan_energy_map') || '';
+    var relation = window.guanGet('guan_relation_map') || '';
+    var energy = window.guanGet('guan_energy_map') || '';
+    var talent = window.guanGet('guan_talent') || '';
     var voice = {
       warm: 0,
       concrete: 0
     };
-    if (drain.indexOf('反刍') > -1 || drain.indexOf('比较') > -1 || drain.indexOf('完美') > -1) voice.warm += 1;
-    if (selfworth.indexOf('低价值') > -1) voice.warm += 2;
-    if (energy.indexOf('疲惫') > -1) voice.warm += 1;
-    if (drive.indexOf('成就') > -1 || drive.indexOf('行动') > -1) voice.concrete += 1;
-    if (drain.indexOf('讨好') > -1) voice.warm += 1;
+    if (drain.indexOf('反复回想') > -1 || drain.indexOf('与人比较') > -1 || drain.indexOf('要求过高') > -1) voice.warm += 1;
+    if (relation.indexOf('容易低估自己') > -1) voice.warm += 2;
+    if (energy.indexOf('电量偏低') > -1) voice.warm += 1;
+    if (talent.indexOf('实践学习') > -1 || talent.indexOf('方法自信') > -1) voice.concrete += 1;
+    if (drain.indexOf('讨好他人') > -1) voice.warm += 1;
 
     if (voice.warm >= 2) {
       return {
@@ -438,31 +658,18 @@
 
   // 「或许可以成为」：从方案主题映射可能的身份方向，并联动人生模拟
   function buildBecoming(theme, wish, plan) {
-    var map = {
-      work: [
-        { role: '一个把热爱做成事业的人', desc: '在旧路上长出新方向的人——你不必辞职，也能一点点靠近想做的事。', scene: 'career' },
-        { role: '一个敢为方向做决定的人', desc: '不是等想清楚才行动，而是在行动里越来越清楚。', scene: 'career' },
-        { role: '一个平衡现实与理想的人', desc: '既保住生活，也喂养梦想——双轨不是慢，是稳。', scene: 'career' }
-      ],
-      create: [
-        { role: '一个每天都在创作的人', desc: '灵感不再是等来的客人，而是每天都会回家的老友。', scene: 'career' },
-        { role: '一个作品被看见的人', desc: '把你的表达放到世界上，让真实反馈带你走下一步。', scene: 'career' },
-        { role: '一个用热爱帮助别人的人', desc: '你的天赋开始为别人带来价值——那是热爱最踏实的形态。', scene: 'career' }
-      ],
-      relation: [
-        { role: '一个敢于说出需要的人', desc: '不再把话咽回去，关系因此开始真实流动。', scene: 'relation' },
-        { role: '一个温柔而有边界的人', desc: '既照顾好自己，也不把别人推开。', scene: 'relation' },
-        { role: '一个懂得「在场」的人', desc: '不急着解决问题，先让人被看见、被陪伴。', scene: 'relation' }
-      ],
-      default: [
-        { role: '一个拥有自己节奏的人', desc: '不被别人的进度带跑，按自己的方式慢慢走。', scene: 'self' },
-        { role: '一个敢于探索的人', desc: '用一次次小实验，画出属于自己的地图。', scene: 'self' },
-        { role: '一个能为自己留出空间的人', desc: '无论生活多忙，心里都有一块属于你的地方。', scene: 'self' }
-      ]
-    };
-    var list = map[theme] || map.default;
+    var cm = CAREER_MAP[themeMapKey(theme)];
+    var scene = theme === 'relation' ? 'relation' : (theme === 'freedom' || theme === 'stable' ? 'self' : 'career');
+    var list = cm.map(function (c, i) {
+      return {
+        role: c.tag.replace(/^原型 [ABC] · /, ''),
+        desc: c.title + '——参考职业：' + c.careers.map(function (cc) { return cc.name; }).join('、'),
+        scene: scene,
+        careers: c.careers
+      };
+    });
     // 保存方案供模拟器读取
-    window.guanSet('guan_plan', JSON.stringify({ theme: theme, wish: wish, roles: list }));
+    window.guanSet('guan_plan', JSON.stringify({ theme: theme, wish: wish, roles: list, routes: cm }));
     return list;
   }
 
@@ -472,11 +679,16 @@
     var money = inputs.money || '你愿意投入的预算';
     var goal = inputs.goal || '看到一点真实的变化';
     var timeUnit = time.indexOf('每周') > -1 ? time.split('每周')[1] : time;
+    var timeNum = parseFloat(time) || 0;
+    var moneyNum = parseFloat(String(money).replace(/[^0-9.]/g, '')) || 0;
+    var perDay = timeNum > 0 ? Math.max(1, Math.round(timeNum / 7)) : 1;
+    var perWeekBudget = moneyNum > 0 ? Math.round(moneyNum / 4) : 0;
+    var isStudent = userIdentity() === 'student';
     return [
-      { week: '第一周 · 看见', plan: '把「' + goal + '」写下来，贴在看得见的地方。这周只做一件事：每天从你的 ' + timeUnit + ' 里抽一小块时间，熟悉你的方向，不要求产出。' },
-      { week: '第二周 · 尝试', plan: '用 ' + money + ' 做一次最小尝试：买一本书、约一次内行聊、参加一次体验。完成它，记录你的真实感受。' },
-      { week: '第三周 · 调整', plan: '回看前两周：什么让你有能量，什么在消耗你？砍掉消耗的部分，把时间留给有能量的事。' },
-      { week: '第四周 · 回望', plan: '写下这一月的发现：你更了解自己什么？下一步想往哪走？带着这份答案，去做一次专属自察，或再来一次设计。' }
+      { week: '第一周 · 定向', plan: '把「' + goal + '」写下来贴在看得见的地方。' + (timeNum ? '你每周可投入约 ' + timeNum + ' 小时，摊到每天约 ' + perDay + ' 小时——请固定一个时段（如早上 30 分钟），形成「雷打不动」的日常。' : '）每天固定抽出 30 分钟，形成日常。') + ' 这一周不要求产出，只做三件事：①列出 3 个你想靠近的方向；②为每个方向写下「它吸引我的原因」；③选一个方向作为下周实验对象。' + (isStudent ? ' 作为学生，优先利用课后/周末时段，把它当作一个「个人项目」而非额外压力。' : '') },
+      { week: '第二周 · 实验', plan: '用' + (perWeekBudget ? '每周约 ' + perWeekBudget + ' 元的预算' : money) + '做一次最小实验：买一本相关的书、约一位内行聊 30 分钟、或参加一次体验/试听课。' + (timeNum ? '把这周 ' + timeNum + ' 小时拆成：2/3 做实验动作，1/3 记录感受。' : '') + ' 每完成一个动作，回答三个问题：这件事让我有能量还是消耗？我看到什么新信息？我想继续靠近还是后退？' },
+      { week: '第三周 · 调整', plan: '回看前两周的记录：什么让你有能量，什么在消耗你？砍掉消耗的部分，把时间留给有能量的方向。' + (timeNum ? '这一周把 ' + timeNum + ' 小时全部集中投给「最有能量」的那个方向，做一次比上周更完整的尝试（如完成一个小作品、一次完整访谈）。' : '') + ' 本周结束前，请确定：这个方向值不值得再投入 30 天？' },
+      { week: '第四周 · 定稿', plan: '写下这一月的总结：①我验证了什么？②我发现自己擅长/不擅长什么？③下一步（未来 30 天）我要做什么？' + (perWeekBudget ? '把没用完的预算留到下一阶段，作为「继续实验」的燃料。' : '') + ' 然后带着这份答案，去「人生模拟」把选定的方向推演一遍，或再来一次设计，把方案升级成 3-6 个月版本。' }
     ];
   }
 
@@ -486,8 +698,16 @@
     paras.push(voice.tone);
     if (inputs.pain) paras.push('你说，你现在卡在「' + inputs.pain + '」。这句话本身很重要——能说清楚卡在哪里，就已经是开始。');
     if (inputs.wish) paras.push('你希望自己「' + inputs.wish + '」。这份渴望不是空想，它是你心里的方向感，值得被认真对待。');
-    if (inputs.time) paras.push('你愿意每周投入 ' + inputs.time + '——这意味着你有诚意，也有现实感。下面方案里的每一周，都会围绕这个时间量来安排。');
-    if (inputs.money) paras.push('你提到每月大约有 ' + inputs.money + ' 的预算。钱不多不少，但「有多少用多少」本身就是一种清醒——方案里所有尝试都会控制在这个范围。');
+    if (inputs.time) {
+      var tn = parseFloat(inputs.time) || 0;
+      var perD = tn > 0 ? Math.max(1, Math.round(tn / 7)) : 1;
+      paras.push('你愿意每周投入 ' + inputs.time + '——这不是小数目，它意味着你每天约有 ' + perD + ' 小时可以给这件事。方案会按「每天固定一小块时间」来设计，而不是指望某天挤出大块时间。');
+    }
+    if (inputs.money) {
+      var mn = parseFloat(String(inputs.money).replace(/[^0-9.]/g, '')) || 0;
+      var pw = mn > 0 ? Math.round(mn / 4) : 0;
+      paras.push('你提到每月大约有 ' + inputs.money + ' 的预算。拆开看，每周约 ' + pw + ' 元——足够做一次最小尝试（买一本书、约一次访谈、试听一节课），方案里每一步都会控制在这个范围内。');
+    }
     if (inputs.asset) paras.push('你手里已经有「' + inputs.asset + '」。很多人看不见自己已有的资源，而你看见了——这些会成为你起步的台阶。');
     if (inputs.block) paras.push('你担心「' + inputs.block + '」。这份担心不是软弱，它说明你已经想过困难——方案里，我们会给这份担心留一个位置，而不是假装它不存在。');
     if (inputs.goal) paras.push('你希望三十天后「' + inputs.goal + '」。那就把它当作这条路的第一个路标。');
@@ -531,15 +751,27 @@
     routes.forEach(function (r) {
       var div = document.createElement('div');
       div.className = 'design-route';
+      var careerBlock = (r.careers && r.careers.length) ?
+        '<div class="design-career-map"><b>职业规划师对标 · 参考职业</b>' +
+        r.careers.map(function (c) {
+          return '<div class="career-line"><strong>' + c.name + '</strong><span>' + c.why + '</span></div>';
+        }).join('') +
+        '</div>' : '';
       var paras = (r.deep && r.deep.length ? r.deep : [r.body]);
       paras = paras.concat([
         (talents.length ? '在你身上，有一个天赋叫「' + talents[0].name + '」——' + talents[0].desc + '走这条路时，它会是你的同行者，而不是需要被你赶着走的负担。' : '') +
         '这条路不要求你立刻走完，也不要求你每天打卡。它只是在你心里放下一张地图：当你愿意的时候，可以朝这个方向看一眼；当你累了，可以合上它休息。方向不是任务，它是你在黑夜里的参照。'
       ]);
       div.innerHTML = '<span class="route-tag">' + r.tag + '</span><h4>' + r.title + '</h4>' +
+        careerBlock +
         paras.map(function (p) { return '<p style="margin-bottom:12px">' + p + '</p>'; }).join('');
       routesEl.appendChild(div);
     });
+
+    var idHint = identityHint();
+    if (idHint && introEl) {
+      introEl.textContent = idHint + ' ' + voice.tone;
+    }
 
     var tDiv = document.createElement('div');
     tDiv.className = 'design-principles talent-block design-dynamic';

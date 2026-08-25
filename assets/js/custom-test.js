@@ -18,6 +18,12 @@
   var growth = read('guan_growth', []);
   var nickname = profile.nickname || '';
 
+  // 日期种子：让每次打开的自察在措辞与提问角度上有所不同
+  var now = new Date();
+  var daySeed = (now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()) % 17;
+  var history = [];
+  try { history = JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { history = []; }
+
   var themes = {
     care: 0, explore: 0, steady: 0, express: 0, boundary: 0, meaning: 0
   };
@@ -38,18 +44,23 @@
   // Build questions tailored to the user's data
   var questions = [];
 
-  var archetype = resultOf('guan_archetype');
-  var stage = resultOf('guan_stage');
-  var energy = resultOf('guan_energy');
-  var values = resultOf('guan_values');
-  var burnout = resultOf('guan_burnout');
-  var attachment = resultOf('guan_attachment');
-  var drain = resultOf('guan_drain');
-  var pleasing = resultOf('guan_pleasing');
+  var archetype = resultOf('guan_who');
+  var stage = resultOf('guan_who');
+  var energy = resultOf('guan_energy_map');
+  var values = resultOf('guan_life_want');
+  var burnout = resultOf('guan_pressure');
+  var attachment = resultOf('guan_relation_map');
+  var drain = resultOf('guan_energy_map');
+  var pleasing = resultOf('guan_relation_map');
 
   // Q1: state
+  var stateQ = [
+    '此刻回顾最近的日子，你心里最接近的一种感受是？',
+    '如果给今天的自己一个「状态词」，你会选哪一个？',
+    '最近的你，更常被哪一种感觉占据？'
+  ];
   questions.push(q(
-    (nickname ? nickname + '，' : '') + '此刻回顾最近的日子，你心里最接近的一种感受是？',
+    (nickname ? nickname + '，' : '') + stateQ[daySeed % 3],
     [
       opt('有一种想往前走的劲，但方向还不完全清楚', '跃跃欲试', { explore: 2, meaning: 1 }),
       opt('有点累，想先喘口气，不想被催着走', '需要休息', { care: 2, steady: 1 }),
@@ -59,7 +70,12 @@
   ));
 
   // Q2: crossing dimension (unique to custom test, not in fixed tests)
-  questions.push(q('如果把最近的生活比作一本书，你正读到的章节更像？', [
+  var bookQ = [
+    '如果把最近的生活比作一本书，你正读到的章节更像？',
+    '如果最近的生活是一段旅程，你正处在哪一段？',
+    '如果最近的生活是一场电影，你正看到哪一幕？'
+  ];
+  questions.push(q(bookQ[daySeed % 3], [
     opt('序章：很多可能还没展开', '序章', { explore: 2 }),
     opt('转折章：旧情节正在退场', '转折', { meaning: 2 }),
     opt('沉淀章：情节在慢慢扎根', '沉淀', { steady: 2 }),
@@ -67,25 +83,25 @@
   ]));
 
   // Q3: based on drain
-  if (drain.indexOf('反刍') > -1) {
+  if (drain.indexOf('反复回想') > -1) {
     questions.push(q('你的内耗常来自反复回放过去。当旧事又一次浮上来时，什么最能帮到你？', [
       opt('有人告诉我「都过去了，你已经做得很好了」', '被安抚', { care: 2, express: 1 }),
       opt('自己写下来，把乱麻理一理', '被整理', { steady: 1, boundary: 1 }),
       opt('动起来，让身体把念头打断', '被转移', { explore: 2 })
     ]));
-  } else if (drain.indexOf('比较') > -1) {
+  } else if (drain.indexOf('与人比较') > -1) {
     questions.push(q('你的内耗常来自比较。当你看到别人过得「更好」时，你其实真正想对自己说的是？', [
       opt('我也想被看见、被认可', '渴望认可', { express: 2, care: 1 }),
       opt('我是不是走得太慢了', '自我怀疑', { care: 2 }),
       opt('我不想过成别人的样子', '要自己的路', { boundary: 2, meaning: 1 })
     ]));
-  } else if (drain.indexOf('完美') > -1) {
+  } else if (drain.indexOf('要求过高') > -1) {
     questions.push(q('你的内耗常来自对自己要求太高。如果今天允许自己「不完美地完成」一件事，你最想完成什么？', [
       opt('完成一件拖了很久的小事', '先完成', { steady: 2 }),
       opt('说出一句一直没说的话', '先表达', { express: 2 }),
       opt('只是休息，不产出任何东西', '先休息', { care: 2 })
     ]));
-  } else if (drain.indexOf('讨好') > -1) {
+  } else if (drain.indexOf('讨好他人') > -1) {
     questions.push(q('你的内耗常来自太在意别人。如果今天练习一次「先照顾自己」，你更想从哪开始？', [
       opt('拒绝一件不想做的事', '学说不', { boundary: 2 }),
       opt('先做一件只取悦自己的事', '学爱己', { care: 2 }),
@@ -141,14 +157,14 @@
   }
 
   // Q6: based on burnout
-  if (burnout.indexOf('疲惫') > -1) {
-    questions.push(q('你的倦怠测试显示你已很疲惫。此刻最不被允许、但你最需要的事是？', [
+  if (burnout.indexOf('电量偏低') > -1) {
+    questions.push(q('你的能量测试显示你电量偏低。此刻最不被允许、但你最需要的事是？', [
       opt('彻底休息，什么都不做', '休息', { care: 2 }),
       opt('承认「我撑不住了」，不再硬撑', '示弱', { express: 2 }),
       opt('把一部分责任放下', '卸担', { boundary: 2 })
     ]));
-  } else if (burnout.indexOf('觉醒') > -1) {
-    questions.push(q('你的倦怠测试显示你正在觉醒：你知道该变了。你更希望下一步是？', [
+  } else if (burnout.indexOf('蜕变重生') > -1 || burnout.indexOf('向外探索') > -1) {
+    questions.push(q('你的生长测试显示你正在蜕变/向外探索：你知道该变了。你更希望下一步是？', [
       opt('先保住现状，再悄悄试新路', '双轨', { steady: 2, explore: 1 }),
       opt('尽快开始新的尝试，不等了', '起步', { explore: 2 }),
       opt('先想清楚自己要什么，再动', '澄清', { meaning: 2 })
@@ -162,13 +178,13 @@
   }
 
   // Q7: based on pleasing
-  if (pleasing.indexOf('照顾') > -1) {
+  if (pleasing.indexOf('习惯性付出') > -1) {
     questions.push(q('你的模式里带着「习惯照顾别人」。如果今天把照顾的力气分一点给自己，你最想为自己做的是？', [
       opt('好好吃一顿、睡一觉', '照顾身体', { care: 2 }),
       opt('做一件一直想做但「没时间」的事', '照顾心愿', { explore: 2, meaning: 1 }),
       opt('什么都不安排，留白', '照顾空白', { steady: 2 })
     ]));
-  } else if (pleasing.indexOf('怕冲突') > -1) {
+  } else if (pleasing.indexOf('怕冲突而让步') > -1) {
     questions.push(q('你习惯避免冲突。如果今天练习一次「温柔地表达不同」，你更想从哪里开始？', [
       opt('对一件小事说「我有不同想法」', '小表达', { express: 2, boundary: 1 }),
       opt('拒绝一次不想答应的请求', '小拒绝', { boundary: 2 }),
@@ -272,6 +288,77 @@
     opt('一句让我安心的理解', '被理解', { care: 2, express: 1 }),
     opt('一个可以开始的小方向', '小方向', { explore: 2, meaning: 1 }),
     opt('一点允许自己慢慢来的空间', '被允许', { steady: 2, care: 1 })
+  ]));
+
+  // Q13: 动态题 · 成长记录（每次根据最新记录变化）
+  var recentGrowth = growth.slice(-1).map(function (g) { return g.note || ''; }).join(' ').trim();
+  if (recentGrowth) {
+    questions.push(q('你昨天/最近在成长轨迹里写下：「' + recentGrowth.slice(0, 30) + (recentGrowth.length > 30 ? '…' : '') + '」。如果我顺着这句话继续问你，你最想让我问的是？', [
+      opt('「这句话背后，你真正想要的是什么？」', '追问愿望', { meaning: 2, explore: 1 }),
+      opt('「写完这句话之后，你感觉怎么样？」', '追问感受', { care: 2, express: 1 }),
+      opt('「这件事，你下一步打算做什么？」', '追问行动', { explore: 2, steady: 1 })
+    ]));
+  } else {
+    var growthQ = [
+      '你还没有开始记录成长轨迹。如果今天写第一笔，你最想记录的是？',
+      '如果从今天起开始记录自己，你希望第一行写什么？'
+    ];
+    questions.push(q(growthQ[daySeed % 2], [
+      opt('此刻最真实的感受', '记感受', { express: 2 }),
+      opt('今天做成的或推进的一件事', '记小事', { steady: 2 }),
+      opt('我想成为的样子', '记愿景', { meaning: 2, explore: 1 })
+    ]));
+  }
+
+  // Q14: 动态题 · 档案变动
+  if (profile.selfDesc) {
+    var selfQ = [
+      '你在档案里写过：「' + profile.selfDesc.slice(0, 26) + (profile.selfDesc.length > 26 ? '…' : '') + '」。现在的你，还想对这句话补充什么？',
+      '你曾经这样描述自己：「' + profile.selfDesc.slice(0, 26) + (profile.selfDesc.length > 26 ? '…' : '') + '」。如果今天的你重新说一次，会更接近哪一句？'
+    ];
+    questions.push(q(selfQ[daySeed % 2], [
+      opt('「其实我比自己写的更有力量」', '看见力量', { self: 2, meaning: 1 }),
+      opt('「我还在那个状态里，但我想出来了」', '想出来', { explore: 2, boundary: 1 }),
+      opt('「我对自己有了新的认识」', '新认识', { meaning: 2, express: 1 })
+    ]));
+  } else {
+    var descQ = [
+      '如果用一个词描述「最近的你」，你会选哪个？',
+      '如果让熟悉你的人用一个词形容你，你希望是？'
+    ];
+    questions.push(q(descQ[daySeed % 2], [
+      opt('「在找方向」', '找方向', { explore: 2, meaning: 1 }),
+      opt('「在撑着」', '撑住', { care: 2, steady: 1 }),
+      opt('「在变」', '变化中', { meaning: 2, express: 1 })
+    ]));
+  }
+
+  // Q15: 动态题 · 测试历程
+  if (history.length >= 2) {
+    var titles = history.slice(0, 3).map(function (h) { return h.title; }).join('、');
+    questions.push(q('你已经完成了 ' + history.length + ' 次探索（' + titles + '）。把它们放在一起看，你发现了什么？', [
+      opt('它们指向同一个方向——我开始知道我要什么了', '方向浮现', { meaning: 2, explore: 1 }),
+      opt('它们让我更懂自己，但行动还没跟上', '知而未行', { steady: 2, care: 1 }),
+      opt('它们像一面镜子，照出我一直在回避的事', '看见回避', { boundary: 2, care: 1 })
+    ]));
+  } else {
+    questions.push(q('这是你最早期的探索之一。你希望这份自察，能帮你回答哪个问题？', [
+      opt('「我到底想要什么」', '要方向', { meaning: 2 }),
+      opt('「我为什么总在某个地方卡住」', '要解结', { boundary: 2, care: 1 }),
+      opt('「我怎么才能更喜欢自己」', '要接纳', { care: 2, express: 1 })
+    ]));
+  }
+
+  // Q16: 动态题 · 性格与自我认知（每次按 seed 换角度）
+  var selfQ = [
+    '如果把你最欣赏自己的一个特点送给别人，你会送什么？',
+    '你希望自己在三年后，被人记住的一个特点是？',
+    '如果只能保留一种「我本来的样子」，你希望是？'
+  ];
+  questions.push(q(selfQ[daySeed % 3], [
+    opt('「真诚」——不装、不讨好', '真诚', { express: 2, boundary: 1 }),
+    opt('「坚持」——认定的事会走到底', '坚持', { steady: 2, meaning: 1 }),
+    opt('「温柔」——能接住自己也能接住别人', '温柔', { care: 2, express: 1 })
   ]));
 
   // Ensure all themes have at least one result map

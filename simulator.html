@@ -100,6 +100,9 @@
             </div>
             <h3 class="sim-question" id="simQuestion"></h3>
             <div class="sim-options" id="simOptions"></div>
+            <div class="sim-note-input">
+              <textarea class="journal-area" id="simNoteInput" rows="2" placeholder="写下你此刻的想法（可选）：为什么这样选？你担心什么？……"></textarea>
+            </div>
             <div class="sim-story" id="simStory"></div>
             <div class="sim-nav">
               <button type="button" class="back-link" id="simBack" style="visibility:hidden">← 回到上一个选择</button>
@@ -124,6 +127,12 @@
               <p id="simInsight"></p>
             </div>
             <div class="sim-futures" id="simFutures"></div>
+            <div class="sim-planner" id="simPlanner">
+              <h4>职业规划师解读</h4>
+              <div id="simPlannerBody"></div>
+              <textarea class="journal-area" id="plannerInput" rows="3" placeholder="补充你的信息（可选）：你目前是学生还是在职？你觉得自己擅长什么、担心什么？……"></textarea>
+              <button type="button" class="btn btn-gold btn-sm" id="plannerBtn">生成更确定的分析</button>
+            </div>
             <div class="sim-actions">
               <button type="button" class="btn btn-gold btn-sm" id="simSave">保存这次模拟</button>
               <button type="button" class="btn btn-sm" id="simAgain">再试一次不同选择</button>
