@@ -1225,3 +1225,41 @@ button{font-family:inherit}
 
 .legacy-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:rgba(224,192,126,.08);border:1px solid rgba(224,192,126,.25);border-radius:12px;padding:12px 16px;margin:0 auto 22px;max-width:920px}
 .legacy-bar span{color:var(--muted);font-size:13px;line-height:1.7}
+
+/* ---------- 变现门控（L1 锁定 / 解锁面板 / 深度解读 teaser） ---------- */
+.locked-wrap{position:relative;overflow:hidden;border-radius:14px;margin-bottom:20px}
+.locked-wrap .result-block{margin-bottom:0}
+.lock-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;background:rgba(10,15,28,.82);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:2;border:1px solid rgba(224,192,126,.18);border-radius:14px;padding:24px}
+.lock-overlay .lock-ico{font-size:26px;opacity:.9}
+.lock-overlay b{color:var(--text);font-size:15px;letter-spacing:.05em}
+.lock-overlay em{color:var(--muted);font-size:12.5px;font-style:normal;line-height:1.8}
+
+.gate-panel{border:1px solid rgba(224,192,126,.35);background:linear-gradient(180deg,rgba(224,192,126,.08),rgba(224,192,126,.02));border-radius:16px;padding:26px 24px;margin:4px 0 22px;text-align:center}
+.gate-panel h4{font-family:var(--serif);font-size:20px;letter-spacing:.08em;color:var(--gold-bright);margin-bottom:10px}
+.gate-panel>p{color:var(--muted);font-size:14px;line-height:1.9;max-width:520px;margin:0 auto 18px}
+.gate-options{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.gate-note{font-size:12.5px!important;color:var(--muted-2)!important;margin-top:16px!important;margin-bottom:0!important}
+.gate-support{font-size:12px;color:var(--muted-2);margin-top:10px;margin-bottom:0}
+.gate-manual{margin-top:14px;padding-top:12px;border-top:1px solid rgba(224,192,126,.18)}
+.gate-manual p{font-size:12px;color:var(--muted-2);margin-bottom:8px!important}
+.gate-manual>div{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.gate-manual input{background:rgba(10,15,28,.6);border:1px solid rgba(224,192,126,.25);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;width:220px;max-width:100%}
+.gate-manual input:focus{outline:none;border-color:var(--gold-bright)}
+
+.deep-teaser{border:1px dashed rgba(224,192,126,.4);background:rgba(224,192,126,.04);border-radius:14px;padding:22px 20px;text-align:center}
+.deep-teaser h4{font-family:var(--serif);font-size:18px;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:10px}
+.deep-teaser p{color:var(--muted);font-size:13.5px;line-height:1.9;max-width:520px;margin:0 auto 16px}
+
+/* ---------- A/B 配置面板（?admin=1） ---------- */
+.admin-panel{position:fixed;right:16px;bottom:16px;z-index:9999;width:330px;max-width:calc(100vw - 32px);max-height:72vh;overflow:auto;background:#0d1424;border:1px solid rgba(224,192,126,.35);border-radius:14px;padding:16px 18px;color:var(--text);font-size:13px;box-shadow:0 12px 40px rgba(0,0,0,.55)}
+.admin-panel h3{font-family:var(--serif);font-size:16px;letter-spacing:.08em;color:var(--gold-bright);margin-bottom:12px;border-bottom:1px solid rgba(224,192,126,.2);padding-bottom:10px}
+.admin-panel label{display:block;margin:10px 0 4px;color:var(--muted);font-size:12.5px}
+.admin-panel input{width:100%;background:rgba(10,15,28,.7);border:1px solid rgba(224,192,126,.25);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px}
+.admin-panel input:focus{outline:none;border-color:var(--gold-bright)}
+.admin-panel input[type="checkbox"]{width:auto;accent-color:var(--gold-bright)}
+.admin-panel .admin-row{display:flex;gap:10px;margin-top:14px}
+.admin-panel .admin-note{color:var(--muted-2);font-size:11.5px;line-height:1.7;margin-top:10px}
+
+/* 本地调试齿轮入口 */
+#adminGear{position:fixed;right:16px;bottom:16px;z-index:9998;width:44px;height:44px;border-radius:50%;border:1px solid rgba(224,192,126,.4);background:rgba(13,20,36,.92);color:var(--gold-bright);font-size:20px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+#adminGear:hover{background:rgba(224,192,126,.15)}

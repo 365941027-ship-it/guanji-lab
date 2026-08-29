@@ -13,6 +13,36 @@
     }
   })();
 
+  // ---------- 付费配置（面包多 V0，可在控制台 localStorage 覆盖） ----------
+  // 正式配置方法：
+  //   localStorage.setItem('guan_pay_enabled', '1')
+  //   localStorage.setItem('guan_pay_goods', JSON.stringify({
+  //     default: 'https://mianbaoduo.com/你的商品链接',
+  //     guan_who: 'https://mianbaoduo.com/你的专属商品链接（可选）'
+  //   }))
+  window.GUAN_PAY_CONFIG = {
+    enabled: (function () {
+      try { return localStorage.getItem('guan_pay_enabled') === '1'; } catch (e) { return false; }
+    })(),
+    price: 9.9,
+    supportEmail: (function () {
+      try { return localStorage.getItem('guan_pay_support_email') || 'guanji@example.com'; } catch (e) { return 'guanji@example.com'; }
+    })(),
+    goods: (function () {
+      try { return JSON.parse(localStorage.getItem('guan_pay_goods') || '{}'); } catch (e) { return {}; }
+    })()
+  };
+  window.GUAN_PRICE = function (quizKey) {
+    var cfg = window.GUAN_PAY_CONFIG || {};
+    var byQuiz = cfg.goods && cfg.goods[quizKey + '_price'];
+    return byQuiz || cfg.price || 9.9;
+  };
+  window.GUAN_GOODS_URL = function (quizKey) {
+    var cfg = window.GUAN_PAY_CONFIG || {};
+    if (!cfg.goods) return '';
+    return cfg.goods[quizKey] || cfg.goods.default || '';
+  };
+
   // ---------- 埋点（V0：Supabase REST 上报，未配置则落本地日志） ----------
   window.guanTrack = function (event, data) {
     var payload = {
@@ -246,6 +276,203 @@
       fallbackCopy(text, done);
     }
   };
+
+  // ---------- 权益（本地为准，Supabase 有账号时尽力同步） ----------
+  function entitlementsRaw() {
+    try { return JSON.parse(window.guanGet('guan_entitlements') || '{}'); } catch (e) { return {}; }
+  }
+  function saveEntitlements(obj) {
+    try { window.guanSet('guan_entitlements', JSON.stringify(obj)); } catch (e) {}
+  }
+  window.guanHasEntitlement = function (quizKey, level) {
+    var all = entitlementsRaw();
+    var rec = all[quizKey];
+    if (!rec) return false;
+    if (level === 'paid') return rec.level === 'paid';
+    if (level === 'share') return rec.level === 'share' || rec.level === 'paid';
+    return !!rec;
+  };
+  window.guanMarkEntitlement = function (quizKey, level, order) {
+    var all = entitlementsRaw();
+    var cur = all[quizKey] || {};
+    // paid 覆盖 share，share 不覆盖 paid
+    if (cur.level === 'paid') return;
+    all[quizKey] = { level: level, order: order || '', ts: Date.now() };
+    saveEntitlements(all);
+    // 尽力同步到 Supabase（登录用户）
+    try {
+      var supaUrl = localStorage.getItem('guan_supabase_url') || '';
+      var anonKey = localStorage.getItem('guan_supabase_anon') || '';
+      if (!supaUrl || !anonKey) return;
+      // 通过 auth 会话拿不到 user id 时静默跳过，本地权益仍生效
+      if (!window.supabase || !window.SUPABASE_CONFIG) return;
+      var sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+      sb.auth.getSession().then(function (res) {
+        var uid = res.data && res.data.session && res.data.session.user && res.data.session.user.id;
+        if (!uid) return;
+        return sb.from('entitlements').upsert({
+          user_id: uid,
+          quiz_key: quizKey,
+          level: level,
+          order_no: order || '',
+          created_at: new Date().toISOString()
+        }, { onConflict: 'user_id,quiz_key' });
+      }).catch(function () {});
+    } catch (e) {}
+  };
+
+  // ---------- 分享链接（带来源与随机 ref） ----------
+  window.guanShareUrl = function (quizKey) {
+    var base = location.href.split('?')[0].split('#')[0];
+    var ref = Math.random().toString(36).slice(2, 8);
+    try { localStorage.setItem('guan_share_ref_' + quizKey, ref); } catch (e) {}
+    return base + '?from=' + encodeURIComponent(quizKey) + '&ref=' + ref;
+  };
+  window.guanShareRef = function (quizKey) {
+    try { return localStorage.getItem('guan_share_ref_' + quizKey) || ''; } catch (e) { return ''; }
+  };
+
+  // ---------- 分享验证（V1）：记录朋友打开 / 查询是否已打开 ----------
+  var GUAN_CLAIM_DEFAULT = 'https://guanji-lab.vercel.app/api/claim';
+  window.GUAN_CLAIM_URL = (function () {
+    try { return localStorage.getItem('guan_claim_url') || GUAN_CLAIM_DEFAULT || ''; } catch (e) { return GUAN_CLAIM_DEFAULT || ''; }
+  })();
+  window.guanRecordShareClaim = function (ref, quiz) {
+    var url = window.GUAN_CLAIM_URL || '';
+    if (!url) return Promise.resolve({ recorded: false, configured: false });
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, quiz: quiz || '' })
+    }).then(function (res) { return res.json().catch(function () { return {}; }); })
+      .catch(function () { return { recorded: false, configured: false }; });
+  };
+  window.guanCheckShareClaim = function (ref, quiz) {
+    var url = window.GUAN_CLAIM_URL || '';
+    if (!url) return Promise.resolve({ claimed: false, configured: false });
+    return fetch(url + '?ref=' + encodeURIComponent(ref) + '&quiz=' + encodeURIComponent(quiz || ''))
+      .then(function (res) { return res.json().catch(function () { return {}; }); })
+      .catch(function () { return { claimed: false, configured: false }; });
+  };
+
+  // 朋友打开分享链接时，登记一次「打开」（同一 ref 只登记一次）
+  (function recordIncomingClaim() {
+    var qs = {};
+    location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) {
+      try { qs[decodeURIComponent(k)] = decodeURIComponent(v); } catch (e) {}
+    });
+    var ref = qs.ref || '';
+    var from = qs.from || '';
+    if (!ref) return;
+    var key = 'guan_claimed_' + ref;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch (e) {}
+    if (window.guanRecordShareClaim) {
+      window.guanRecordShareClaim(ref, from).then(function () {});
+    }
+    setTimeout(function () {
+      if (window.guanToast) window.guanToast('谢谢打开——你帮朋友解锁了完整解读');
+    }, 900);
+  })();
+
+  // ---------- A/B 配置面板（?admin=1 打开） ----------
+  (function adminPanel() {
+    var isLocal = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(location.hostname);
+    var autoOpen = location.search.indexOf('admin=1') > -1;
+    var forceShow = false;
+    try { forceShow = localStorage.getItem('guan_admin') === '1'; } catch (e) {}
+    // 本地环境始终显示齿轮入口；线上只有 ?admin=1 或 localStorage 开启时才显示
+    var showEntry = isLocal || autoOpen || forceShow;
+    if (!showEntry) return;
+
+    function buildPanel() {
+      if (document.querySelector('.admin-panel')) return;
+      var CORE = [
+        ['guan_who', '我如何成为我'],
+        ['guan_energy_map', '我的能量地图'],
+        ['guan_relation_map', '我在关系里的位置'],
+        ['guan_talent', '我的天赋信号'],
+        ['guan_pressure', '我如何重新生长'],
+        ['guan_life_want', '我真正想要的生活']
+      ];
+      function readGoods() {
+        try { return JSON.parse(localStorage.getItem('guan_pay_goods') || '{}'); } catch (e) { return {}; }
+      }
+      function writeGoods(g) {
+        localStorage.setItem('guan_pay_goods', JSON.stringify(g));
+      }
+      var panel = document.createElement('div');
+      panel.className = 'admin-panel';
+      var rows = CORE.map(function (c) {
+        return '<label>' + c[1] + ' 价格（元）</label>' +
+          '<input type="number" step="0.1" min="0" data-price="' + c[0] + '" placeholder="默认价">';
+      }).join('');
+      panel.innerHTML =
+        '<h3>变现 A/B 配置</h3>' +
+        '<label><input type="checkbox" id="adminEnabled"> 启用付费</label>' +
+        '<label>默认价格（元）</label><input type="number" step="0.1" min="0" id="adminDefaultPrice">' +
+        '<label>默认商品链接</label><input type="url" id="adminGoodsUrl" placeholder="https://mianbaoduo.com/...">' +
+        rows +
+        '<label>支持邮箱</label><input type="email" id="adminSupportEmail">' +
+        '<div class="admin-row">' +
+        '<button type="button" class="btn btn-gold btn-sm" id="adminSave">保存</button>' +
+        '<button type="button" class="btn btn-sm" id="adminClose">关闭</button>' +
+        '</div>' +
+        '<p class="admin-note">保存后刷新页面生效。测试不同价格时改完刷新即可。</p>';
+      document.body.appendChild(panel);
+
+      var goods = readGoods();
+      document.getElementById('adminEnabled').checked = localStorage.getItem('guan_pay_enabled') === '1';
+      document.getElementById('adminDefaultPrice').value = (window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.price) || 9.9;
+      document.getElementById('adminGoodsUrl').value = goods.default || '';
+      document.getElementById('adminSupportEmail').value = (window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.supportEmail) || 'guanji@example.com';
+      CORE.forEach(function (c) {
+        var el = panel.querySelector('[data-price="' + c[0] + '"]');
+        if (el) el.value = goods[c[0] + '_price'] || '';
+      });
+
+      panel.querySelector('#adminSave').addEventListener('click', function () {
+        var enabled = document.getElementById('adminEnabled').checked;
+        localStorage.setItem('guan_pay_enabled', enabled ? '1' : '0');
+        var dp = parseFloat(document.getElementById('adminDefaultPrice').value);
+        if (!isNaN(dp) && dp > 0) {
+          var g = readGoods();
+          g.default = document.getElementById('adminGoodsUrl').value.trim();
+          CORE.forEach(function (c) {
+            var v = parseFloat(panel.querySelector('[data-price="' + c[0] + '"]').value);
+            if (!isNaN(v) && v > 0) g[c[0] + '_price'] = v;
+            else delete g[c[0] + '_price'];
+          });
+          writeGoods(g);
+        }
+        localStorage.setItem('guan_pay_support_email', document.getElementById('adminSupportEmail').value.trim());
+        if (window.guanToast) window.guanToast('配置已保存，刷新页面生效');
+        setTimeout(function () { location.reload(); }, 700);
+      });
+      panel.querySelector('#adminClose').addEventListener('click', function () {
+        panel.remove();
+        if (forceShow && !autoOpen) {
+          try { localStorage.setItem('guan_admin', '1'); } catch (e) {}
+        }
+      });
+    }
+
+    if (autoOpen || forceShow) {
+      buildPanel();
+    } else {
+      // 本地环境：右下角显示齿轮入口
+      var gear = document.createElement('button');
+      gear.type = 'button';
+      gear.id = 'adminGear';
+      gear.setAttribute('aria-label', '变现配置');
+      gear.title = '变现配置（本地调试）';
+      gear.textContent = '⚙';
+      gear.addEventListener('click', buildPanel);
+      document.body.appendChild(gear);
+    }
+  })();
 
   function fallbackCopy(text, done) {
     var ta = document.createElement('textarea');

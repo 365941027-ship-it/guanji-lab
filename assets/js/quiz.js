@@ -1322,6 +1322,14 @@
 
   // 点击「深度解读」：不弹窗，直接生成；没有通道时才在结果区内联填 Key
   function runDeepNow() {
+    var paid = window.guanHasEntitlement && window.guanHasEntitlement(QUIZ.key, 'paid');
+    if (!paid) {
+      window.guanTrack && window.guanTrack('deep_click', { quiz: QUIZ.key, gated: 1 });
+      gatedDeepReading();
+      window.guanToast('深度解读已经为你准备好——先解锁它');
+      return;
+    }
+    window.guanTrack && window.guanTrack('deep_click', { quiz: QUIZ.key });
     var provider = 'deepseek';
     var key = aiKeyFor(provider) || '';
     var proxyReady = !!(window.GUAN_PROXY_URL);
@@ -1406,6 +1414,244 @@
     }
     readingBox.setAttribute('data-auto-started', '1');
     startDeepReading(provider, key, false);
+  }
+
+  // ---------- 变现门控（L0 免费 / L1 分享解锁 / L2 付费深度解读） ----------
+  function isL0Block(title, idx, el, isLetter) {
+    if (isLetter) return false;
+    // 量表类结果保持全部免费（仅 L2 深度解读收费）
+    if (QUIZ.isStandard || QUIZ.isBigFive || QUIZ.scoring === 'phq9' || QUIZ.scoring === 'gad7') return true;
+    if (title === '今日一问' || title === '核心特征' || title === '量表结果' || title === '这意味着什么') return true;
+    if (idx < 2) return true;
+    return false;
+  }
+
+  function applyGates() {
+    var sections = resultEl.querySelector('.result-sections');
+    if (!sections) return;
+    var paid = window.guanHasEntitlement && window.guanHasEntitlement(QUIZ.key, 'paid');
+    var shared = window.guanHasEntitlement && window.guanHasEntitlement(QUIZ.key, 'share');
+    if (paid || shared) return;
+
+    Array.prototype.slice.call(sections.children).forEach(function (child, idx) {
+      if (child.nodeType !== 1) return;
+      var h4 = child.querySelector(':scope > h4');
+      var title = h4 ? h4.textContent : '';
+      var isLetter = child.classList.contains('result-letter');
+      if (isL0Block(title, idx, child, isLetter)) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'locked-wrap';
+      child.parentNode.insertBefore(wrap, child);
+      wrap.appendChild(child);
+      var ov = document.createElement('div');
+      ov.className = 'lock-overlay';
+      ov.innerHTML = '<span class="lock-ico">🔒</span><b>这部分内容，解锁后可见</b><em>分享给一位朋友，或解锁深度解读</em>';
+      wrap.appendChild(ov);
+    });
+
+    var panel = document.createElement('div');
+    panel.className = 'gate-panel';
+    panel.id = 'gatePanel';
+    var price = window.GUAN_PRICE ? window.GUAN_PRICE(QUIZ.key) : 9.9;
+    var support = (window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.supportEmail) || 'guanji@example.com';
+    var pending = !!(window.guanShareRef && window.guanShareRef(QUIZ.key));
+    panel.innerHTML = gatePanelHTML(pending, price, support);
+    sections.parentNode.insertBefore(panel, sections.nextSibling);
+    bindGateButtons(panel);
+  }
+
+  function gatePanelHTML(pending, price, support) {
+    var shareBtn = pending
+      ? '<button type="button" class="btn btn-sm" data-verify-share>我已分享，验证解锁</button>' +
+        '<button type="button" class="btn btn-sm" data-resend-share>重新复制分享链接</button>'
+      : '<button type="button" class="btn btn-sm" data-unlock-share>分享解锁全部内容</button>';
+    return '<h4>解锁完整解读</h4>' +
+      '<p>你已经看到了这份结果的核心。再往下，还有更多只属于你的部分。</p>' +
+      '<div class="gate-options">' + shareBtn +
+      '<button type="button" class="btn btn-gold" data-unlock-pay>✨ 深度解读 · ¥' + price + '</button>' +
+      '</div>' +
+      '<p class="gate-note">分享只需发给一位朋友；深度解读由 AI 结合你的回答与档案生成，约 3000 字，只属于你。</p>' +
+      '<div class="gate-manual">' +
+      '  <p>已支付但没有自动解锁？</p>' +
+      '  <div><input type="text" id="gateManualOrder" placeholder="订单号或支付备注" maxlength="60"><button type="button" class="btn btn-sm" data-unlock-manual>手动解锁</button></div>' +
+      '</div>' +
+      '<p class="gate-support">遇到问题？联系 ' + support + '</p>';
+  }
+
+  function bindGateButtons(container) {
+    var sBtn = container.querySelector('[data-unlock-share]');
+    var vBtn = container.querySelector('[data-verify-share]');
+    var rBtn = container.querySelector('[data-resend-share]');
+    var pBtn = container.querySelector('[data-unlock-pay]');
+    var mBtn = container.querySelector('[data-unlock-manual]');
+    if (sBtn) sBtn.addEventListener('click', shareToUnlock);
+    if (vBtn) vBtn.addEventListener('click', verifyShareUnlock);
+    if (rBtn) rBtn.addEventListener('click', resendShareLink);
+    if (pBtn) pBtn.addEventListener('click', startPay);
+    if (mBtn) mBtn.addEventListener('click', function () { unlockManual(container); });
+  }
+
+  function removeGates() {
+    resultEl.querySelectorAll('.locked-wrap').forEach(function (wrap) {
+      Array.prototype.slice.call(wrap.children).forEach(function (ch) {
+        if (ch.classList && ch.classList.contains('lock-overlay')) { ch.remove(); return; }
+        wrap.parentNode.insertBefore(ch, wrap);
+      });
+      wrap.remove();
+    });
+    var panel = resultEl.querySelector('#gatePanel');
+    if (panel) panel.remove();
+  }
+
+  function shareToUnlock() {
+    window.guanTrack && window.guanTrack('share_click', { quiz: QUIZ.key, unlock: 1 });
+    var url = window.guanShareUrl ? window.guanShareUrl(QUIZ.key) : location.href;
+    window.guanCopy(url + '\n我在「观己实验室」完成了' + QUIZ.title + '，也来试试：', function (ok) {
+      window.guanToast(ok ? '链接已复制 · 发给一位朋友，TA 打开后点「我已分享」解锁' : '链接已生成，请手动复制发送');
+    });
+    setSharePending();
+  }
+
+  function setSharePending() {
+    var price = window.GUAN_PRICE ? window.GUAN_PRICE(QUIZ.key) : 9.9;
+    var support = (window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.supportEmail) || 'guanji@example.com';
+    var panel = resultEl.querySelector('#gatePanel');
+    if (panel) {
+      panel.innerHTML = gatePanelHTML(true, price, support);
+      bindGateButtons(panel);
+    }
+    var teaser = resultEl.querySelector('#deepReading .deep-teaser');
+    if (teaser) {
+      var box = resultEl.querySelector('#deepReading');
+      if (box) {
+        box.innerHTML = deepTeaserHTML(true, price, support);
+        bindGateButtons(box);
+      }
+    }
+  }
+
+  function resendShareLink() {
+    var url = window.guanShareUrl ? window.guanShareUrl(QUIZ.key) : location.href;
+    window.guanCopy(url + '\n我在「观己实验室」完成了' + QUIZ.title + '，也来试试：', function (ok) {
+      window.guanToast(ok ? '链接已重新复制' : '复制失败，请手动复制');
+    });
+  }
+
+  function verifyShareUnlock() {
+    var ref = window.guanShareRef ? window.guanShareRef(QUIZ.key) : '';
+    window.guanTrack && window.guanTrack('share_verify', { quiz: QUIZ.key });
+    if (!ref || !window.guanCheckShareClaim) {
+      // 没有 ref 或验证通道不可用：回退到信任制（V0）
+      window.guanMarkEntitlement && window.guanMarkEntitlement(QUIZ.key, 'share');
+      removeGates();
+      window.guanToast('已解锁全部内容');
+      return;
+    }
+    window.guanToast('正在确认朋友的打开记录…');
+    window.guanCheckShareClaim(ref, QUIZ.key).then(function (res) {
+      if (res && res.claimed) {
+        window.guanMarkEntitlement && window.guanMarkEntitlement(QUIZ.key, 'share');
+        window.guanTrack && window.guanTrack('share_success', { quiz: QUIZ.key });
+        removeGates();
+        window.guanToast('朋友已打开，已解锁全部内容');
+      } else if (res && res.configured === false) {
+        // 接口未配置：回退信任制
+        window.guanMarkEntitlement && window.guanMarkEntitlement(QUIZ.key, 'share');
+        removeGates();
+        window.guanToast('已解锁全部内容');
+      } else {
+        window.guanToast('还没有收到朋友的打开记录，再等等或重新发送');
+      }
+    });
+  }
+
+  function deepTeaserHTML(pending, price, support) {
+    var shareBtn = pending
+      ? '<button type="button" class="btn btn-sm" data-verify-share>我已分享，验证解锁</button>' +
+        '<button type="button" class="btn btn-sm" data-resend-share>重新复制分享链接</button>'
+      : '<button type="button" class="btn btn-sm" data-unlock-share>分享解锁全部内容</button>';
+    return '<div class="deep-teaser">' +
+      '<h4>你的专属深度解读</h4>' +
+      '<p>一段只属于你的解读：AI 会读你刚才的每一个回答，结合你的档案与过往探索，写一封约 3000 字的回信。' +
+      (pending ? '链接已复制——朋友打开后点「我已分享」即可解锁。' : '分享给一位朋友即可解锁全部内容；深度解读需 ' + price + ' 元。') + '</p>' +
+      '<div class="gate-options">' + shareBtn +
+      '<button type="button" class="btn btn-gold" data-unlock-pay>✨ 深度解读 · ¥' + price + '</button>' +
+      '</div>' +
+      '<div class="gate-manual"><p>已支付但没有自动解锁？</p>' +
+      '<div><input type="text" id="gateManualOrder" placeholder="订单号或支付备注" maxlength="60"><button type="button" class="btn btn-sm" data-unlock-manual>手动解锁</button></div></div>' +
+      '</div>';
+  }
+
+  function startPay() {
+    var url = window.GUAN_GOODS_URL ? window.GUAN_GOODS_URL(QUIZ.key) : '';
+    window.guanTrack && window.guanTrack('pay_click', { quiz: QUIZ.key });
+    if (!url || !(window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.enabled)) {
+      window.guanToast('付费通道正在准备中，很快开放');
+      return;
+    }
+    try {
+      sessionStorage.setItem('guan_pending_' + QUIZ.key, JSON.stringify(state.answers));
+    } catch (e) {}
+    var ret = location.href.split('?')[0].split('#')[0] +
+      '?paid=1&quiz=' + encodeURIComponent(QUIZ.key) + '&order=' + Date.now();
+    var sep = url.indexOf('?') > -1 ? '&' : '?';
+    window.open(url + sep + 'return_url=' + encodeURIComponent(ret), '_blank');
+  }
+
+  function checkPaidReturn() {
+    var qs = {};
+    location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) {
+      try { qs[decodeURIComponent(k)] = decodeURIComponent(v); } catch (e) {}
+    });
+    if (qs.paid !== '1' || !qs.quiz) return;
+    window.guanMarkEntitlement && window.guanMarkEntitlement(qs.quiz, 'paid', qs.order || '');
+    window.guanTrack && window.guanTrack('pay_success', { quiz: qs.quiz, order: qs.order || '' });
+    if (qs.quiz === QUIZ.key) {
+      try {
+        var pending = sessionStorage.getItem('guan_pending_' + QUIZ.key);
+        if (pending) {
+          var arr = JSON.parse(pending);
+          if (Array.isArray(arr) && arr.length === totalQuestions() && arr.indexOf(null) === -1) {
+            state.answers = arr;
+            sessionStorage.removeItem('guan_pending_' + QUIZ.key);
+            window.guanToast('已解锁深度解读，正在为你生成…');
+            setTimeout(function () {
+              buildResultView();
+              setTimeout(function () { removeGates(); autoDeepReading(); }, 500);
+            }, 300);
+            return;
+          }
+        }
+      } catch (e) {}
+      window.guanToast('已解锁深度解读，重新完成测试即可查看');
+    }
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  }
+
+  function gatedDeepReading() {
+    var box = resultEl.querySelector('#deepReading');
+    if (!box) return;
+    var paid = window.guanHasEntitlement && window.guanHasEntitlement(QUIZ.key, 'paid');
+    var shared = window.guanHasEntitlement && window.guanHasEntitlement(QUIZ.key, 'share');
+    if (paid) { autoDeepReading(); return; }
+    box.style.display = 'block';
+    var price = window.GUAN_PRICE ? window.GUAN_PRICE(QUIZ.key) : 9.9;
+    var pending = !shared && !!(window.guanShareRef && window.guanShareRef(QUIZ.key));
+    var support = (window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.supportEmail) || 'guanji@example.com';
+    box.innerHTML = deepTeaserHTML(pending, price, support);
+    bindGateButtons(box);
+  }
+
+  function unlockManual(container) {
+    var scope = container || resultEl;
+    var input = scope.querySelector('#gateManualOrder');
+    var order = input ? input.value.trim() : '';
+    if (!order) { window.guanToast('请填写订单号或支付备注，方便我们对账'); return; }
+    window.guanMarkEntitlement && window.guanMarkEntitlement(QUIZ.key, 'paid', order);
+    window.guanTrack && window.guanTrack('pay_success', { quiz: QUIZ.key, order: order, manual: 1 });
+    removeGates();
+    window.guanToast('已解锁深度解读，正在为你生成…');
+    setTimeout(autoDeepReading, 400);
   }
 
   function buildAiPrompt() {
@@ -1789,8 +2035,9 @@
         renderQuestion();
       });
     }
-    // 结果页自动生成深度解读（不弹窗、不付费墙）
-    autoDeepReading();
+    // 结果页门控：L1 锁定块 + L2 深度解读
+    applyGates();
+    gatedDeepReading();
   }
 
   function shareText(label, name, core) {
@@ -2037,6 +2284,7 @@
   })();
 
   window.guanTrack && window.guanTrack('quiz_start', { quiz: QUIZ.key });
+  checkPaidReturn();
 
   renderQuestion();
 })();

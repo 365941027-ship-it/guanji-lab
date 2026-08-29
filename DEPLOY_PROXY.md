@@ -41,10 +41,23 @@ var GUAN_PROXY_DEFAULT = 'https://guanji-lab.vercel.app/api/interpret';
 
 > 当前已部署完成，线上地址即 `https://guanji-lab.vercel.app/api/interpret`，`DEEPSEEK_API_KEY` 已配置为生产环境变量（Sensitive）。
 
+## 3.1 分享解锁验证接口（V1）
+
+`api/claim.js` 需要额外两个环境变量（Vercel → 项目 → Settings → Environment Variables → Production）：
+
+```bash
+vercel env add SUPABASE_URL              # 形如 https://xxxx.supabase.co
+vercel env add SUPABASE_SERVICE_ROLE_KEY # Project Settings → API → service_role（勿泄露）
+vercel --prod
+```
+
+配置后，`https://guanji-lab.vercel.app/api/claim` 即可登记/查询分享打开记录。
+未配置时接口返回 `configured:false`，前端自动回退到「点击即解锁」的信任制，不影响使用。
+
 ## 4. 验证
 
 - 浏览器访问 `https://你的项目.vercel.app/api/interpret`，应返回 `{"ok":true,"provider":"deepseek","ready":true}`。
-- 打开任一测试 → 完成 → 「✨ 深度解读」→ 不填 Key 直接生成完整解读（结果页自动展开）。
+- 打开任一测试 → 完成 → 「✨ 深度解读」→ 弹窗显示「● 内置解读通道已连接」，不填 Key 直接「开始解读」。
 
 ## 可选
 
