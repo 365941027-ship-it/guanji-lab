@@ -1,0 +1,20 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # 每 2 天一次，防止免费档因 7 天无活动被自动暂停
+    - cron: "0 4 */2 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          curl -s -o /dev/null -w "supabase_ping_status=%{http_code}\n" \
+            "https://npsmpxfpxjhspymnxrrv.supabase.co/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wc21weGZweGpoc3B5bW54cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjI1MTIsImV4cCI6MjEwMjkzODUxMn0.9agyMYWqh6tkIrTfIs4OJgd4dvQeSuoHUJqPi954Toc"
+          curl -s -o /dev/null -w "supabase_auth_status=%{http_code}\n" \
+            "https://npsmpxfpxjhspymnxrrv.supabase.co/auth/v1/health" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wc21weGZweGpoc3B5bW54cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjI1MTIsImV4cCI6MjEwMjkzODUxMn0.9agyMYWqh6tkIrTfIs4OJgd4dvQeSuoHUJqPi954Toc"
