@@ -19,13 +19,13 @@ export default async function handler(req, res) {
     const r = await fetch(base + '/rest/v1/profiles?select=id&limit=1', { headers });
     results.rest = r.status;
   } catch (e) {
-    results.rest = 'ERR:' + (e && e.message ? e.message : 'unknown');
+    results.rest = 'ERR:' + (e && e.cause && e.cause.message ? e.cause.message : (e && e.message ? e.message : 'unknown'));
   }
   try {
     const a = await fetch(base + '/auth/v1/health', { headers });
     results.auth = a.status;
   } catch (e) {
-    results.auth = 'ERR:' + (e && e.message ? e.message : 'unknown');
+    results.auth = 'ERR:' + (e && e.cause && e.cause.message ? e.cause.message : (e && e.message ? e.message : 'unknown'));
   }
 
   return res.status(200).json({ ok: true, at: new Date().toISOString(), results });
