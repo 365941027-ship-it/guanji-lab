@@ -10,11 +10,19 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - name: Diagnose network
+        run: |
+          echo "== getent supabase =="
+          getent hosts npsmpxfpxjhspymnxrrv.supabase.co || echo "DNS_FAIL supabase.co"
+          echo "== getent api.github =="
+          getent hosts api.github.com || echo "DNS_FAIL github"
+          echo "== curl github =="
+          curl -s -o /dev/null -w "github=%{http_code}\n" --max-time 10 https://api.github.com || echo "CURL_FAIL github"
       - name: Ping Supabase REST API
         run: |
-          curl -s -o /dev/null -w "supabase_ping_status=%{http_code}\n" \
+          curl -s -o /dev/null -w "supabase_ping_status=%{http_code}\n" --max-time 15 \
             "https://npsmpxfpxjhspymnxrrv.supabase.co/rest/v1/profiles?select=id&limit=1" \
             -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wc21weGZweGpoc3B5bW54cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjI1MTIsImV4cCI6MjEwMjkzODUxMn0.9agyMYWqh6tkIrTfIs4OJgd4dvQeSuoHUJqPi954Toc"
-          curl -s -o /dev/null -w "supabase_auth_status=%{http_code}\n" \
+          curl -s -o /dev/null -w "supabase_auth_status=%{http_code}\n" --max-time 15 \
             "https://npsmpxfpxjhspymnxrrv.supabase.co/auth/v1/health" \
             -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wc21weGZweGpoc3B5bW54cnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjI1MTIsImV4cCI6MjEwMjkzODUxMn0.9agyMYWqh6tkIrTfIs4OJgd4dvQeSuoHUJqPi954Toc"
