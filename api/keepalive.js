@@ -15,17 +15,26 @@ export default async function handler(req, res) {
   const headers = { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
   const results = {};
 
-  try {
-    const r = await fetch(base + '/rest/v1/profiles?select=id&limit=1', { headers });
-    results.rest = r.status;
-  } catch (e) {
-    results.rest = 'ERR:' + (e && e.cause && e.cause.message ? e.cause.message : (e && e.message ? e.message : 'unknown'));
+  // 瞬时 DNS/网络抖动时自动重试一次，避免误报
+  async function pingOnce(url) {
+    try {
+      const r = await fetch(url, { headers });
+      return String(r.status);
+    } catch (e) {
+      return 'ERR:' + (e && e.cause && e.cause.message ? e.cause.message : (e && e.message ? e.message : 'unknown'));
+    }
   }
+  async function pingWithRetry(url) {
+    const first = await pingOnce(url);
+    if (!first.startsWith('ERR:')) return first;
+    await new Promise((res) => setTimeout(res, 1500));
+    const second = await pingOnce(url);
+    return first + ' | retry:' + second;
+  }
+
   try {
-    const a = await fetch(base + '/auth/v1/health', { headers });
-    results.auth = a.status;
-  } catch (e) {
-    results.auth = 'ERR:' + (e && e.cause && e.cause.message ? e.cause.message : (e && e.message ? e.message : 'unknown'));
+    results.rest = await pingWithRetry(base + '/rest/v1/profiles?select=id&limit=1');
+    results.auth = await pingWithRetry(base + '/auth/v1/health');
   }
 
   return res.status(200).json({ ok: true, at: new Date().toISOString(), results });
