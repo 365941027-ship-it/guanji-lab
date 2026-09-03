@@ -32,10 +32,8 @@ export default async function handler(req, res) {
     return first + ' | retry:' + second;
   }
 
-  try {
-    results.rest = await pingWithRetry(base + '/rest/v1/profiles?select=id&limit=1');
-    results.auth = await pingWithRetry(base + '/auth/v1/health');
-  }
+  results.rest = await pingWithRetry(base + '/rest/v1/profiles?select=id&limit=1');
+  results.auth = await pingWithRetry(base + '/auth/v1/health');
 
   return res.status(200).json({ ok: true, at: new Date().toISOString(), results });
 }
