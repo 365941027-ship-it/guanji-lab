@@ -1,0 +1,27 @@
+# 观己实验室 · 腾讯云部署（与 A股盯盘共用一台服务器）
+# A股服务占 8235 端口；观己站默认 8787 端口，互不冲突。
+#
+# 用法：
+#   cd /opt/guanji-lab
+#   sudo bash deploy/install_guanji_docker.sh
+#
+# 首次部署前把 deploy/.env.example 复制为 /opt/guanji-lab/.env 并填入真实参数。
+services:
+  guanji:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: guanji-lab:latest
+    container_name: guanji-lab
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: 8787
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      GUAN_PAY_ENABLED: ${GUAN_PAY_ENABLED:-0}
+      GUAN_PAY_PRICE: ${GUAN_PAY_PRICE:-9.9}
+      GUAN_PAY_GOODS_JSON: ${GUAN_PAY_GOODS_JSON:-}
+      GUAN_PAY_SUPPORT_EMAIL: ${GUAN_PAY_SUPPORT_EMAIL:-}

@@ -61,7 +61,10 @@ export default async function handler(req, res) {
     'null': true // 无来源（同源/隐私模式）放行，仍受限流保护
   };
   var origin = req.headers.origin || 'null';
-  if (!ALLOWED_ORIGINS[origin]) {
+  var hostHeader = req.headers.host || '';
+  var sameOrigin = origin !== 'null' && origin !== '' &&
+    (origin === ('http://' + hostHeader) || origin === ('https://' + hostHeader));
+  if (!ALLOWED_ORIGINS[origin] && !sameOrigin) {
     return res.status(403).json({ error: { code: 'origin_forbidden', message: '来源不被允许' } });
   }
   res.setHeader('Access-Control-Allow-Origin', origin);

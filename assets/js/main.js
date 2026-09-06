@@ -1,10 +1,27 @@
 (function () {
   'use strict';
 
+  // 判断当前页面是否仍由静态托管（GitHub Pages / Vercel / 本地调试）提供：
+  // 是则继续调用远端 Vercel 代理；否则（腾讯云等自建服务器）自动改走同源 /api。
+  function guanSameOriginApi() {
+    var host = String(location.hostname || '').toLowerCase();
+    var knownStaticHosts = [
+      '365941027-ship-it.github.io',
+      'guanji-lab.vercel.app',
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0'
+    ];
+    if (knownStaticHosts.indexOf(host) > -1) return false;
+    return true;
+  }
+
   // 服务端解读代理（免用户 Key）
   // 部署代理后，把 GUAN_PROXY_DEFAULT 改为完整 URL，例如 'https://your-app.vercel.app/api/interpret'
   // 个人调试可用 localStorage.setItem('guan_proxy_url', '...') 覆盖
-  var GUAN_PROXY_DEFAULT = 'https://guanji-lab.vercel.app/api/interpret';
+  var GUAN_PROXY_DEFAULT = guanSameOriginApi()
+    ? location.origin + '/api/interpret'
+    : 'https://guanji-lab.vercel.app/api/interpret';
   window.GUAN_PROXY_URL = (function () {
     try {
       return localStorage.getItem('guan_proxy_url') || GUAN_PROXY_DEFAULT || '';
@@ -42,6 +59,30 @@
     if (!cfg.goods) return '';
     return cfg.goods[quizKey] || cfg.goods.default || '';
   };
+
+  // 自建服务器模式下，从 /api/config 拉取站点级付费配置。
+  // 本地 A/B 面板若已配置（localStorage），优先保留本地面板设置。
+  (function loadServerPayConfig() {
+    if (!guanSameOriginApi()) return;
+    try {
+      var hasLocalOverride =
+        localStorage.getItem('guan_pay_enabled') !== null ||
+        localStorage.getItem('guan_pay_goods') !== null;
+      if (hasLocalOverride) return;
+    } catch (e) {}
+    fetch(location.origin + '/api/config', { cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (cfg) {
+        if (!cfg || !cfg.pay) return;
+        var cur = window.GUAN_PAY_CONFIG;
+        var p = cfg.pay;
+        cur.enabled = !!p.enabled;
+        if (p.price) cur.price = p.price;
+        if (p.supportEmail) cur.supportEmail = p.supportEmail;
+        if (p.goods && (p.goods.default || Object.keys(p.goods).length)) cur.goods = p.goods;
+      })
+      .catch(function () {});
+  })();
 
   // ---------- 埋点（V0：Supabase REST 上报，未配置则落本地日志） ----------
   window.guanTrack = function (event, data) {
@@ -333,7 +374,9 @@
   };
 
   // ---------- 分享验证（V1）：记录朋友打开 / 查询是否已打开 ----------
-  var GUAN_CLAIM_DEFAULT = 'https://guanji-lab.vercel.app/api/claim';
+  var GUAN_CLAIM_DEFAULT = guanSameOriginApi()
+    ? location.origin + '/api/claim'
+    : 'https://guanji-lab.vercel.app/api/claim';
   window.GUAN_CLAIM_URL = (function () {
     try { return localStorage.getItem('guan_claim_url') || GUAN_CLAIM_DEFAULT || ''; } catch (e) { return GUAN_CLAIM_DEFAULT || ''; }
   })();
