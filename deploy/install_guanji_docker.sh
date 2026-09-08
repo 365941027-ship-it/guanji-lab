@@ -11,6 +11,7 @@ set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE="docker compose -f $APP_DIR/deploy/docker-compose.yml"
+ENV_FILE="$APP_DIR/.env"
 
 echo "== [1/4] 确认 Docker =="
 docker --version
@@ -27,8 +28,8 @@ fi
 
 echo "== [3/4] 构建并启动 =="
 cd "$APP_DIR"
-$COMPOSE build guanji
-$COMPOSE up -d guanji
+$COMPOSE --env-file "$ENV_FILE" build guanji
+$COMPOSE --env-file "$ENV_FILE" up -d guanji
 sleep 3
 docker ps --filter name=guanji-lab --format "观己容器：{{.Names}} 状态={{.Status}}"
 
