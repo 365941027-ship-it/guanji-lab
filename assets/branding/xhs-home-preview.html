@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>观己实验室 · 小红书主页预览</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(160deg,#05070f 0%,#0b1220 55%,#141b30 100%);
+      min-height:100vh; color:#e9e2d0; padding:32px 18px;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    .page-title { font-size:20px; letter-spacing:2px; color:#e9c98e; margin-bottom:6px; }
+    .page-sub { font-size:12px; color:rgba(233,226,208,.55); letter-spacing:1px; margin-bottom:26px; }
+
+    .stage { display:flex; gap:34px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+
+    /* 手机壳 */
+    .phone {
+      width:390px; background:#fff; border-radius:42px; overflow:hidden;
+      box-shadow:0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(224,192,126,.22);
+      position:relative;
+    }
+    .phone-bar { height:38px; background:transparent; display:flex; align-items:center; justify-content:center; }
+    .notch { width:96px; height:24px; background:#0a0f1c; border-radius:18px; }
+
+    /* 小红书主色（预览里用近似红，仅作界面示意） */
+    .xhs-body { background:#fff; color:#222; font-size:13px; }
+    .topline { display:flex; align-items:center; justify-content:space-between; padding:4px 16px 0; }
+    .back-arrow { font-size:18px; color:#333; }
+    .top-icons { display:flex; gap:14px; font-size:16px; color:#333; }
+    .xhs-red { color:#ff2442; font-weight:700; }
+
+    /* 背景横幅 */
+    .banner { height:136px; background:url("xhs-banner.png") center/cover no-repeat; position:relative; }
+    .banner::after {
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, transparent 60%, rgba(255,255,255,.92));
+    }
+
+    /* 头像压边 */
+    .head { position:relative; padding:0 14px; }
+    .avatar {
+      width:84px; height:84px; border-radius:50%; overflow:hidden;
+      border:3px solid #fff; background:#0a1122;
+      margin-top:-46px; box-shadow:0 6px 18px rgba(0,0,0,.18);
+      position:relative; z-index:2;
+    }
+    .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+    .head-top { display:flex; align-items:flex-start; }
+    .head-meta { margin:8px 0 0 12px; }
+    .name { display:flex; align-items:center; gap:5px; font-size:16px; font-weight:700; }
+    .edit-btn {
+      margin-left:auto; font-size:12px; color:#555; border:1px solid #d6d6d6;
+      border-radius:5px; padding:3px 14px; background:#fafafa; white-space:nowrap;
+    }
+    .xhs-id { color:#999; font-size:11px; margin-top:3px; }
+    .bio { padding:10px 16px 0; line-height:1.65; color:#333; font-size:13px; }
+    .bio .hl { color:#333; font-weight:600; }
+    .tags { padding:7px 16px 0; color:#888; font-size:11.5px; }
+    .stats { display:flex; gap:22px; padding:9px 16px 0; font-size:12px; color:#999; }
+    .stats b { display:block; font-size:14px; color:#222; font-weight:700; text-align:center; }
+    .stat { text-align:center; }
+
+    .op-row { display:flex; gap:8px; padding:12px 16px 0; }
+    .op-primary { flex:1; background:#ff2442; color:#fff; border:none; border-radius:5px; height:34px; font-size:13px; }
+    .op-ghost { flex:1; background:#fff; color:#333; border:1px solid #ddd; border-radius:5px; height:34px; font-size:13px; }
+    .op-bubble { width:52px; border:1px solid #ddd; border-radius:5px; height:34px; font-size:17px; background:#fff; }
+
+    .tabs { display:flex; margin-top:10px; border-bottom:1px solid #eee; }
+    .tab { flex:1; text-align:center; padding:9px 0; font-size:13px; color:#888; border-bottom:2px solid transparent; }
+    .tab.active { color:#222; border-bottom-color:#ff2442; font-weight:600; }
+    .tab-badge { display:inline-block; min-width:15px; height:15px; line-height:15px; border-radius:8px; background:#ff2442; color:#fff; font-size:9px; text-align:center; margin-left:2px; }
+
+    /* 瀑布流 */
+    .masonry { display:grid; grid-template-columns:1fr 1fr; gap:3px; padding:3px; }
+    .note { background:#eee; border-radius:2px; position:relative; aspect-ratio:3/4; overflow:hidden; }
+    .note-cover { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:14px; color:#fff; }
+    .note-cover.p1 { background:linear-gradient(150deg,#101a35,#1b2a4f); }
+    .note-cover.p2 { background:linear-gradient(150deg,#0a1122,#252033); }
+    .note-cover.p3 { background:linear-gradient(150deg,#171226,#3a2b3c); }
+    .cover-line1 { font-size:15px; font-weight:700; letter-spacing:1px; line-height:1.45; font-family:serif; }
+    .cover-line2 { font-size:10px; margin-top:8px; opacity:.75; letter-spacing:2px; }
+    .pinned { position:absolute; top:6px; left:6px; background:rgba(0,0,0,.42); color:#fff; font-size:9px; padding:2px 6px; border-radius:3px; }
+    .note-bot { position:absolute; bottom:0; left:0; right:0; padding:5px 8px; font-size:11px; color:#333; background:rgba(255,255,255,.88); display:flex; justify-content:space-between; }
+    .note-bot .t { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .note-bot .likes { color:#888; flex:none; margin-left:5px; }
+
+    /* 说明卡 */
+    .panel { max-width:430px; background:rgba(13,21,40,.82); border:1px solid rgba(224,192,126,.28); border-radius:18px; padding:26px 24px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+    .panel h3 { color:#e9c98e; font-size:16px; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid rgba(224,192,126,.18); padding-bottom:10px; }
+    .spec { margin-bottom:16px; }
+    .spec dt { font-size:11px; color:#a6adbd; letter-spacing:1px; margin-bottom:4px; }
+    .spec dd { font-size:13.5px; line-height:1.7; color:#e9e2d0; }
+    .spec dd small { color:#8b93a7; }
+    .files { margin-top:8px; background:rgba(255,255,255,.04); border-radius:10px; padding:12px 14px; font-size:11px; color:#a6adbd; line-height:1.8; word-break:break-all; }
+  </style>
+</head>
+<body>
+  <div class="page-title">观己实验室 · 小红书主页设计</div>
+  <div class="page-sub">头像 / 背景横幅 / 简介 / 内容排布 预览</div>
+
+  <div class="stage">
+    <!-- 手机预览 -->
+    <div class="phone">
+      <div class="phone-bar"><div class="notch"></div></div>
+      <div class="xhs-body">
+        <div class="topline">
+          <span class="back-arrow">‹</span>
+          <span style="font-weight:700;letter-spacing:.5px">观己实验室</span>
+          <span class="top-icons">⋯  ⊙</span>
+        </div>
+        <div class="banner"></div>
+        <div class="head">
+          <div class="head-top">
+            <div class="avatar"><img src="xhs-avatar.png" alt="头像"></div>
+            <div class="head-meta">
+              <div class="name">观己实验室</div>
+              <div class="xhs-id">小红书号：guanjilab（可自定义）</div>
+            </div>
+            <button class="edit-btn">编辑资料</button>
+          </div>
+        </div>
+        <div class="bio">
+          <span class="hl">理解自己，设计人生。</span>不卖答案，只做镜子。
+          向内观看，再慢慢成为自己。🔍 搜索「观己实验室」。
+          <div style="margin-top:4px">✳ 心理成长 · 自我探索 · 人生设计</div>
+        </div>
+        <div class="tags">🏷 成长分享者 · 观己来信</div>
+        <div class="stats">
+          <div class="stat"><b>23</b>关注</div>
+          <div class="stat"><b>86</b>粉丝</div>
+          <div class="stat"><b>412</b>获赞与收藏</div>
+        </div>
+        <div class="op-row">
+          <button class="op-primary">关注</button>
+          <button class="op-ghost">私信</button>
+          <button class="op-bubble">✦</button>
+        </div>
+        <div class="tabs">
+          <div class="tab active">笔记 <span class="tab-badge">12</span></div>
+          <div class="tab">收藏</div>
+          <div class="tab">赞过</div>
+        </div>
+        <div class="masonry">
+          <div class="note">
+            <div class="pinned">置顶</div>
+            <div class="note-cover p1">
+              <div class="cover-line1">迷茫不是故障<br>是你在换系统</div>
+              <div class="cover-line2">自我探索 · 六面镜子</div>
+            </div>
+            <div class="note-bot"><span class="t">迷茫不是故障，是你在换系统</span><span class="likes">♡ 128</span></div>
+          </div>
+          <div class="note">
+            <div class="pinned">置顶</div>
+            <div class="note-cover p2">
+              <div class="cover-line1">我不是在找自己<br>而是在做自己</div>
+              <div class="cover-line2">关于观己的一封信</div>
+            </div>
+            <div class="note-bot"><span class="t">我不是在找自己，而是在做自己</span><span class="likes">♡ 96</span></div>
+          </div>
+          <div class="note">
+            <div class="note-cover p3">
+              <div class="cover-line1">测了那么多「我是谁」<br>没人告诉我下一步</div>
+              <div class="cover-line2">反标签 · 成长</div>
+            </div>
+            <div class="note-bot"><span class="t">测了那么多「我是谁」…</span><span class="likes">♡ 74</span></div>
+          </div>
+          <div class="note">
+            <div class="note-cover p1">
+              <div class="cover-line1">写给你的一封信<br>你不需要被定义</div>
+              <div class="cover-line2">观己来信</div>
+            </div>
+            <div class="note-bot"><span class="t">写给你的一封信</span><span class="likes">♡ 63</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 配套说明 -->
+    <div class="panel">
+      <h3>主页文案与设置</h3>
+      <dl class="spec">
+        <dt>昵称</dt>
+        <dd>观己实验室</dd>
+        <dt>小红书号</dt>
+        <dd>guanjilab（若已被占用，可用 guanji_lab / selfinsightlab）</dd>
+        <dt>简介（可直接复制）</dt>
+        <dd>理解自己，设计人生。不卖答案，只做镜子。<br>向内观看，再慢慢成为自己。<br>🔍 搜索「观己实验室」<br><small>✳ 心理成长 · 自我探索 · 人生设计</small></dd>
+        <dt>置顶笔记建议</dt>
+        <dd>① 品牌长文《我不是在找自己，而是在做自己》<br>② 测试体验《迷茫不是故障，是你在换系统》<br>③ 反标签观点《测了那么多「我是谁」，没人告诉我下一步》</dd>
+      </dl>
+      <h3 style="margin-top:8px">设计文件</h3>
+      <div class="files">
+        头像（正方形，上传后系统裁圆）：xhs-avatar.svg / xhs-avatar.png<br>
+        主页背景横幅：xhs-banner.svg / xhs-banner.png<br>
+        预览页：xhs-home-preview.html
+      </div>
+    </div>
+  </div>
+</body>
+</html>

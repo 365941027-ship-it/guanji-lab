@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="观己实验室 小红书头像">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#101a35"/>
+      <stop offset="55%" stop-color="#0a1122"/>
+      <stop offset="100%" stop-color="#070b16"/>
+    </radialGradient>
+    <linearGradient id="goldMain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0d59a"/>
+      <stop offset="45%" stop-color="#e0c07e"/>
+      <stop offset="100%" stop-color="#a9854a"/>
+    </linearGradient>
+    <linearGradient id="ringGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9c98e"/>
+      <stop offset="100%" stop-color="#8f6b38"/>
+    </linearGradient>
+    <radialGradient id="starHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(224,192,126,.28)"/>
+      <stop offset="100%" stop-color="rgba(224,192,126,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 深蓝夜底色 -->
+  <rect width="1024" height="1024" fill="#070b16"/>
+  <circle cx="512" cy="512" r="506" fill="url(#bgGlow)"/>
+
+  <!-- 外圈金色环 -->
+  <circle cx="512" cy="512" r="462" fill="none" stroke="url(#ringGold)" stroke-width="7" opacity=".9"/>
+  <circle cx="512" cy="512" r="446" fill="none" stroke="url(#ringGold)" stroke-width="2" opacity=".35"/>
+
+  <!-- 星芒柔光 -->
+  <circle cx="512" cy="470" r="330" fill="url(#starHalo)"/>
+
+  <!-- 主星形（延续站内 Logo 的星） -->
+  <path d="M512 296 L531.2 443.4 L680 459.6 L562.4 557.2 L603.2 701.6 L512 621.2 L420.8 701.6 L461.6 557.2 L344 459.6 L492.8 443.4 Z"
+        fill="url(#goldMain)"/>
+
+  <!-- 星内部镂空圆：像一面望向自己的镜子 -->
+  <circle cx="512" cy="526" r="74" fill="#0a1122"/>
+  <circle cx="512" cy="526" r="74" fill="none" stroke="url(#goldMain)" stroke-width="5" opacity=".85"/>
+  <circle cx="512" cy="526" r="52" fill="none" stroke="url(#goldMain)" stroke-width="1.6" opacity=".45" stroke-dasharray="6 8"/>
+  <circle cx="512" cy="510" r="14" fill="#f0d59a"/>
+
+  <!-- 底部轨道微光 -->
+  <circle cx="330" cy="752" r="7" fill="#e0c07e" opacity=".7"/>
+  <circle cx="694" cy="752" r="7" fill="#e0c07e" opacity=".7"/>
+  <path d="M330 752 Q512 830 694 752" fill="none" stroke="url(#ringGold)" stroke-width="3" opacity=".45"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1242 440" role="img" aria-label="观己实验室 小红书主页背景">
+  <defs>
+    <linearGradient id="bgTop" x1="0" y1="0" x2="1" y2="0.65">
+      <stop offset="0%" stop-color="#070b16"/>
+      <stop offset="52%" stop-color="#0d1528"/>
+      <stop offset="100%" stop-color="#1a1f36"/>
+    </linearGradient>
+    <linearGradient id="goldTxt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f0d59a"/>
+      <stop offset="0.5" stop-color="#e0c07e"/>
+      <stop offset="1" stop-color="#b28d52"/>
+    </linearGradient>
+    <radialGradient id="glowR" cx="78%" cy="24%" r="38%">
+      <stop offset="0%" stop-color="rgba(224,192,126,.16)"/>
+      <stop offset="100%" stop-color="rgba(224,192,126,0)"/>
+    </radialGradient>
+    <radialGradient id="glowL" cx="10%" cy="80%" r="32%">
+      <stop offset="0%" stop-color="rgba(120,156,220,.12)"/>
+      <stop offset="100%" stop-color="rgba(120,156,220,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="1242" height="440" fill="url(#bgTop)"/>
+  <rect width="1242" height="440" fill="url(#glowR)"/>
+  <rect width="1242" height="440" fill="url(#glowL)"/>
+
+  <!-- 装饰轨道 -->
+  <g opacity=".26" fill="none" stroke="#d4af76">
+    <circle cx="1090" cy="70" r="150" stroke-width="1"/>
+    <circle cx="1090" cy="70" r="116" stroke-width="1" stroke-dasharray="3 8"/>
+    <circle cx="170" cy="392" r="96" stroke-width="1"/>
+    <circle cx="170" cy="392" r="68" stroke-width="1" stroke-dasharray="2 7"/>
+  </g>
+  <g fill="#e0c07e" opacity=".5">
+    <circle cx="1090" cy="-80" r="4"/>
+    <circle cx="1242" cy="160" r="3"/>
+    <circle cx="60" cy="60" r="3"/>
+  </g>
+
+  <!-- 主标题 -->
+  <text x="76" y="196" fill="url(#goldTxt)" font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, STSong, serif"
+        font-size="64" letter-spacing="10">理解自己，设计人生</text>
+  <text x="80" y="262" fill="rgba(233,226,208,.62)" font-family="Helvetica Neue, PingFang SC, sans-serif"
+        font-size="26" letter-spacing="7">一 面 镜 子 · 一 盏 灯 · 一 条 自 己 的 路</text>
+
+  <!-- 星标 -->
+  <g transform="translate(76 300) scale(1)">
+    <path d="M0 12 L5 24 L18 24 L8 33 L11.5 46 L0 38 L-11.5 46 L-8 33 L-18 24 L-5 24 Z"
+          fill="url(#goldTxt)" opacity=".95"/>
+  </g>
+  <text x="120" y="330" fill="rgba(233,226,208,.8)" font-family="Georgia, Times, serif"
+        font-size="25" letter-spacing="6" font-style="italic">Self Insight Lab</text>
+</svg>
