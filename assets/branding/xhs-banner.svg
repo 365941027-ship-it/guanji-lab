@@ -1,57 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-label="观己实验室 小红书竖屏主页背景">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-label="观己实验室 小红书主页背景">
   <defs>
-    <radialGradient id="deepGlow" cx="50%" cy="42%" r="75%">
-      <stop offset="0%" stop-color="#131e3a"/>
-      <stop offset="45%" stop-color="#0b1224"/>
-      <stop offset="78%" stop-color="#070b16"/>
-      <stop offset="100%" stop-color="#05070f"/>
-    </radialGradient>
-    <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e9c98e"/>
-      <stop offset="100%" stop-color="#9a7640"/>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#fdfbf4"/>
+      <stop offset="55%" stop-color="#f7f1e3"/>
+      <stop offset="100%" stop-color="#efe7d3"/>
     </linearGradient>
-    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="rgba(224,192,126,.26)"/>
-      <stop offset="100%" stop-color="rgba(224,192,126,0)"/>
+    <radialGradient id="glowTop" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#fffdf6" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#fffdf6" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="goldBreath" cx="50%" cy="56%" r="38%">
+      <stop offset="0%" stop-color="rgba(212,175,118,.20)"/>
+      <stop offset="100%" stop-color="rgba(212,175,118,0)"/>
+    </radialGradient>
+    <linearGradient id="hairline" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8b987"/>
+      <stop offset="100%" stop-color="#c2a06c"/>
+    </linearGradient>
   </defs>
 
-  <!-- 全幅深蓝渐变，无空白 -->
-  <rect width="1080" height="1920" fill="url(#deepGlow)"/>
+  <!-- 米白纸感渐变，整幅铺满 -->
+  <rect width="1080" height="1920" fill="url(#paper)"/>
+  <rect width="1080" height="1920" fill="url(#glowTop)"/>
+  <circle cx="540" cy="980" r="700" fill="url(#goldBreath)"/>
 
-  <!-- 极细金色轨迹：简约的实验室感 -->
-  <g fill="none" stroke="url(#goldLine)" opacity=".14">
-    <circle cx="540" cy="790" r="560" stroke-width="1.2"/>
-    <circle cx="540" cy="790" r="442" stroke-width=".8" stroke-dasharray="2 10"/>
-    <circle cx="540" cy="790" r="660" stroke-width=".5" opacity=".7"/>
+  <!-- 极细金色发丝圆：似有似无，留白感 -->
+  <g fill="none" stroke="url(#hairline)" opacity=".42">
+    <circle cx="540" cy="960" r="520" stroke-width="1"/>
+    <circle cx="540" cy="960" r="660" stroke-width=".6" opacity=".7" stroke-dasharray="1 7"/>
+    <circle cx="540" cy="960" r="392" stroke-width=".5" opacity=".5"/>
   </g>
 
-  <!-- 远处星点 -->
-  <g fill="#e0c07e" opacity=".5">
-    <circle cx="240" cy="330" r="3.5"/>
-    <circle cx="845" cy="490" r="2.8"/>
-    <circle cx="150" cy="1350" r="3"/>
-    <circle cx="935" cy="1560" r="2.6"/>
-    <circle cx="540" cy="330" r="2.2" opacity=".35"/>
+  <!-- 几粒柔光星点，不构成 logo -->
+  <g fill="#d6b276" opacity=".5">
+    <circle cx="430" cy="380" r="2.6"/>
+    <circle cx="690" cy="1560" r="2.6"/>
+    <circle cx="842" cy="560" r="1.8"/>
+    <circle cx="250" cy="1360" r="1.8"/>
   </g>
 
-  <!-- 星形（居中主视觉，避开顶部头像遮挡区） -->
-  <circle cx="540" cy="1120" r="300" fill="url(#starGlow)"/>
-  <path d="M540 900 L566 1030 L698 1040 L592 1122 L625 1250 L540 1184 L455 1250 L488 1122 L382 1040 L514 1030 Z"
-        fill="none" stroke="url(#goldLine)" stroke-width="5" stroke-linejoin="round" opacity=".92"/>
-  <path d="M540 900 L566 1030 L698 1040 L592 1122 L625 1250 L540 1184 L455 1250 L488 1122 L382 1040 L514 1030 Z"
-        fill="url(#goldLine)" opacity=".12"/>
-  <circle cx="540" cy="1122" r="46" fill="none" stroke="url(#goldLine)" stroke-width="2.6" opacity=".8"/>
-  <circle cx="540" cy="1108" r="10" fill="#f0d59a"/>
-
-  <!-- 文案 -->
-  <text x="540" y="1445" text-anchor="middle" fill="#f0d59a"
-        font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, serif"
-        font-size="52" letter-spacing="12">理解自己</text>
-  <text x="540" y="1540" text-anchor="middle" fill="#f0d59a"
-        font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, serif"
-        font-size="52" letter-spacing="12">设计人生</text>
-  <text x="540" y="1628" text-anchor="middle" fill="rgba(233,226,208,.48)"
-        font-family="Georgia, Times, serif" font-style="italic"
-        font-size="24" letter-spacing="6">Self Insight Lab</text>
+  <!-- 一条若有若无的斜弧线，像呼吸/地平线 -->
+  <path d="M-80 1430 Q 260 1210 620 1245 T 1160 1180"
+        fill="none" stroke="#d8b987" stroke-width="1.1" opacity=".34"/>
+  <path d="M-80 1480 Q 260 1255 620 1290 T 1160 1222"
+        fill="none" stroke="#cbb083" stroke-width=".5" opacity=".18"/>
 </svg>
