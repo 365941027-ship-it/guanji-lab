@@ -54,11 +54,11 @@ const PROVIDERS = {
 export default async function handler(req, res) {
   // 只允许本站与本地调试调用，禁止任意站点白嫖解读通道
   var ALLOWED_ORIGINS = {
+    'http://162.14.105.122:8787': true,
+    'http://localhost:8787': true,
     'https://guanji-lab.vercel.app': true,
-    'https://365941027-ship-it.github.io': true,
     'http://localhost:8777': true,
     'http://127.0.0.1:8777': true,
-    'null': true // 无来源（同源/隐私模式）放行，仍受限流保护
   };
   var origin = req.headers.origin || 'null';
   var hostHeader = req.headers.host || '';
