@@ -22,9 +22,13 @@ export default async function handler(req, res) {
   }
   const price = Number(process.env.GUAN_PAY_PRICE || 9.9);
   const enabled = process.env.GUAN_PAY_ENABLED === '1';
+  const localAuth = process.env.GUAN_LOCAL_AUTH === '1';
 
   return res.status(200).json({
     ok: true,
+    auth: {
+      localOnly: localAuth
+    },
     pay: {
       enabled,
       price: price > 0 ? price : 9.9,

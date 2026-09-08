@@ -5,12 +5,73 @@
 
   var CFG = window.SUPABASE_CONFIG || {};
 
+  // ---------- 内测本地账号模式 ----------
+  // 当服务器 /api/config 返回 auth.localOnly=true（或 SUPABASE_CONFIG.localOnly=true）时，
+  // 注册/登录走浏览器本地存储，不依赖 Supabase，便于内测期在 Supabase 不可用时使用。
+  function localAuthEnabled() {
+    return !!(window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.localOnly === true);
+  }
+
+  // 尝试从同源 /api/config 拉取 auth.localOnly（自建服务器模式下有效）
+  (function loadLocalAuthFlag() {
+    try {
+      if (!window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.localOnly === true) return;
+      var host = String(location.hostname || '').toLowerCase();
+      var knownStatic = ['365941027-ship-it.github.io', 'guanji-lab.vercel.app', 'localhost', '127.0.0.1', '0.0.0.0'];
+      if (knownStatic.indexOf(host) > -1) return;
+      fetch(location.origin + '/api/config', { cache: 'no-store' })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (cfg) {
+          if (cfg && cfg.auth && cfg.auth.localOnly === true && window.SUPABASE_CONFIG) {
+            window.SUPABASE_CONFIG.localOnly = true;
+          }
+        })
+        .catch(function () {});
+    } catch (e) {}
+  })();
+
+  function localUsersRaw() {
+    try { return JSON.parse(localStorage.getItem('guan_local_users') || '{}'); } catch (e) { return {}; }
+  }
+  function saveLocalUsers(users) {
+    try { localStorage.setItem('guan_local_users', JSON.stringify(users)); } catch (e) {}
+  }
+  function localSession() {
+    try { return JSON.parse(localStorage.getItem('guan_session') || 'null'); } catch (e) { return null; }
+  }
+  function setLocalSession(email) {
+    var s = { name: String(email || '').split('@')[0], email: email || '', local: true, ts: Date.now() };
+    try { localStorage.setItem('guan_session', JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+  function clearLocalSession() {
+    try { localStorage.removeItem('guan_session'); } catch (e) {}
+  }
+  function toHex(buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  function sha256(text) {
+    if (!window.crypto || !window.crypto.subtle) {
+      // 极简 fallback（非加密强度，仅内测演示）
+      var h = 0;
+      for (var i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+      return Promise.resolve(String(h));
+    }
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(toHex);
+  }
+  function randomSalt() {
+    var arr = new Uint8Array(12);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(arr);
+    return Array.prototype.map.call(arr, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+
   function supabaseReady() {
     return !!(window.supabase && CFG.url && CFG.anonKey);
   }
 
   var sb = null;
   function client() {
+    if (localAuthEnabled()) return null;
     if (sb) return sb;
     if (!window.supabase || !CFG.url || !CFG.anonKey) return null;
     sb = window.supabase.createClient(CFG.url, CFG.anonKey, {
@@ -26,6 +87,19 @@
 
   // ---------- 邮箱密码 ----------
   window.guanSignUp = async function (email, password) {
+    if (localAuthEnabled()) {
+      var e = String(email || '').trim().toLowerCase();
+      if (!e || !password || password.length < 6) { toast('请填写正确邮箱与至少 6 位密码'); return null; }
+      var users = localUsersRaw();
+      if (users[e]) { toast('这个邮箱已经注册过了，请直接登录'); return null; }
+      var salt = randomSalt();
+      var hash = await sha256(salt + ':' + password);
+      users[e] = { salt: salt, hash: hash, name: e.split('@')[0], created: Date.now() };
+      saveLocalUsers(users);
+      var sess = setLocalSession(e);
+      toast('注册成功，欢迎来到观己');
+      return { user: { email: e }, local: true, session: sess };
+    }
     var c = client();
     if (!c) { toast('账号服务尚未配置，请先完成 Supabase 设置'); return null; }
     var opts = {};
@@ -41,6 +115,17 @@
   };
 
   window.guanSignIn = async function (email, password) {
+    if (localAuthEnabled()) {
+      var e = String(email || '').trim().toLowerCase();
+      var users = localUsersRaw();
+      var rec = users[e];
+      if (!rec) { toast('这个邮箱还没有注册，请先创建账号'); return null; }
+      var hash = await sha256(rec.salt + ':' + String(password || ''));
+      if (hash !== rec.hash) { toast('密码不正确，请重试'); return null; }
+      var sess = setLocalSession(e);
+      toast('欢迎回来');
+      return { user: { email: e }, local: true, session: sess };
+    }
     var c = client();
     if (!c) { toast('账号服务尚未配置，请先完成 Supabase 设置'); return null; }
     var res = await c.auth.signInWithPassword({ email: email, password: password });
@@ -50,14 +135,17 @@
   };
 
   window.guanSignOut = async function () {
-    var c = client();
-    if (c) await c.auth.signOut();
-    try { localStorage.removeItem('guan_session'); } catch (e) {}
+    if (!localAuthEnabled()) {
+      var c = client();
+      if (c) await c.auth.signOut();
+    }
+    clearLocalSession();
     try { localStorage.removeItem('guan_users'); } catch (e) {}
     if (window.location.pathname.indexOf('login.html') < 0) window.location.href = 'login.html';
   };
 
   window.guanResetPassword = async function (email) {
+    if (localAuthEnabled()) { toast('内测版为本地账号，暂不支持找回密码，请记住你的密码'); return; }
     var c = client();
     if (!c) { toast('账号服务尚未配置'); return; }
     var res = await c.auth.resetPasswordForEmail(email, {
@@ -71,11 +159,17 @@
   // 微信开放平台 Web 登录需要企业认证 + ICP 备案 + 审核，个人暂时无法开通。
   // 资质就绪后，在 supabase-config.js 填 wechatAppId，并在这里接 OAuth 回调流程。
   window.guanWechatLogin = function () {
+    if (localAuthEnabled()) { toast('内测版暂不支持微信登录'); return; }
     toast('微信扫码登录正在准备中：需要微信开放平台企业认证后才能开通');
   };
 
   // ---------- 会话 ----------
   window.guanSupabaseUser = function () {
+    if (localAuthEnabled()) {
+      var sess = localSession();
+      if (sess && sess.email) return Promise.resolve({ data: { user: { email: sess.email } } });
+      return Promise.resolve({ data: { user: null } });
+    }
     return Promise.resolve().then(function () {
       var c = client();
       if (!c) return { data: { user: null } };
@@ -217,6 +311,7 @@
 
   // 页面加载时：如果有会话则恢复导航身份显示
   (function init() {
+    if (localAuthEnabled()) return;
     if (!supabaseReady()) return;
     var c = client();
     c.auth.onAuthStateChange(function (event, session) {

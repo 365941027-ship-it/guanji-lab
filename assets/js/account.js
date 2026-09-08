@@ -10,6 +10,19 @@
   var resetBtn = document.getElementById('resetPass');
   var wechatBtn = document.getElementById('wechatBtn');
 
+  function localOnly() {
+    return !!(window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.localOnly === true);
+  }
+
+  if (localOnly()) {
+    if (resetBtn) resetBtn.style.display = 'none';
+    if (wechatBtn) wechatBtn.style.display = 'none';
+    var divider = document.querySelector('.login-divider');
+    if (divider) divider.style.display = 'none';
+    var privacy = document.querySelector('.login-privacy');
+    if (privacy) privacy.textContent = '当前为内测本地账号：账号与数据保存在这台设备上，方便你体验完整流程；正式版将支持跨设备同步。';
+  }
+
   function setMsg(text, ok) {
     if (!msg) return;
     msg.textContent = text || '';
