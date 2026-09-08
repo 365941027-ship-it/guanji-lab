@@ -1,52 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1242 440" role="img" aria-label="观己实验室 小红书主页背景">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-label="观己实验室 小红书竖屏主页背景">
   <defs>
-    <linearGradient id="bgTop" x1="0" y1="0" x2="1" y2="0.65">
-      <stop offset="0%" stop-color="#070b16"/>
-      <stop offset="52%" stop-color="#0d1528"/>
-      <stop offset="100%" stop-color="#1a1f36"/>
+    <radialGradient id="deepGlow" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#131e3a"/>
+      <stop offset="45%" stop-color="#0b1224"/>
+      <stop offset="78%" stop-color="#070b16"/>
+      <stop offset="100%" stop-color="#05070f"/>
+    </radialGradient>
+    <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9c98e"/>
+      <stop offset="100%" stop-color="#9a7640"/>
     </linearGradient>
-    <linearGradient id="goldTxt" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#f0d59a"/>
-      <stop offset="0.5" stop-color="#e0c07e"/>
-      <stop offset="1" stop-color="#b28d52"/>
-    </linearGradient>
-    <radialGradient id="glowR" cx="78%" cy="24%" r="38%">
-      <stop offset="0%" stop-color="rgba(224,192,126,.16)"/>
+    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(224,192,126,.26)"/>
       <stop offset="100%" stop-color="rgba(224,192,126,0)"/>
     </radialGradient>
-    <radialGradient id="glowL" cx="10%" cy="80%" r="32%">
-      <stop offset="0%" stop-color="rgba(120,156,220,.12)"/>
-      <stop offset="100%" stop-color="rgba(120,156,220,0)"/>
-    </radialGradient>
   </defs>
-  <rect width="1242" height="440" fill="url(#bgTop)"/>
-  <rect width="1242" height="440" fill="url(#glowR)"/>
-  <rect width="1242" height="440" fill="url(#glowL)"/>
 
-  <!-- 装饰轨道 -->
-  <g opacity=".26" fill="none" stroke="#d4af76">
-    <circle cx="1090" cy="70" r="150" stroke-width="1"/>
-    <circle cx="1090" cy="70" r="116" stroke-width="1" stroke-dasharray="3 8"/>
-    <circle cx="170" cy="392" r="96" stroke-width="1"/>
-    <circle cx="170" cy="392" r="68" stroke-width="1" stroke-dasharray="2 7"/>
+  <!-- 全幅深蓝渐变，无空白 -->
+  <rect width="1080" height="1920" fill="url(#deepGlow)"/>
+
+  <!-- 极细金色轨迹：简约的实验室感 -->
+  <g fill="none" stroke="url(#goldLine)" opacity=".14">
+    <circle cx="540" cy="790" r="560" stroke-width="1.2"/>
+    <circle cx="540" cy="790" r="442" stroke-width=".8" stroke-dasharray="2 10"/>
+    <circle cx="540" cy="790" r="660" stroke-width=".5" opacity=".7"/>
   </g>
+
+  <!-- 远处星点 -->
   <g fill="#e0c07e" opacity=".5">
-    <circle cx="1090" cy="-80" r="4"/>
-    <circle cx="1242" cy="160" r="3"/>
-    <circle cx="60" cy="60" r="3"/>
+    <circle cx="240" cy="330" r="3.5"/>
+    <circle cx="845" cy="490" r="2.8"/>
+    <circle cx="150" cy="1350" r="3"/>
+    <circle cx="935" cy="1560" r="2.6"/>
+    <circle cx="540" cy="330" r="2.2" opacity=".35"/>
   </g>
 
-  <!-- 主标题 -->
-  <text x="76" y="196" fill="url(#goldTxt)" font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, STSong, serif"
-        font-size="64" letter-spacing="10">理解自己，设计人生</text>
-  <text x="80" y="262" fill="rgba(233,226,208,.62)" font-family="Helvetica Neue, PingFang SC, sans-serif"
-        font-size="26" letter-spacing="7">一 面 镜 子 · 一 盏 灯 · 一 条 自 己 的 路</text>
+  <!-- 星形（居中主视觉，避开顶部头像遮挡区） -->
+  <circle cx="540" cy="1120" r="300" fill="url(#starGlow)"/>
+  <path d="M540 900 L566 1030 L698 1040 L592 1122 L625 1250 L540 1184 L455 1250 L488 1122 L382 1040 L514 1030 Z"
+        fill="none" stroke="url(#goldLine)" stroke-width="5" stroke-linejoin="round" opacity=".92"/>
+  <path d="M540 900 L566 1030 L698 1040 L592 1122 L625 1250 L540 1184 L455 1250 L488 1122 L382 1040 L514 1030 Z"
+        fill="url(#goldLine)" opacity=".12"/>
+  <circle cx="540" cy="1122" r="46" fill="none" stroke="url(#goldLine)" stroke-width="2.6" opacity=".8"/>
+  <circle cx="540" cy="1108" r="10" fill="#f0d59a"/>
 
-  <!-- 星标 -->
-  <g transform="translate(76 300) scale(1)">
-    <path d="M0 12 L5 24 L18 24 L8 33 L11.5 46 L0 38 L-11.5 46 L-8 33 L-18 24 L-5 24 Z"
-          fill="url(#goldTxt)" opacity=".95"/>
-  </g>
-  <text x="120" y="330" fill="rgba(233,226,208,.8)" font-family="Georgia, Times, serif"
-        font-size="25" letter-spacing="6" font-style="italic">Self Insight Lab</text>
+  <!-- 文案 -->
+  <text x="540" y="1445" text-anchor="middle" fill="#f0d59a"
+        font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, serif"
+        font-size="52" letter-spacing="12">理解自己</text>
+  <text x="540" y="1540" text-anchor="middle" fill="#f0d59a"
+        font-family="PingFang SC, Hiragino Sans GB, Noto Serif SC, serif"
+        font-size="52" letter-spacing="12">设计人生</text>
+  <text x="540" y="1628" text-anchor="middle" fill="rgba(233,226,208,.48)"
+        font-family="Georgia, Times, serif" font-style="italic"
+        font-size="24" letter-spacing="6">Self Insight Lab</text>
 </svg>
