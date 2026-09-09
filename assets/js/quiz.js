@@ -1585,8 +1585,22 @@
   function startPay() {
     var url = window.GUAN_GOODS_URL ? window.GUAN_GOODS_URL(QUIZ.key) : '';
     window.guanTrack && window.guanTrack('pay_click', { quiz: QUIZ.key });
-    if (!url || !(window.GUAN_PAY_CONFIG && window.GUAN_PAY_CONFIG.enabled)) {
-      window.guanToast('付费通道正在准备中，很快开放');
+    if (!url) {
+      // 服务器付费配置可能尚未加载完成：主动拉取一次，提示用户再点
+      window.guanToast('正在获取付款信息，请稍等片刻再点一次');
+      try {
+        fetch(location.origin + '/api/config', { cache: 'no-store' })
+          .then(function (r) { return r.json().catch(function () { return {}; }); })
+          .then(function (cfg) {
+            if (!cfg || !cfg.pay || !window.GUAN_PAY_CONFIG) return;
+            var cur = window.GUAN_PAY_CONFIG;
+            var p = cfg.pay;
+            cur.enabled = !!p.enabled;
+            if (p.price) cur.price = p.price;
+            if (p.goods && (p.goods.default || Object.keys(p.goods).length)) cur.goods = p.goods;
+          })
+          .catch(function () {});
+      } catch (e) {}
       return;
     }
     try {
@@ -1594,14 +1608,33 @@
     } catch (e) {}
     // 金数据收款页不解析 return_url，付款完成后需回来输入订单号手动解锁
     if (url.indexOf('jsform.com') > -1) {
-      window.open(url, '_blank');
-      window.guanToast('已打开付款页。完成付款后，复制页面里的订单号，回到这里输入即可解锁');
+      var win = window.open(url, '_blank');
+      if (win) {
+        window.guanToast('已为你打开付款页。完成后复制订单号，回到这里输入即可解锁');
+      } else {
+        window.guanToast('浏览器拦截了付款页。请点击下方「前往付款页」链接');
+        showPayFallback(url);
+      }
       return;
     }
     var ret = location.href.split('?')[0].split('#')[0] +
       '?paid=1&quiz=' + encodeURIComponent(QUIZ.key) + '&order=' + Date.now();
     var sep = url.indexOf('?') > -1 ? '&' : '?';
     window.open(url + sep + 'return_url=' + encodeURIComponent(ret), '_blank');
+  }
+
+  function showPayFallback(url) {
+    var panels = resultEl.querySelectorAll('.gate-panel, .deep-teaser');
+    panels.forEach(function (p) {
+      if (p.querySelector('[data-pay-fallback]')) return;
+      var box = document.createElement('div');
+      box.className = 'gate-manual';
+      box.style.marginTop = '8px';
+      box.innerHTML = '<p>没有自动打开？</p>' +
+        '<a class="btn btn-sm" href="' + url + '" target="_blank" rel="noopener" data-pay-fallback>前往付款页</a>' +
+        '<p style="font-size:12px;opacity:.75;margin-top:6px">付款后复制订单号，回到这里输入即可解锁。</p>';
+      p.appendChild(box);
+    });
   }
 
   function checkPaidReturn() {

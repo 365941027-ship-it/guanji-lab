@@ -61,15 +61,8 @@
   };
 
   // 自建服务器模式下，从 /api/config 拉取站点级付费配置。
-  // 本地 A/B 面板若已配置（localStorage），优先保留本地面板设置。
   (function loadServerPayConfig() {
     if (!guanSameOriginApi()) return;
-    try {
-      var hasLocalOverride =
-        localStorage.getItem('guan_pay_enabled') !== null ||
-        localStorage.getItem('guan_pay_goods') !== null;
-      if (hasLocalOverride) return;
-    } catch (e) {}
     fetch(location.origin + '/api/config', { cache: 'no-store' })
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (cfg) {
