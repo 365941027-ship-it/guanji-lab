@@ -14,6 +14,8 @@ import interpretHandler from './api/interpret.js';
 import claimHandler from './api/claim.js';
 import keepaliveHandler from './api/keepalive.js';
 import configHandler from './api/config.js';
+import chatHandler from './api/chat.js';
+import selfcheckHandler from './api/selfcheck.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url)).replace(/[\\/]$/, '');
 const ROOT = __dirname;
@@ -211,7 +213,9 @@ const API_ROUTES = [
   ['/api/interpret', interpretHandler],
   ['/api/claim', claimHandler],
   ['/api/keepalive', keepaliveHandler],
-  ['/api/config', configHandler]
+  ['/api/config', configHandler],
+  ['/api/chat', chatHandler],
+  ['/api/selfcheck', selfcheckHandler]
 ];
 
 async function handleApi(req, res, pathname, url) {
