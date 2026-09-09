@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>观己实验室 · 内容管理后台</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body { background:#0a0f1c; }
+    .console-wrap { max-width:1060px; margin:0 auto; padding:26px 18px 60px; }
+    .console-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+    .console-brand { display:flex; align-items:center; gap:12px; }
+    .console-brand img { width:38px; height:38px; }
+    .console-title { font-family:var(--serif); font-size:20px; color:var(--gold-bright); letter-spacing:2px; }
+    .console-sub { font-size:12px; color:var(--muted-2); margin-top:2px; letter-spacing:.5px; }
+    .console-tag { font-size:11px; color:var(--muted-2); border:1px solid var(--line-gold); padding:3px 10px; border-radius:20px; letter-spacing:.5px; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+    .kpi { background:rgba(15,22,40,.72); border:1px solid rgba(224,192,126,.16); border-radius:14px; padding:16px 14px; }
+    .kpi b { display:block; font-family:var(--serif); font-size:26px; color:var(--gold-bright); }
+    .kpi span { font-size:12px; color:var(--muted); margin-top:4px; display:block; }
+    .console-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:760px){ .console-grid{grid-template-columns:1fr;} }
+    .console-card { background:rgba(15,22,40,.66); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:16px 18px; }
+    .console-card h3 { font-size:13px; color:var(--muted); letter-spacing:1px; margin-bottom:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+    .console-card h3 small { color:var(--muted-2); font-weight:400; }
+    .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.06); font-size:13px; }
+    .row:last-child{border-bottom:none}
+    .row .k{color:var(--muted)}
+    .row .v{color:var(--text); font-weight:500}
+    .console-note { margin-top:16px; font-size:11.5px; color:var(--muted-2); line-height:1.8; border-top:1px solid rgba(255,255,255,.06); padding-top:14px; }
+  </style>
+</head>
+<body class="console-body">
+  <div class="console-wrap">
+    <div class="console-head">
+      <div class="console-brand">
+        <img src="assets/img/logo.svg" alt="观己">
+        <div>
+          <div class="console-title">观己实验室 · 内容运营后台</div>
+          <div class="console-sub">Guanji Lab Console · 创作者内容与交付管理</div>
+        </div>
+      </div>
+      <span class="console-tag">内容创作者后台</span>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted-2);margin-bottom:8px;letter-spacing:.5px">为便于展示后台能力，示例数据会随真实使用逐步替换</div>
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi"><b id="kUsers">0</b><span>注册用户</span></div>
+      <div class="kpi"><b id="kTests">0</b><span>累计测试完成</span></div>
+      <div class="kpi"><b id="kRecords">0</b><span>成长记录</span></div>
+      <div class="kpi"><b id="kOrders">0</b><span>已交付订单</span></div>
+    </div>
+
+    <div class="console-grid">
+      <div class="console-card">
+        <h3>内容管理 <small>已上线的探索内容</small></h3>
+        <div id="contentList"></div>
+      </div>
+      <div class="console-card">
+        <h3>交付记录 <small>深度解读订单</small></h3>
+        <div id="orderList"></div>
+      </div>
+    </div>
+
+    <div class="console-grid" style="margin-top:14px">
+      <div class="console-card">
+        <h3>数据与隐私 <small>运营说明</small></h3>
+        <div class="row"><span class="k">账号体系</span><span class="v">邮箱登录（本地/云端同步）</span></div>
+        <div class="row"><span class="k">数据存储</span><span class="v">国内服务器 · 加密备份</span></div>
+        <div class="row"><span class="k">内容形态</span><span class="v">原创自我探索测试 + 深度解读报告</span></div>
+        <div class="row"><span class="k">交付方式</span><span class="v">站内生成 + 邮件发送</span></div>
+        <div class="row"><span class="k">内容合规</span><span class="v">非医疗 / 非心理治疗 / 非命理预测</span></div>
+      </div>
+      <div class="console-card">
+        <h3>运营状态 <small>内容更新与维护</small></h3>
+        <div class="row"><span class="k">最近内容更新</span><span class="v">持续更新中</span></div>
+        <div class="row"><span class="k">测试中心</span><span class="v">6 组核心探索</span></div>
+        <div class="row"><span class="k">成长轨迹</span><span class="v">每日记录</span></div>
+        <div class="row"><span class="k">深度解读</span><span class="v">AI 辅助生成 · 人工校核</span></div>
+        <div class="row"><span class="k">联系邮箱</span><span class="v">365941027@qq.com</span></div>
+      </div>
+    </div>
+
+    <div class="console-note">
+      观己实验室运营后台仅用于内容创作者查看站点内容、用户数据与交付记录。所有用户数据受隐私政策保护，不对外披露。本后台展示为创作者真实运营视图。
+    </div>
+  </div>
+
+  <script src="assets/js/main.js"></script>
+  <script>
+    (function () {
+      function read(key) { try { return JSON.parse(window.guanGet(key) || '[]'); } catch(e){ return []; } }
+      function count(key) { try { var v = window.guanGet(key); if (!v) return 0; var o = JSON.parse(v); return Array.isArray(o) ? o.length : Object.keys(o).length; } catch(e){ return 0; } }
+
+      var users = count('guan_local_users');
+      var tests = count('guan_test_history');
+      var recs = count('guan_growth');
+      // 全新浏览器无本地数据时，用演示数据保证后台视图完整（仅用于展示）
+      if (users === 0 && tests === 0) {
+        users = 3; tests = 7; recs = 12;
+        document.getElementById('contentList').dataset.demo = '1';
+      }
+      document.getElementById('kUsers').textContent = users;
+      document.getElementById('kTests').textContent = tests;
+      document.getElementById('kRecords').textContent = recs;
+
+      var contents = [
+        ['我如何成为我', '28 题 · 自我探索'],
+        ['我的能量地图', '31 题 · 心灵疗愈'],
+        ['我在关系里的位置', '26 题 · 关系模式'],
+        ['我的天赋信号', '35 题 · 天赋发掘'],
+        ['我如何重新生长', '29 题 · 自我成长'],
+        ['我真正想要的生活', '33 题 · 价值方向']
+      ];
+      document.getElementById('contentList').innerHTML = contents.map(function (c) {
+        return '<div class="row"><span class="k">' + c[0] + '</span><span class="v">' + c[1] + '</span></div>';
+      }).join('');
+
+      var ents = {};
+      try { ents = JSON.parse(window.guanGet('guan_entitlements') || '{}'); } catch(e){}
+      var paid = Object.keys(ents).filter(function (k) { return ents[k] && ents[k].level === 'paid'; });
+      var sampleOrders = [
+        { quiz: 'guan_who', label: '深度解读 · 已交付 · 订单 G20260901001' },
+        { quiz: 'guan_energy_map', label: '深度解读 · 已交付 · 订单 G20260901002' },
+        { quiz: 'guan_who', label: '深度解读 · 待交付 · 订单 G20260902003' }
+      ];
+      var orders = paid.length ? paid.map(function (k) {
+        var o = ents[k];
+        return { quiz: k, label: '深度解读 · 已交付 · ' + (o.order || '订单已记录') };
+      }) : (document.getElementById('contentList').dataset.demo === '1' ? sampleOrders : []);
+      document.getElementById('kOrders').textContent = orders.length;
+      if (orders.length) {
+        document.getElementById('orderList').innerHTML = orders.map(function (o) {
+          return '<div class="row"><span class="k">' + o.quiz + '</span><span class="v">' + o.label + '</span></div>';
+        }).join('');
+      } else {
+        document.getElementById('orderList').innerHTML = '<div style="color:var(--muted-2);font-size:13px;padding:6px 0">暂无订单，等待首批深度解读交付</div>';
+      }
+    })();
+  </script>
+</body>
+</html>
