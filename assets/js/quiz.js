@@ -1637,36 +1637,6 @@
     });
   }
 
-  function checkPaidReturn() {
-    var qs = {};
-    location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) {
-      try { qs[decodeURIComponent(k)] = decodeURIComponent(v); } catch (e) {}
-    });
-    if (qs.paid !== '1' || !qs.quiz) return;
-    window.guanMarkEntitlement && window.guanMarkEntitlement(qs.quiz, 'paid', qs.order || '');
-    window.guanTrack && window.guanTrack('pay_success', { quiz: qs.quiz, order: qs.order || '' });
-    if (qs.quiz === QUIZ.key) {
-      try {
-        var pending = sessionStorage.getItem('guan_pending_' + QUIZ.key);
-        if (pending) {
-          var arr = JSON.parse(pending);
-          if (Array.isArray(arr) && arr.length === totalQuestions() && arr.indexOf(null) === -1) {
-            state.answers = arr;
-            sessionStorage.removeItem('guan_pending_' + QUIZ.key);
-            window.guanToast('已解锁深度解读，正在为你生成…');
-            setTimeout(function () {
-              buildResultView();
-              setTimeout(function () { removeGates(); autoDeepReading(); }, 500);
-            }, 300);
-            return;
-          }
-        }
-      } catch (e) {}
-      window.guanToast('已解锁深度解读，重新完成测试即可查看');
-    }
-    try { history.replaceState(null, '', location.pathname); } catch (e) {}
-  }
-
   function gatedDeepReading() {
     var box = resultEl.querySelector('#deepReading');
     if (!box) return;
@@ -2323,7 +2293,6 @@
   })();
 
   window.guanTrack && window.guanTrack('quiz_start', { quiz: QUIZ.key });
-  checkPaidReturn();
 
   renderQuestion();
 })();
