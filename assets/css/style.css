@@ -973,14 +973,14 @@ button{font-family:inherit}
 .option.on{border-color:var(--gold);background:rgba(201,168,106,.12);color:var(--text)}
 .option.on .opt-tag{color:var(--gold-bright)}
 .option .opt-tag{display:block;font-size:11px;color:var(--muted-2);letter-spacing:.14em;margin-top:3px}
-.other-row{display:flex;gap:10px;margin-top:18px;align-items:stretch;flex-wrap:wrap}
+.other-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:18px;align-items:stretch}
 .other-input{
-  flex:1;background:rgba(10,15,28,.5);border:1px solid var(--line);border-radius:12px;
+  grid-column:1;background:rgba(10,15,28,.5);border:1px solid var(--line);border-radius:12px;
   color:var(--text);padding:13px 16px;font-size:14px;font-family:var(--sans);
 }
 .other-input:focus{outline:none;border-color:var(--line-gold)}
-.other-btn{flex:none}
-.other-hint{flex-basis:100%;font-size:12.5px;color:var(--muted-2);line-height:1.8;margin:8px 2px 0;letter-spacing:.02em}
+.other-btn{grid-column:2}
+.other-hint{grid-column:1 / -1;font-size:12.5px;color:var(--muted-2);line-height:1.7;margin:2px 0 0;letter-spacing:.02em}
 .hidden{display:none!important}
 .quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:30px}
 .back-link{color:var(--muted);font-size:13.5px;letter-spacing:.05em}
@@ -1111,6 +1111,13 @@ button{font-family:inherit}
 .deep-head span{font-size:11px;color:var(--muted-2)}
 .deep-body p{font-size:15px;color:var(--muted);line-height:2.05;margin-bottom:14px}
 .deep-body strong{color:var(--gold-bright);font-weight:600}
+.deep-lock{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-top:18px;padding:16px 18px;border:1px dashed rgba(224,192,126,.42);border-radius:14px;
+  background:rgba(224,192,126,.06);
+}
+.deep-lock b{display:block;color:var(--gold-bright);font-size:14px;letter-spacing:.05em;margin-bottom:4px}
+.deep-lock span{font-size:12.5px;color:var(--muted);line-height:1.7;display:block;max-width:480px}
 .deep-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 .deep-note{font-size:12px;color:var(--muted-2);line-height:1.8;margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
 .deep-error-hint{font-size:12px;color:var(--muted-2)}
