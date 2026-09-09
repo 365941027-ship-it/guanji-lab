@@ -639,6 +639,11 @@
   }
 
   function runCustomLLM(fallback) {
+    // Agent4 优先：动态心理咨询分析师 + 职业规划师（每次基于最新数据重构）
+    if (window.guanAgentChat && window.guanAgentCacheSet) {
+      runMirrorAgent(fallback);
+      return;
+    }
     var provider = 'deepseek';
     var key = aiKeyFor(provider) || '';
     var proxyReady = !!(window.GUAN_PROXY_URL);
@@ -660,6 +665,80 @@
       fillCustomLLMFromText(text, fallback);
     }).catch(function () {
       fillCustomLLM(fallback, false);
+    });
+  }
+
+  function runMirrorAgent(fallback) {
+    var key = 'mirror';
+    var cached = window.guanAgentCacheGet(key);
+    var paid = window.guanAgentIsPaid(key);
+    if (cached && paid) {
+      renderMirrorAgentText(cached, fallback, true);
+      return;
+    }
+    window.guanAgentChat({
+      pageType: 'mirror',
+      userInput: buildAiUserText(),
+      maxTokens: 8000,
+      extra: { mode: 'interpret' }
+    }).then(function (data) {
+      var text = data && data.text ? data.text : '';
+      if (!text) { fillCustomLLM(fallback, false); return; }
+      renderMirrorAgentText(text, fallback, false);
+    }).catch(function () {
+      fillCustomLLM(fallback, false);
+    });
+  }
+
+  function mirrorAgentPart(text, name) {
+    var re = new RegExp('【' + name + '】([\\s\\S]*?)(?=【|$)', 'm');
+    var m = text.match(re);
+    return m ? m[1].trim() : '';
+  }
+
+  function renderMirrorAgentText(fullText, fallback, forceFull) {
+    var key = 'mirror';
+    window.guanAgentCacheSet(key, fullText);
+    var paid = forceFull || window.guanAgentIsPaid(key);
+    var core = mirrorAgentPart(fullText, '核心特质') || fullText;
+    var conflict = mirrorAgentPart(fullText, '内在冲突');
+    var growth = mirrorAgentPart(fullText, '成长方向');
+    var boxes = {
+      core: core, conflict: conflict, growth: growth
+    };
+    if (paid) {
+      ['core', 'conflict', 'growth'].forEach(function (part) {
+        var box = resultEl.querySelector('[data-llm-part="' + part + '"]');
+        if (!box) return;
+        var t = boxes[part] || fallback[part] || '';
+        box.innerHTML = t ? '<p style="line-height:2">' + t.replace(/\n+/g, '</p><p style="line-height:2">') + '</p>' : (fallback[part] || '');
+      });
+      window.guanToast('你的专属深度自察已生成');
+      return;
+    }
+    // 免费预览：取全文前 30% 放在「核心特质」，其余板块锁定
+    var paras = fullText.split(/\n{2,}/).filter(function (x) { return x.trim(); });
+    var acc = 0; var preview = [];
+    for (var i = 0; i < paras.length; i += 1) {
+      acc += paras[i].length;
+      preview.push(paras[i]);
+      if (acc >= fullText.length * 0.3) break;
+    }
+    var coreBox = resultEl.querySelector('[data-llm-part="core"]');
+    var lockBox = resultEl.querySelector('[data-llm-part="conflict"]');
+    var growBox = resultEl.querySelector('[data-llm-part="growth"]');
+    var previewHtml = preview.map(function (p) { return '<p style="line-height:2">' + p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>'; }).join('');
+    var price = (window.GUAN_PRICE ? window.GUAN_PRICE(key) : 9.9) || 9.9;
+    var lockHtml = '<div class="deep-lock"><div><b>免费预览 · 前 30%</b><span>解锁后查看完整「核心特质 / 内在冲突 / 成长方向」。</span></div>' +
+      '<button type="button" class="btn btn-gold btn-sm" data-mirror-unlock>解锁完整自察 · ¥' + price + '</button></div>';
+    if (coreBox) coreBox.innerHTML = previewHtml + lockHtml;
+    if (lockBox) lockBox.innerHTML = '<p style="line-height:2;opacity:.8">内在冲突的完整分析已锁定。</p>';
+    if (growBox) growBox.innerHTML = '<p style="line-height:2;opacity:.8">成长方向的完整建议已锁定。</p>';
+    var btn = resultEl.querySelector('[data-mirror-unlock]');
+    if (btn) btn.addEventListener('click', function () {
+      window.guanAgentPayDone(key, key, function () {
+        renderMirrorAgentText(window.guanAgentCacheGet(key) || fullText, fallback, true);
+      });
     });
   }
 

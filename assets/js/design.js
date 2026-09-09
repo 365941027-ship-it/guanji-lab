@@ -738,6 +738,83 @@
       window.guanToast('至少写下「卡在哪里」和「想去哪里」，我们才能慢慢聊');
       return;
     }
+    // Agent2 优先：人生架构师生成三个职业化原型
+    if (window.guanAgentChat) {
+      renderAgentDesign(inputs);
+      return;
+    }
+    renderLocal(inputs);
+  }
+
+  function renderAgentDesign(inputs) {
+    var routeBox = routesEl;
+    routeBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>人生架构师正在重读你的档案…</h4>' +
+      '<p>把你的八字、星座、MBTI、测试结果与资源，打碎重组为三个具体的人生原型。</p></div>';
+    output.classList.add('show');
+    var userInput = '我现在卡住的地方：' + (inputs.pain || '') +
+      '\n我向往的状态：' + (inputs.wish || '') +
+      '\n我每周能投入：' + (inputs.time || '未填写') +
+      '\n我每月能投入：' + (inputs.money || '未填写') +
+      '\n我已拥有的资源：' + (inputs.asset || '未填写') +
+      '\n我心里最大的障碍：' + (inputs.block || '未填写') +
+      '\n三十天后我最希望的变化：' + (inputs.goal || '未填写');
+    window.guanAgentChat({
+      pageType: 'design',
+      userInput: userInput,
+      userId: (function () { try { var s = JSON.parse(localStorage.getItem('guan_session') || 'null'); return (s && s.email) || ''; } catch (e) { return ''; } })() || ''
+    }).then(function (data) {
+      var text = data && data.text ? data.text : '';
+      if (!text) { fallbackLocalDesign(inputs); return; }
+      if (window.guanAgentCacheSet) window.guanAgentCacheSet('design', text);
+      lastPlan = lastPlan || {};
+      lastPlan.aiText = text;
+      lastPlan.pain = inputs.pain; lastPlan.wish = inputs.wish; lastPlan.inputs = inputs;
+      // 用 Agent 长文替换旧结构化路线区；其余旧规则块清空不重复渲染
+      routeBox.innerHTML = '';
+      var wrap = document.createElement('div');
+      wrap.className = 'design-ai-full design-route design-dynamic';
+      wrap.innerHTML = '<span class="route-tag">人生架构师 · 为你重组</span>' +
+        '<h4>你的三份人生原型方案</h4>' +
+        (data.styleMode === 'emotional' ? '<p style="font-size:13px;color:var(--muted-2)">本方案采用高情绪价值模式，先接住你的感受，再谈路径。</p>' : '') +
+        mdLines(text);
+      routeBox.parentNode.insertBefore(wrap, routeBox);
+      routeBox.style.display = 'none';
+      // 隐藏旧的规则化副区块，避免与 Agent 长文并列混淆
+      ['designPrinciples', 'designBecoming', 'designSimBlock', 'designPlan30'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      var intro = introEl;
+      if (intro) intro.textContent = '以下是人生架构师根据你的档案、资源与心里话生成的三条原型路径。';
+      output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function () {
+      fallbackLocalDesign(inputs);
+    });
+  }
+
+  function mdLines(text) {
+    return String(text || '').split(/\n{2,}/).map(function (p) {
+      var t = p.trim();
+      if (!t) return '';
+      return '<p style="margin-bottom:14px;line-height:2.05">' +
+        t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
+  function fallbackLocalDesign(inputs) {
+    window.guanToast('AI 通道暂时不可用，已为你生成结构化方案');
+    if (routesEl) routesEl.style.display = '';
+    ['designPrinciples', 'designBecoming', 'designSimBlock', 'designPlan30'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = '';
+    });
+    renderLocal(inputs);
+  }
+
+  function renderLocal(inputs) {
+    var pain = inputs.pain || '';
+    var wish = inputs.wish || '';
     var theme = pickTheme(pain, wish);
     var routes = buildRoutes(theme, wish, inputs.time);
     var principles = buildPrinciples();
@@ -872,6 +949,10 @@
 
   function copyPlan() {
     if (!lastPlan) return;
+    if (lastPlan.aiText) {
+      window.guanCopy(lastPlan.aiText, function (ok) { window.guanToast(ok ? '方案已复制' : '复制失败'); });
+      return;
+    }
     var it = lastPlan.inputs || {};
     var text = '【我的人生设计方案 · 观己实验室】\n\n卡点：' + lastPlan.pain + '\n渴望：' + lastPlan.wish +
       '\n每周时间：' + (it.time || '未填写') + '\n每月预算：' + (it.money || '未填写') +
@@ -909,6 +990,7 @@
     var snapshot = {
       date: new Date().toISOString().slice(0, 10),
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      aiText: lastPlan.aiText || '',
       pain: lastPlan.pain || '',
       wish: lastPlan.wish || '',
       theme: lastPlan.routes && lastPlan.routes[0] ? lastPlan.routes[0].tag : '',
@@ -928,8 +1010,9 @@
         goal: it.goal || ''
       }
     };
-    try {
+      try {
       window.guanSet('guan_design_saved', JSON.stringify(snapshot));
+      if (window.guanMarkSelfCheckUpdate) window.guanMarkSelfCheckUpdate('design');
       // 统一保存到我的档案
       window.guanSaveToArchive({
         type: 'design',

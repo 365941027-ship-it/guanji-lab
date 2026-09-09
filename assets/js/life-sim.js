@@ -762,42 +762,55 @@
   function runPlannerLLM(extra) {
     var body = document.getElementById('simPlannerBody');
     if (!body) return;
-    var proxyReady = !!(window.GUAN_PROXY_URL);
-    var key = localStorage.getItem('guan_ai_key_deepseek') || '';
-    if (!proxyReady && !key) {
-      window.guanToast('内置解读通道未配置，先展示规则版分析');
-      return;
-    }
-    body.innerHTML = '<div class="deep-loading"><div class="spinner"></div><p>正在以职业规划师视角分析你的选择…</p></div>';
+    body.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>平行宇宙叙事师正在推演…</h4><p>正在把你这组选择展开成一条具体的人生轨迹。</p></div>';
     var s = SCENARIOS[state.scenario];
     var picksText = state.picks.map(function (p, i) { return (i + 1) + '. ' + p.text + (state.notes[i] ? '（你的想法：' + state.notes[i] + '）' : ''); }).join('\n');
     var profileText = '';
     try {
       var p = JSON.parse(window.guanGet('guan_profile') || '{}');
-      profileText = JSON.stringify({ job: p.job, mbti: p.mbti, zodiac: p.zodiac, stage: p.stage, selfDesc: p.selfDesc, focus: p.focus });
+      profileText = JSON.stringify({ nickname: p.nickname, job: p.job, mbti: p.mbti, zodiac: p.zodiac, bazi: p.bazi, stage: p.stage, selfDesc: p.selfDesc, focus: p.focus });
     } catch (e) {}
-    var sys = '你是专业的职业规划师。请基于用户的人生模拟选择、补充信息和档案，给出确定性的职业分析，分四段：\n' +
-      '1）【你将扮演的身份】这个选择对应的职业/身份是什么，具体一点（如：自媒体内容创作者、项目经理、独立手作人）。\n' +
-      '2）【你能发挥的优势】结合用户档案中的性格特质，指出哪些优势会在该职业中真正被看见。\n' +
-      '3）【局限与规避】这个选择对用户的具体局限是什么，以及如何规避。\n' +
-      '4）【30 天第一步】给出一个今天就能开始的、具体的行动。\n' +
-      '语言要专业、确定、可执行，不空泛安慰，不夸大保证。';
-    var user = '我的模拟场景：' + (s ? s.title : '') + '\n我的选择轨迹：\n' + picksText + '\n\n我的补充信息：' + (extra || '（无）') + '\n我的档案：' + (profileText || '（无）') + '\n\n请给我确定性的职业规划分析。';
-    var callUrl = window.GUAN_PROXY_URL;
-    if (callUrl) {
-      fetch(callUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'deepseek', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], max_tokens: 2000, temperature: 0.7 })
-      }).then(function (res) { return res.json(); }).then(function (data) {
-        if (data && data.text) {
-          body.innerHTML = data.text.split(/\n{2,}/).map(function (para) {
-            return '<p style="margin-bottom:12px;line-height:2">' + para.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
-          }).join('');
-        } else {
-          window.guanToast('生成失败，展示规则版分析');
+    var user = '我的模拟场景：' + (s ? s.title : '') + '\n我的选择轨迹：\n' + picksText +
+      '\n\n我的补充信息：' + (extra || '（无）') + '\n我的档案：' + (profileText || '（无）') +
+      '\n\n请基于我的选择给出本原型的预见成果与阶段规划。';
+    if (!window.guanAgentChat) {
+      window.guanToast('多角色解读通道未就绪，展示规则版分析');
+      return;
+    }
+    window.guanAgentChat({ pageType: 'simulate', userInput: user, maxTokens: 8000, extra: { mode: 'outcome' } })
+      .then(function (data) {
+        var text = data && data.text ? data.text : '';
+        if (!text) { window.guanToast('生成失败，展示规则版分析'); return; }
+        window.guanAgentCacheSet('simulate', text);
+        renderSimAgentBody(body, text, false);
+      })
+      .catch(function () {
+        window.guanToast('AI 通道暂时不可用，展示规则版分析');
+      });
+  }
+
+  // 渲染 Agent3 长文：免费前 30%，已付费全文；解锁回调后全文替换
+  function renderSimAgentBody(body, fullText, forceFull) {
+    var key = 'simulate';
+    var paid = forceFull || !!(window.guanAgentIsPaid && window.guanAgentIsPaid(key));
+    if (paid) {
+      window.guanAgentRenderResult({
+        text: fullText, key: key, container: body,
+        title: '你在该原型中的预见成果', sub: '完整版',
+        onPaid: function () {
+          var cached = window.guanAgentCacheGet(key);
+          if (cached) renderSimAgentBody(body, cached, true);
         }
-      }).catch(function () { window.guanToast('生成失败，展示规则版分析'); });
+      });
+    } else {
+      window.guanAgentRenderResult({
+        text: fullText, key: key, container: body,
+        title: '你在该原型中的预见成果', sub: '免费预览 · 前 30%',
+        onPaid: function () {
+          var cached = window.guanAgentCacheGet(key);
+          if (cached) renderSimAgentBody(body, cached, true);
+        }
+      });
     }
   }
 
@@ -839,6 +852,11 @@
         var extra = (document.getElementById('plannerInput') || {}).value || '';
         runPlannerLLM(extra);
       };
+    }
+    // 平行宇宙叙事师：完成模拟后自动生成可免费预览 30% 的预见成果
+    var existing = document.getElementById('simPlannerBody');
+    if (existing && window.guanAgentChat && window.guanAgentChat !== undefined) {
+      setTimeout(function () { runPlannerLLM(''); }, 350);
     }
 
     var primary = dominantDim();

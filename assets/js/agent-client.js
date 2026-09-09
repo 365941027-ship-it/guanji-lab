@@ -104,4 +104,169 @@
     }).then(function (r) { return r.json().catch(function () { return {}; }); })
       .catch(function () { return { ok: false }; });
   };
+
+  // ---------- Agent 结果渲染助手（供 design / simulate / mirror 三个页面共用） ----------
+  // 输出为「前 30% 免费预览 + 付费解锁全文」；已付费用户直接看全文。
+  window.guanAgentIsPaid = function (key) {
+    return !!(window.guanHasEntitlement && window.guanHasEntitlement(key || 'agent', 'paid'));
+  };
+
+  window.guanAgentCacheGet = function (key) {
+    try { return (window.guanGet ? window.guanGet('guan_agent_' + key) : null) || ''; } catch (e) { return ''; }
+  };
+
+  window.guanAgentCacheSet = function (key, text) {
+    try { if (window.guanSet) window.guanSet('guan_agent_' + key, String(text || '').slice(0, 16000)); } catch (e) {}
+  };
+
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function mdish(text) {
+    return String(text || '').split(/\n{2,}/).map(function (p) {
+      var t = p.trim();
+      if (!t) return '';
+      t = esc(t);
+      return '<p>' + t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
+  function cutPreview(text, ratio) {
+    var paras = String(text || '').split(/\n{2,}/).filter(function (p) { return p.trim(); });
+    if (!paras.length) return { html: '', remaining: 0, total: 0 };
+    var full = text.length;
+    var acc = 0;
+    var kept = [];
+    for (var i = 0; i < paras.length; i += 1) {
+      acc += paras[i].length;
+      kept.push(paras[i]);
+      if (acc >= full * (ratio || 0.3)) break;
+    }
+    return { kept: kept, total: paras.length };
+  }
+
+  // 打开金数据支付并轮询解锁；unlockKey 默认与 agentKey 相同
+  window.guanAgentPayDone = function (agentKey, unlockKey, done) {
+    var key = unlockKey || agentKey;
+    var cfg = window.GUAN_PAY_CONFIG || {};
+    var goods = cfg.goods || {};
+    var url = goods[key] || goods.default || '';
+    if (!url || !cfg.enabled) {
+      window.guanToast('付费通道正在准备中，很快开放');
+      return;
+    }
+    var email = '';
+    try {
+      var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
+      email = (s && s.email) || '';
+    } catch (e) {}
+    var win;
+    if (url.indexOf('jsform.com') > -1) {
+      var sep = url.indexOf('?') > -1 ? '&' : '?';
+      var payUrl = email ? url + sep + 'email=' + encodeURIComponent(email) + '&quiz=' + encodeURIComponent(key) : url;
+      win = window.open(payUrl, '_blank');
+    } else {
+      var ret = location.href.split('?')[0].split('#')[0] + '?paid=1&quiz=' + encodeURIComponent(key) + '&order=' + Date.now();
+      var s2 = url.indexOf('?') > -1 ? '&' : '?';
+      win = window.open(url + s2 + 'return_url=' + encodeURIComponent(ret), '_blank');
+    }
+    if (win) {
+      window.guanToast('已为你打开付款页。完成后回到本页会自动解锁');
+      window.guanAgentStartPaidPoll(key, function () {
+        if (done) done();
+        else try { location.reload(); } catch (e) {}
+      });
+    } else {
+      window.guanToast('浏览器拦截了付款页，请从页面链接前往');
+    }
+  };
+
+  window.guanAgentPay = function (agentKey, unlockKey) {
+    window.guanAgentPayDone(agentKey, unlockKey, null);
+  };
+
+  window.guanAgentStartPaidPoll = function (unlockKey, done) {
+    var email = '';
+    try {
+      var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
+      email = (s && s.email) || '';
+    } catch (e) {}
+    if (!email) return;
+    var key = unlockKey || 'agent';
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries += 1;
+      if (tries > 30) { clearInterval(timer); return; }
+      fetch('/api/order/status?email=' + encodeURIComponent(email) + '&quiz=' + encodeURIComponent(key), { cache: 'no-store' })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (data) {
+          if (data && data.paid) {
+            clearInterval(timer);
+            if (window.guanMarkEntitlement) window.guanMarkEntitlement(key, 'paid', (data.order && data.order.orderNo) || 'auto');
+            if (window.guanMarkSelfCheckUpdate) window.guanMarkSelfCheckUpdate('pay');
+            if (done) done();
+          }
+        })
+        .catch(function () {});
+    }, 4000);
+  };
+
+  // 渲染 Agent 长文：免费 30% 或全文
+  window.guanAgentRenderResult = function (opts) {
+    var text = String(opts.text || '');
+    var key = opts.key || 'agent';
+    var container = opts.container;
+    if (!container || !text) return;
+    window.guanAgentCacheSet(key, text);
+    var paid = window.guanAgentIsPaid(key);
+    var title = opts.title || '你的深度解读';
+    var sub = opts.sub || (paid ? '完整版' : '免费预览 · 前 30%');
+    var html;
+    if (paid) {
+      html = mdish(text);
+    } else {
+      var cut = cutPreview(text, 0.3);
+      html = cut.kept.map(function (p) {
+        return '<p>' + esc(p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
+      }).join('') + '<p style="opacity:.7">……</p>';
+    }
+    var price = (window.GUAN_PRICE ? window.GUAN_PRICE(key) : 9.9) || 9.9;
+    var lockHtml = paid ? '' :
+      '<div class="deep-lock"><div><b>以上为免费预览 · 前 30%</b>' +
+      '<span>解锁后查看完整 ' + title + '，并自动存入「我的档案」。</span></div>' +
+      '<button type="button" class="btn btn-gold btn-sm" data-guan-agent-pay>解锁完整 · ¥' + price + '</button></div>';
+    container.innerHTML = '<div class="deep-result guan-agent-result">' +
+      '<div class="deep-head"><h4>' + title + '</h4><span>' + sub + '</span></div>' +
+      '<div class="deep-body">' + html + lockHtml + '</div>' +
+      '<div class="deep-actions">' +
+      '<button type="button" class="btn btn-gold btn-sm" data-guan-agent-archive>存入我的档案</button>' +
+      '<a class="btn btn-sm" href="growth.html">记入成长轨迹</a>' +
+      '</div>' +
+      '<p class="deep-note">由观己实验室为你单独生成，仅供自我探索参考，不构成专业建议。</p></div>';
+    var payBtn = container.querySelector('[data-guan-agent-pay]');
+    if (payBtn) payBtn.addEventListener('click', function () {
+      window.guanAgentPayDone(key, key, function () {
+        if (opts.onPaid) opts.onPaid();
+        else try { location.reload(); } catch (e) {}
+      });
+    });
+    var archiveBtn = container.querySelector('[data-guan-agent-archive]');
+    if (archiveBtn) archiveBtn.addEventListener('click', function () {
+      try {
+        if (window.guanSaveToArchive) {
+          window.guanSaveToArchive({ type: 'agent', key: key, title: title, result: title, detail: { text: text.slice(0, 16000), date: new Date().toISOString() } });
+        }
+        var growth = [];
+        try { growth = JSON.parse(window.guanGet('guan_growth') || '[]'); } catch (e) { growth = []; }
+        var d = new Date();
+        function pad(n) { return String(n).padStart(2, '0'); }
+        growth.push({ date: d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()), mood: '平静', energy: 3, note: title + ' · 已保存并存入我的档案', design: '' });
+        window.guanSet('guan_growth', JSON.stringify(growth.slice(-500)));
+        if (window.guanSyncGrowth) window.guanSyncGrowth('growth', growth.slice(-500));
+      } catch (e) {}
+      window.guanToast('已存入我的档案与成长记录');
+    });
+    return paid;
+  };
 })();
