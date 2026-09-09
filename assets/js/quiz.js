@@ -1475,8 +1475,6 @@
       '<div class="gate-manual gate-auto">' +
       '  <p>完成付款后回到本页，系统会自动核对并解锁。若页面没有自动刷新，点下面的按钮：</p>' +
       '  <button type="button" class="btn btn-sm" data-verify-auto>我已付款，立即核对</button>' +
-      '  <details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--muted-2)">自动核对失败？点这里手动解锁（人工核验）</summary>' +
-      '  <div style="margin-top:8px"><input type="text" id="gateManualOrder" placeholder="金数据订单号" maxlength="80"><button type="button" class="btn btn-sm" data-unlock-manual>手动解锁</button></div></details>' +
       '</div>' +
       '<p class="gate-support">遇到问题？联系 ' + support + '</p>';
   }
@@ -1486,13 +1484,11 @@
     var vBtn = container.querySelector('[data-verify-share]');
     var rBtn = container.querySelector('[data-resend-share]');
     var pBtn = container.querySelector('[data-unlock-pay]');
-    var mBtn = container.querySelector('[data-unlock-manual]');
     var vBtn2 = container.querySelector('[data-verify-auto]');
     if (sBtn) sBtn.addEventListener('click', shareToUnlock);
     if (vBtn) vBtn.addEventListener('click', verifyShareUnlock);
     if (rBtn) rBtn.addEventListener('click', resendShareLink);
     if (pBtn) pBtn.addEventListener('click', startPay);
-    if (mBtn) mBtn.addEventListener('click', function () { unlockManual(container); });
     if (vBtn2) vBtn2.addEventListener('click', verifyPaidNow);
   }
 
@@ -1582,8 +1578,8 @@
       '<div class="gate-options">' + shareBtn +
       '<button type="button" class="btn btn-gold" data-unlock-pay>✨ 深度解读 · ¥' + price + '</button>' +
       '</div>' +
-      '<div class="gate-manual"><p>已支付但没有自动解锁？</p>' +
-      '<div><input type="text" id="gateManualOrder" placeholder="订单号或支付备注" maxlength="60"><button type="button" class="btn btn-sm" data-unlock-manual>手动解锁</button></div></div>' +
+      '<div class="gate-manual gate-auto"><p>完成付款后回到本页，系统会自动核对并解锁。若未自动刷新：</p>' +
+      '<button type="button" class="btn btn-sm" data-verify-auto>我已付款，立即核对</button></div>' +
       '</div>';
   }
 
@@ -1690,16 +1686,6 @@
     }
   }
 
-  function unlockManual(container) {
-    var scope = container || resultEl;
-    var input = scope.querySelector('#gateManualOrder');
-    var order = input ? input.value.trim() : '';
-    if (!order) { window.guanToast('请填写金数据订单号，方便我们对账'); return; }
-    window.guanMarkEntitlement && window.guanMarkEntitlement(QUIZ.key, 'paid', order);
-    window.guanTrack && window.guanTrack('pay_success', { quiz: QUIZ.key, order: order, manual: 1 });
-    unlockDeepAfterPaid();
-  }
-
   function currentEmail() {
     try {
       var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
@@ -1712,7 +1698,7 @@
     var email = currentEmail();
     var endpoint = '/api/order/status';
     if (!email) {
-      window.guanToast('当前是未登录/本地状态，无法自动核对，请用订单号手动解锁');
+      window.guanToast('当前未登录，无法自动核对付款。请登录后重试');
       return;
     }
     window.guanToast('正在核对付款状态…');
@@ -1724,11 +1710,11 @@
           window.guanTrack && window.guanTrack('pay_success', { quiz: QUIZ.key, auto: 1 });
           unlockDeepAfterPaid();
         } else {
-          window.guanToast('系统还没收到付款回执。若已付款，可稍后再点核对，或输入订单号解锁');
+          window.guanToast('系统还没收到付款回执。若已付款，可稍后再点「我已付款，立即核对」');
         }
       })
       .catch(function () {
-        window.guanToast('核对服务暂不可用，请稍后再试或输入订单号');
+        window.guanToast('核对服务暂不可用，请稍后再试');
       });
   }
 
