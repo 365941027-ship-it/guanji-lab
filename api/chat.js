@@ -133,7 +133,7 @@ export default async function handler(req, res) {
 
   // ---- 4. 调用模型 ----
   try {
-    const maxTokens = Math.min(Math.max(Number(body.max_tokens) || 5000, 200), 8000);
+    const maxTokens = Math.min(Math.max(Number(body.max_tokens) || 8000, 200), 8000);
     const temperature = typeof body.temperature === 'number' ? body.temperature : 0.8;
     const text = await callModel({
       provider: body.provider || 'deepseek',

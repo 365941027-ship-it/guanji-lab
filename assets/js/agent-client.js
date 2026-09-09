@@ -70,7 +70,7 @@
       recentInputs: ctx.recentInputs,
       designSnapshot: ctx.designSnapshot,
       extra: opts.extra || {},
-      max_tokens: opts.maxTokens || 5000,
+      max_tokens: opts.maxTokens || 8000,
       temperature: opts.temperature !== undefined ? opts.temperature : 0.8,
       markSelfCheckUpdate: opts.markSelfCheckUpdate === true,
       source: opts.source || pageType,
