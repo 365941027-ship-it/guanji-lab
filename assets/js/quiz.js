@@ -1592,6 +1592,12 @@
     try {
       sessionStorage.setItem('guan_pending_' + QUIZ.key, JSON.stringify(state.answers));
     } catch (e) {}
+    // 金数据收款页不解析 return_url，付款完成后需回来输入订单号手动解锁
+    if (url.indexOf('jsform.com') > -1) {
+      window.open(url, '_blank');
+      window.guanToast('已打开付款页。完成付款后，复制页面里的订单号，回到这里输入即可解锁');
+      return;
+    }
     var ret = location.href.split('?')[0].split('#')[0] +
       '?paid=1&quiz=' + encodeURIComponent(QUIZ.key) + '&order=' + Date.now();
     var sep = url.indexOf('?') > -1 ? '&' : '?';
