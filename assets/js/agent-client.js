@@ -207,11 +207,23 @@
 
   function mdish(text) {
     return String(text || '').split(/\n{2,}/).map(function (p) {
-      var t = p.trim();
+      var t = cleanMd(p);
       if (!t) return '';
       t = esc(t);
       return '<p>' + t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
     }).join('');
+  }
+
+  // 去掉模型偶尔带出的 Markdown 标题/分隔线符号，避免页面上出现字面量 ## 与 ---
+  function cleanMd(s) {
+    return String(s || '')
+      .split('\n')
+      .map(function (line) {
+        return line.replace(/^\s{0,3}#{1,6}\s*/, '').replace(/^\s*-{3,}\s*$/, '').trim();
+      })
+      .filter(function (line, i, arr) { return !(line === '' && (i === 0 || i === arr.length - 1)); })
+      .join('\n')
+      .trim();
   }
 
   function cutPreview(text, ratio) {
@@ -310,7 +322,7 @@
     } else {
       var cut = cutPreview(text, 0.3);
       html = cut.kept.map(function (p) {
-        return '<p>' + esc(p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
+        return '<p>' + esc(cleanMd(p)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
       }).join('') + '<p style="opacity:.7">……</p>';
     }
     var price = (window.GUAN_PRICE ? window.GUAN_PRICE(key) : 9.9) || 9.9;

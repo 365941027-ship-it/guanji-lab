@@ -767,6 +767,18 @@
       var text = data && data.text ? data.text : '';
       if (!text) { fallbackLocalDesign(inputs); return; }
       if (window.guanAgentCacheSet) window.guanAgentCacheSet('design', text);
+      // 把 Agent 2 生成的原型存入后端，供 Agent 3（人生模拟）读取
+      try {
+        var uid = '';
+        try { var s = JSON.parse(localStorage.getItem('guan_session') || 'null'); uid = (s && s.email) || ''; } catch (e2) {}
+        if (uid) {
+          fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save-prototypes', userId: uid, prototypesRaw: text, prototypes: parsePrototypes(text) })
+          }).catch(function () {});
+        }
+      } catch (e3) {}
       lastPlan = lastPlan || {};
       lastPlan.aiText = text;
       lastPlan.pain = inputs.pain; lastPlan.wish = inputs.wish; lastPlan.inputs = inputs;
@@ -801,6 +813,21 @@
         t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') + '</p>';
     }).join('');
+  }
+
+  // 从 Agent 2 的长文里解析出三个原型（供 Agent 3 使用）
+  function parsePrototypes(text) {
+    var out = [];
+    try {
+      var re = /(?:原型\s*([ABCＡ-Ｃ])[：:、\s]*)([^\n（(]{2,30})/g;
+      var m;
+      while ((m = re.exec(String(text || ''))) !== null) {
+        var k = m[1].replace('Ａ', 'A').replace('Ｂ', 'B').replace('Ｃ', 'C').trim();
+        var name = String(m[2] || '').replace(/[\【\】*#]/g, '').trim();
+        if (name && !out.some(function (x) { return x.key === k; })) out.push({ key: k, name: name });
+      }
+    } catch (e) {}
+    return out.slice(0, 3);
   }
 
   function fallbackLocalDesign(inputs) {

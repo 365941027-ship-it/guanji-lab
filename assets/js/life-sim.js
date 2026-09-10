@@ -948,4 +948,262 @@
       detail: { scenario: state.scenario, picks: record.picks, dims: dims }
     });
   });
+
+  // ================= Agent 3：原型专属模拟（后端驱动） =================
+  // 数据流：读取存储中的三原型 → 生成原型专属场景（含后台防御机制）→ 用户抉择 → 生成个性化解读 → 提交理想结局
+  (function agent3PrototypeFlow() {
+    var entry = document.getElementById('simProtoEntry');
+    var rolesBox = document.getElementById('simProtoRoles');
+    var card = document.getElementById('simProtoCard');
+    var resultCard = document.getElementById('simProtoResultCard');
+    var sceneBox = document.getElementById('simProtoScene');
+    var countEl = document.getElementById('simProtoCount');
+    var dotsEl = document.getElementById('simProtoDots');
+    var backBtn = document.getElementById('simProtoBack');
+    var restartBtn = document.getElementById('simProtoRestart');
+    var noteEl = document.getElementById('simProtoNote');
+    var titleEl = document.getElementById('simProtoTitle');
+    var descEl = document.getElementById('simProtoDesc');
+    var idealInput = document.getElementById('simProtoIdeal');
+    var idealSaveBtn = document.getElementById('simProtoIdealSave');
+    var idealNote = document.getElementById('simProtoIdealNote');
+    if (!entry || !card || !sceneBox) return;
+
+    function uid() {
+      try { var s = JSON.parse(localStorage.getItem('guan_session') || 'null'); return (s && s.email) || ''; } catch (e) { return ''; }
+    }
+    function profileData() {
+      try { return JSON.parse(window.guanGet('guan_profile') || '{}'); } catch (e) { return {}; }
+    }
+    function designInputs() {
+      try {
+        var d = JSON.parse(window.guanGet('guan_design_saved') || 'null');
+        return (d && d.inputs) || {};
+      } catch (e) { return {}; }
+    }
+    function historyData() {
+      try { return JSON.parse(window.guanGet('guan_test_history') || '[]'); } catch (e) { return []; }
+    }
+    function growthData() {
+      try { return JSON.parse(window.guanGet('guan_growth') || '[]'); } catch (e) { return []; }
+    }
+    function answersText() {
+      return historyData().slice(-6).map(function (h) {
+        return '《' + (h.title || '') + '》：' + (h.result || '');
+      }).join('\n');
+    }
+    function resourceText() {
+      var p = profileData();
+      var it = designInputs();
+      var bits = [];
+      if (it.time || p.weeklyHours) bits.push('每周可投入时间：' + (it.time || p.weeklyHours));
+      if (it.money || p.monthlyBudget) bits.push('每月可投入预算：' + (it.money || p.monthlyBudget));
+      if (it.asset) bits.push('已有资源：' + it.asset);
+      if (p.job) bits.push('职业：' + p.job);
+      if (p.mbti) bits.push('MBTI：' + p.mbti);
+      return bits.join('；');
+    }
+    function rounds() {
+      try {
+        var raw = window.guanGet('guan_rounds');
+        var list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list.slice(-3).map(function (x) { return typeof x === 'string' ? x : ((x && x.text) || ''); }).filter(Boolean) : [];
+      } catch (e) { return []; }
+    }
+
+    var st = { key: 'A', name: '', scenarios: [], index: 0, choices: [] };
+
+    function post(payload) {
+      return fetch('/api/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || '请求失败');
+          return d;
+        });
+      });
+    }
+    function basePayload(extra) {
+      return Object.assign({
+        userId: uid(),
+        profile: profileData(),
+        history: historyData(),
+        growth: growthData(),
+        recentInputs: (window.guanBuildUserContext ? window.guanBuildUserContext({}).recentInputs : []),
+        designSnapshot: (function () { try { return JSON.parse(window.guanGet('guan_design_saved') || 'null'); } catch (e) { return null; } })(),
+        answersText: answersText(),
+        resourceText: resourceText(),
+        historyRounds: rounds()
+      }, extra || {});
+    }
+
+    // —— 读取状态：是否存在 Agent 2 生成的原型 ——
+    fetch('/api/simulate?action=state&userId=' + encodeURIComponent(uid()))
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) {
+        if (!d || !d.prototypesRaw) return;
+        entry.style.display = 'flex';
+        ['A', 'B', 'C'].forEach(function (k) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'sim-script role-btn';
+          btn.innerHTML = '<span class="sim-en">原型 ' + k + '</span><h3>走进原型' + k + '</h3>' +
+            '<p>为这个原型生成三段真实抉择，看看你在压力下会保护什么。</p>';
+          btn.addEventListener('click', function () { startPrototype(k); });
+          rolesBox.appendChild(btn);
+        });
+      }).catch(function () {});
+
+    function loading(msg) {
+      sceneBox.innerHTML = '<div class="deep-loading"><div class="spinner"></div><p>' + msg + '</p></div>';
+    }
+
+    function startPrototype(k) {
+      st = { key: k, name: '', scenarios: [], index: 0, choices: [] };
+      document.getElementById('simPick').classList.add('hidden');
+      if (document.getElementById('simPlanEntry')) document.getElementById('simPlanEntry').style.display = 'none';
+      resultCard.classList.add('hidden');
+      card.classList.remove('hidden');
+      titleEl.textContent = '原型' + k + ' · 专属模拟';
+      descEl.textContent = '正在为你生成三段真实处境。';
+      countEl.textContent = '';
+      dotsEl.innerHTML = '';
+      backBtn.style.visibility = 'hidden';
+      restartBtn.style.visibility = 'hidden';
+      loading('平行宇宙叙事师正在为你设计这段处境…');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      post(basePayload({ action: 'scenario', prototypeKey: k }))
+        .then(function (d) {
+          st.scenarios = d.scenarios || [];
+          st.name = d.prototypeName || '';
+          if (!st.scenarios.length) throw new Error('场景为空');
+          titleEl.textContent = '原型' + k + (st.name ? ' · ' + st.name : '') + ' · 专属模拟';
+          descEl.textContent = '这不是「两条路选一条」——每一个选择，都是你在压力下会怎么保护自己。';
+          renderScene();
+        })
+        .catch(function (e) {
+          sceneBox.innerHTML = '<div class="deep-error"><h4>场景没能生成</h4><p>' + (e && e.message ? e.message : '请稍后重试') + '</p>' +
+            '<button type="button" class="btn btn-sm" data-proto-retry>重试</button></div>';
+          var r = sceneBox.querySelector('[data-proto-retry]');
+          if (r) r.addEventListener('click', function () { startPrototype(k); });
+        });
+    }
+
+    function renderScene() {
+      var sc = st.scenarios[st.index];
+      if (!sc) return;
+      countEl.textContent = (st.index + 1) + ' / ' + st.scenarios.length;
+      dotsEl.innerHTML = st.scenarios.map(function (_, i) {
+        return '<i class="' + (i < st.index ? 'done' : '') + '"></i>';
+      }).join('');
+      backBtn.style.visibility = st.index === 0 ? 'hidden' : 'visible';
+      restartBtn.style.visibility = st.index === st.scenarios.length - 1 ? 'visible' : 'hidden';
+      var picked = st.choices[st.index];
+      sceneBox.innerHTML =
+        '<h3 class="sim-question">' + (sc.title || '') + '</h3>' +
+        (sc.background ? '<p style="font-size:13px;color:var(--muted);line-height:1.9;margin:8px 0 14px">' + sc.background + '</p>' : '') +
+        '<p style="font-size:14.5px;color:var(--text);line-height:1.95;margin-bottom:14px">' + (sc.question || '') + '</p>' +
+        '<div class="sim-options">' + (sc.options || []).map(function (o, i) {
+          var on = picked && String(picked.chosenKey) === String(o.key);
+          return '<button type="button" class="sim-option' + (on ? ' selected' : '') + '" data-proto-opt="' + i + '">' +
+            '<span>' + o.text + '</span></button>';
+        }).join('') + '</div>' +
+        '<p style="font-size:12.5px;color:var(--muted-2);margin-top:12px;line-height:1.8">如果这些选项都不太像你，可以在下面写下你自己的答案。</p>';
+      if (noteEl) noteEl.value = (picked && picked.note) || '';
+      sceneBox.querySelectorAll('[data-proto-opt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var i = Number(btn.getAttribute('data-proto-opt'));
+          var o = sc.options[i];
+          st.choices[st.index] = {
+            id: sc.id, title: sc.title, question: sc.question,
+            chosenKey: o.key, chosenText: o.text,
+            note: noteEl ? noteEl.value.trim() : ''
+          };
+          sceneBox.querySelectorAll('[data-proto-opt]').forEach(function (b2) { b2.classList.remove('selected'); });
+          btn.classList.add('selected');
+          setTimeout(function () {
+            if (st.index < st.scenarios.length - 1) {
+              st.index += 1;
+              renderScene();
+            } else {
+              interpret();
+            }
+          }, 320);
+        });
+      });
+    }
+
+    function interpret() {
+      if (noteEl && st.choices[st.index]) st.choices[st.index].note = noteEl.value.trim();
+      card.classList.add('hidden');
+      resultCard.classList.remove('hidden');
+      var out = document.getElementById('simProtoResult');
+      out.innerHTML = '<div class="deep-loading"><div class="spinner"></div><h4>正在听你刚才的选择…</h4>' +
+        '<p>平行宇宙叙事师正在把你的选择、你的矛盾与你说过的话放在一起看。</p></div>';
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      post(basePayload({ action: 'interpret', prototypeKey: st.key, choices: st.choices }))
+        .then(function (d) {
+          if (window.guanAgentRenderResult) {
+            window.guanAgentRenderResult({
+              text: d.text || '', key: 'simulate_' + st.key, container: out,
+              title: '原型' + st.key + (st.name ? ' · ' + st.name : '') + ' · 预见结果',
+              sub: '免费预览 · 前 30%',
+              onPaid: function () {
+                var t = window.guanAgentCacheGet('simulate_' + st.key);
+                if (t) window.guanAgentRenderResult({ text: t, key: 'simulate_' + st.key, container: out, title: '原型' + st.key + ' · 预见结果', sub: '完整版' });
+              }
+            });
+          } else {
+            out.innerHTML = '<div class="deep-result"><div class="deep-body">' +
+              String(d.text || '').split(/\n{2,}/).map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</div></div>';
+          }
+          if (window.guanMarkSelfCheckUpdate) window.guanMarkSelfCheckUpdate('agent3');
+        })
+        .catch(function (e) {
+          out.innerHTML = '<div class="deep-error"><h4>解读没能生成</h4><p>' + (e && e.message ? e.message : '请稍后重试') + '</p>' +
+            '<button type="button" class="btn btn-sm" data-proto-retry2>重试</button></div>';
+          var r = out.querySelector('[data-proto-retry2]');
+          if (r) r.addEventListener('click', interpret);
+        });
+    }
+
+    if (idealSaveBtn) {
+      idealSaveBtn.addEventListener('click', function () {
+        var v = (idealInput && idealInput.value.trim()) || '';
+        if (!v) { if (window.guanToast) window.guanToast('先写下一个你真正想要的结局'); return; }
+        idealSaveBtn.disabled = true;
+        idealSaveBtn.textContent = '正在更新档案…';
+        post(basePayload({ action: 'ideal', prototypeKey: st.key, ideal: v }))
+          .then(function (d) {
+            try {
+              window.guanSet('guan_ideal', JSON.stringify({ ideal: v, date: new Date().toISOString() }));
+              if (window.guanRecordRound) window.guanRecordRound(v);
+              if (window.guanSaveToArchive) {
+                window.guanSaveToArchive({ type: 'ideal', key: 'agent3_' + st.key, title: '理想结局 · 原型' + st.key, result: v.slice(0, 60), detail: { ideal: v } });
+              }
+            } catch (e) {}
+            idealNote.innerHTML = (d.message || '你的档案已更新。') +
+              '<br><a href="custom-test.html" class="btn btn-gold btn-sm" style="margin-top:8px">去做一次专属自查</a>';
+            idealSaveBtn.textContent = '已更新档案';
+            if (window.guanToast) window.guanToast('你的档案已更新，下次自查与设计会基于这个新版本');
+          })
+          .catch(function (e) {
+            idealSaveBtn.disabled = false;
+            idealSaveBtn.textContent = '写下我的理想结局';
+            if (window.guanToast) window.guanToast(e && e.message ? e.message : '保存失败，请重试');
+          });
+      });
+    }
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        if (st.index > 0) { st.index -= 1; renderScene(); }
+      });
+    }
+    if (restartBtn) {
+      restartBtn.addEventListener('click', function () { startPrototype(st.key); });
+    }
+  })();
 })();

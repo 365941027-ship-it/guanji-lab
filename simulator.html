@@ -69,6 +69,53 @@
           </div>
         </div>
         <p class="sim-free-title">或者，自由选择一个剧本：</p>
+        <div class="sim-plan-entry" id="simProtoEntry" style="display:none">
+          <div>
+            <span class="kicker" style="margin-bottom:6px">From Your Three Prototypes</span>
+            <h3>走进你的人生原型，做一次真实的抉择</h3>
+            <p>这三个原型来自你的人生设计。每一个都会给你三段真实从业者才会遇到的处境——不是「两条路选一条」，而是让你在选择的那一刻，听见自己在保护什么。</p>
+            <div id="simProtoRoles"></div>
+          </div>
+        </div>
+
+        <div class="sim-card hidden" id="simProtoCard">
+          <div class="sim-head">
+            <h2 id="simProtoTitle"></h2>
+            <p id="simProtoDesc"></p>
+          </div>
+          <div class="sim-body">
+            <div class="sim-progress">
+              <span class="count" id="simProtoCount"></span>
+              <div class="dots" id="simProtoDots"></div>
+            </div>
+            <div id="simProtoScene"></div>
+            <div class="sim-note-input">
+              <textarea class="journal-area" id="simProtoNote" rows="2" placeholder="写下你此刻的想法（可选）：为什么这样选？你在保护什么？"></textarea>
+            </div>
+            <div class="sim-nav">
+              <button type="button" class="back-link" id="simProtoBack" style="visibility:hidden">← 回到上一个选择</button>
+              <button type="button" class="btn btn-gold btn-sm" id="simProtoRestart" style="visibility:hidden">重新模拟</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-card hidden" id="simProtoResultCard">
+          <div class="sim-head">
+            <h2 id="simProtoResultTitle">你的原型预见结果</h2>
+            <p>这不是预言，而是你这一组选择展开后的一种可能。</p>
+          </div>
+          <div class="sim-body">
+            <div id="simProtoResult"></div>
+            <div class="sim-revise" id="simProtoRevise">
+              <h4>如果预见的成果，不是你想要的</h4>
+              <p>用你自己的话，写下一个你真正想要的结局。它会写入你的档案，并成为下次自查与设计的起点。</p>
+              <textarea class="journal-area" id="simProtoIdeal" rows="3" placeholder="例如：我想成为一个能靠作品养活自己、同时不必牺牲睡眠的人……"></textarea>
+              <button type="button" class="btn btn-gold btn-sm" id="simProtoIdealSave">写下我的理想结局</button>
+              <p class="sim-note" id="simProtoIdealNote"></p>
+            </div>
+          </div>
+        </div>
+
         <div id="simPick" class="sim-script-grid">
           <button type="button" class="sim-script" data-scenario="career">
             <span class="sim-en">Career Pivot</span>

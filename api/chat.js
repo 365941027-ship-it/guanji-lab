@@ -13,6 +13,7 @@ import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '
 import { callModel } from '../lib/modelClient.js';
 import { getSelfCheck, touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
 import { classifyStyle } from '../lib/styleClassifier.js';
+import { getIdealScenario } from '../lib/userStore.js';
 
 const ALLOWED_ORIGINS = {
   'http://162.14.105.122:8787': true,
@@ -116,13 +117,25 @@ export default async function handler(req, res) {
   // 把结构化档案回写到 injectedContext，便于前端/排查看到实际拼进去的内容
   injectedContext.coreProfile = coreProfile.meta;
 
+  const userId = String(body.userId || body.email || '').trim();
+
+  // Agent 4（专属自查）需要融入用户在人生模拟里写下的理想结局（user_ideal_scenario）
+  let finalUserMessage = userMessage;
+  if (pageType === 'mirror') {
+    const ideal = (userId ? getIdealScenario(userId) : '') || String(body.userIdealScenario || '').trim();
+    if (ideal) {
+      finalUserMessage += '\n\n【用户在人生模拟中写下的理想结局 user_ideal_scenario】\n' + ideal.slice(0, 1500) +
+        '\n（请在自查问题与解读中体现这个理想方向，并指出用户与它之间的距离。）';
+      injectedContext.userIdealScenario = ideal;
+    }
+  }
+
   const messages = [
     { role: 'system', content: agent.system },
-    { role: 'user', content: userMessage }
+    { role: 'user', content: finalUserMessage }
   ];
 
   // ---- 5. “我的专属自查”刷新机制 ----
-  const userId = String(body.userId || body.email || '').trim();
   let selfCheck = null;
   if (pageType === 'mirror') {
     selfCheck = shouldRegenerate(userId || null, body.lastSelfCheckUpdate || null);
@@ -153,7 +166,7 @@ export default async function handler(req, res) {
       styleInstruction: style.instruction,
       injectedContext,
       coreProfileBlock: coreProfile.text,
-      userMessagePreview: userMessage.slice(0, 1200),
+      userMessagePreview: finalUserMessage.slice(0, 1200),
       selfCheck,
       text
     });
