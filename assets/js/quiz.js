@@ -1857,6 +1857,43 @@
 
   function callChat(provider, key, sysPrompt) {
     var userText = buildAiUserText();
+    // 优先走多角色调度（/api/chat，pageType='test'）：
+    // 这样测试页也能享受「核心档案拼接 + 系统级风格分类器 + 历史轮次统计」。
+    if (window.guanAgentChat) {
+      var styleSample = buildStyleSample();
+      if (window.guanRecordRound) window.guanRecordRound(styleSample || userText);
+      return window.guanAgentChat({
+        pageType: 'test',
+        userInput: userText,
+        styleSample: styleSample,
+        maxTokens: 8000
+      }).then(function (data) {
+        var text = data && data.text;
+        if (!text) throw new Error('没有收到解读内容，请重试。');
+        return text.trim();
+      }).catch(function (err) {
+        // 调度通道失败：回退到旧的解读代理 / 用户自带 Key，保证解读不中断
+        return callChatLegacy(provider, key, sysPrompt, userText, err);
+      });
+    }
+    return callChatLegacy(provider, key, sysPrompt, userText);
+  }
+
+  // 风格样本：只取用户的选择项与手写原话，剔除题干措辞，避免干扰频率统计
+  function buildStyleSample() {
+    try {
+      var bits = [];
+      state.answers.forEach(function (a, qi) {
+        if (!a) return;
+        var q = QUIZ.questions[qi];
+        if (a.option !== undefined && q && q.options && q.options[a.option]) bits.push(q.options[a.option].text);
+        if (a.other) bits.push(a.other);
+      });
+      return bits.join('。');
+    } catch (e) { return ''; }
+  }
+
+  function callChatLegacy(provider, key, sysPrompt, userText, firstErr) {
     var proxyUrl = window.GUAN_PROXY_URL || '';
     if (proxyUrl) {
       return callProxy(proxyUrl, provider, sysPrompt.content, userText).catch(function (err) {
@@ -1866,7 +1903,7 @@
           if (provider === 'deepseek') return callDeepSeek(key, sysPrompt.content, userText);
           return callOpenAI(key, sysPrompt.content, userText);
         }
-        throw err;
+        throw firstErr || err;
       });
     }
     if (provider === 'gemini') {
