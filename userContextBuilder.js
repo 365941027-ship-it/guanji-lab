@@ -306,15 +306,19 @@ export async function buildCoreProfileBlock(injectedContext) {
  * 生成完整用户消息（核心档案 + 本次输入 + 交互规则）
  */
 export function buildAgentUserMessage({ coreProfileBlock, userInput, style }) {
+  // 优先使用系统级风格分类器给出的完整指令；缺失时回退到按 mode 生成的简版说明。
+  const styleLine = (style && style.instruction)
+    ? style.instruction
+    : (style && style.mode === 'emotional'
+      ? '高情绪价值模式（多共情、多认可，先接住感受再给建议）。'
+      : style && style.mode === 'action'
+        ? '高行动力模式（多给具体步骤，少做情感铺垫，直接可执行）。'
+        : '自然平衡模式（理性与共情兼顾）。');
   const rules = [
     '1. 本次回答中，至少引用【历史输入摘要】中的 1 句话（引用时请用原话）；',
     '2. 本次回答中，至少引用【用户核心档案】中的 1 个数据；',
     '3. 结尾必须推荐另一个具体测试，或引导用户进入人生设计；',
-    '4. 用语风格：' + (style && style.mode === 'emotional'
-      ? '高情绪价值模式（多共情、多认可，先接住感受再给建议）。'
-      : style && style.mode === 'action'
-        ? '高行动力模式（多给具体步骤，少做情感铺垫，直接可执行）。'
-        : '自然平衡模式（理性与共情兼顾）。')
+    '4. ' + styleLine
   ].join('\n');
   return coreProfileBlock + '\n\n' +
     '【本次输入】\n' + String(userInput || '').trim() + '\n\n' +

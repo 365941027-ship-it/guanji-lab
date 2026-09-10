@@ -30,6 +30,31 @@
     } catch (e) { return ''; }
   }
 
+  // 最近 3 轮用户输入（用于风格分类器的历史轮次判定）
+  function recentRounds() {
+    try {
+      var raw = window.guanGet ? window.guanGet('guan_rounds') : localStorage.getItem('guan_rounds');
+      var list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) return [];
+      return list.slice(-3).map(function (x) {
+        return typeof x === 'string' ? x : ((x && x.text) || '');
+      }).filter(Boolean);
+    } catch (e) { return []; }
+  }
+
+  // 记录一轮用户输入（每次完成测试 / 设计 / 模拟 / 自查时调用）
+  window.guanRecordRound = function (text) {
+    var t = String(text || '').trim();
+    if (!t) return;
+    try {
+      var raw = window.guanGet ? window.guanGet('guan_rounds') : localStorage.getItem('guan_rounds');
+      var list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+      list.push({ text: t.slice(0, 300), ts: Date.now() });
+      window.guanSet('guan_rounds', JSON.stringify(list.slice(-12)));
+    } catch (e) {}
+  };
+
   // 采集用户的「原话」：题目自填答案、设计输入、模拟备注、理想、成长记录
   function collectUserVoices() {
     var voices = [];
@@ -117,8 +142,10 @@
     var body = {
       pageType: pageType,
       userInput: String(opts.userInput || opts.question || '').trim(),
+      styleSample: String(opts.styleSample || '').trim(),
       provider: opts.provider || 'deepseek',
       userId: ctx.userId,
+      historyRounds: recentRounds(),
       profile: ctx.profile,
       history: ctx.history,
       growth: ctx.growth,

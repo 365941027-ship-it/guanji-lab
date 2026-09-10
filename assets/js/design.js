@@ -758,6 +758,7 @@
       '\n我已拥有的资源：' + (inputs.asset || '未填写') +
       '\n我心里最大的障碍：' + (inputs.block || '未填写') +
       '\n三十天后我最希望的变化：' + (inputs.goal || '未填写');
+    if (window.guanRecordRound) window.guanRecordRound(userInput);
     window.guanAgentChat({
       pageType: 'design',
       userInput: userInput,

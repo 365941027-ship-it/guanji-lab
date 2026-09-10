@@ -676,9 +676,23 @@
       renderMirrorAgentText(cached, fallback, true);
       return;
     }
+    var mirrorInput = buildAiUserText();
+    // 风格样本：只取用户的选择与手写原话，剔除题干措辞，避免干扰频率统计
+    var styleSample = (function () {
+      var bits = [];
+      state.answers.forEach(function (a, qi) {
+        if (!a) return;
+        var q = QUIZ.questions[qi];
+        if (a.option !== undefined && q && q.options && q.options[a.option]) bits.push(q.options[a.option].text);
+        if (a.other) bits.push(a.other);
+      });
+      return bits.join('。');
+    })();
+    if (window.guanRecordRound) window.guanRecordRound(styleSample || mirrorInput);
     window.guanAgentChat({
       pageType: 'mirror',
-      userInput: buildAiUserText(),
+      userInput: mirrorInput,
+      styleSample: styleSample,
       maxTokens: 8000,
       extra: { mode: 'interpret' }
     }).then(function (data) {

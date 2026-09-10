@@ -777,6 +777,7 @@
       window.guanToast('多角色解读通道未就绪，展示规则版分析');
       return;
     }
+    if (window.guanRecordRound) window.guanRecordRound(user);
     window.guanAgentChat({ pageType: 'simulate', userInput: user, maxTokens: 8000, extra: { mode: 'outcome' } })
       .then(function (data) {
         var text = data && data.text ? data.text : '';

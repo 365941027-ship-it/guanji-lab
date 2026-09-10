@@ -12,6 +12,7 @@ import { resolveAgent } from '../prompts/index.js';
 import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '../userContextBuilder.js';
 import { callModel } from '../lib/modelClient.js';
 import { getSelfCheck, touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
+import { classifyStyle } from '../lib/styleClassifier.js';
 
 const ALLOWED_ORIGINS = {
   'http://162.14.105.122:8787': true,
@@ -21,30 +22,6 @@ const ALLOWED_ORIGINS = {
   'http://127.0.0.1:8777': true,
   'null': true // 允许同源/无来源（含本地调试与隐私模式），配合内测门禁使用
 };
-
-const EMOTION_WORDS = ['害怕', '担心', '焦虑', '迷茫'];
-const ACTION_WORDS = ['计划', '下周', '安排', '具体'];
-
-function countHits(text, words) {
-  let n = 0;
-  words.forEach((w) => {
-    let i = 0;
-    while (text.indexOf(w, i) > -1) { n += 1; i = text.indexOf(w, i) + w.length; }
-  });
-  return n;
-}
-
-function detectStyle(userInput, historyText) {
-  // 风格判定依据：本次输入 + 历史输入摘要（用户历史里反复出现的情绪/行动词同样生效）
-  const t = String(userInput || '') + '\n' + String(historyText || '');
-  if (countHits(t, EMOTION_WORDS) >= 2) {
-    return { mode: 'emotional', instruction: '风格要求：高情绪价值模式，每段先给情绪认可再给建议。' };
-  }
-  if (ACTION_WORDS.some((w) => t.indexOf(w) > -1)) {
-    return { mode: 'action', instruction: '风格要求：高行动力模式，直接给步骤，禁止超过2句情绪铺垫。' };
-  }
-  return { mode: 'balanced', instruction: '' };
-}
 
 function parseBody(raw) {
   return typeof raw === 'string' ? JSON.parse(raw) : (raw || {});
@@ -110,9 +87,21 @@ export default async function handler(req, res) {
     extra: body.extra
   });
 
-  // ---- 2. 语言风格适配（本次输入 + 历史输入共同判定） ----
-  const historyText = (injectedContext.coreQuotes || []).map((q) => q.text).join(' ');
-  const style = detectStyle(userInput, historyText);
+  // ---- 2. 系统级风格分类器（本次输入 + 最近3轮历史，频率 >30% 判定） ----
+  const styleResult = classifyStyle({
+    // styleSample：页面可传入「更干净的用户表达样本」（如仅含用户选项与手写原话，不含题干），
+    // 避免题干措辞干扰频率统计；未提供时回退到本次输入。
+    currentInput: String(body.styleSample || '').trim() || userInput,
+    historyRounds: Array.isArray(body.historyRounds) ? body.historyRounds : [],
+    coreQuotes: injectedContext.coreQuotes || []
+  });
+  const style = {
+    mode: styleResult.styleMode,
+    instruction: styleResult.instruction,
+    type: styleResult.type,
+    label: styleResult.label,
+    stats: styleResult.stats
+  };
 
   // ---- 3. 生成「用户核心档案」块（星座/八字关键词 可通过 GUAN_ASTRO_API_URL 接入外部轻量接口）----
   const coreProfile = await buildCoreProfileBlock(injectedContext);
@@ -158,6 +147,9 @@ export default async function handler(req, res) {
       pageType,
       agent: agent.name,
       styleMode: style.mode,
+      styleType: style.type,
+      styleLabel: style.label,
+      styleStats: style.stats,
       styleInstruction: style.instruction,
       injectedContext,
       coreProfileBlock: coreProfile.text,
