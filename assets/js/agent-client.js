@@ -30,6 +30,61 @@
     } catch (e) { return ''; }
   }
 
+  // 采集用户的「原话」：题目自填答案、设计输入、模拟备注、理想、成长记录
+  function collectUserVoices() {
+    var voices = [];
+    // 1) 测试里用户手写的「其他」答案（由 quiz.js 持久化）
+    try {
+      var raw = window.guanGet ? window.guanGet('guan_voices') : null;
+      if (raw) {
+        JSON.parse(raw).forEach(function (v) {
+          if (v && v.text) voices.push({ text: String(v.text).trim(), source: 'answer' });
+        });
+      }
+    } catch (e) {}
+    // 1b) 各测试里用户手写的「其他」答案（旧格式兼容）
+    try {
+      ['guan_who', 'guan_energy_map', 'guan_relation_map', 'guan_talent', 'guan_pressure', 'guan_life_want', 'guan_custom'].forEach(function (k) {
+        var r = window.guanGet ? window.guanGet('guan_answers_' + k) : null;
+        if (!r) return;
+        try {
+          JSON.parse(r).forEach(function (a) {
+            if (a && a.other && String(a.other).trim()) voices.push({ text: String(a.other).trim(), source: 'answer' });
+          });
+        } catch (e) {}
+      });
+    } catch (e) {}
+    // 2) 人生设计里写下的输入
+    try {
+      var design = JSON.parse(localStorage.getItem('guan_design_saved') || 'null');
+      if (design) {
+        ['pain', 'wish', 'block', 'goal'].forEach(function (f) {
+          if (design[f]) voices.push({ text: String(design[f]), source: 'input' });
+        });
+        if (design.inputs) {
+          ['pain', 'wish', 'block', 'goal'].forEach(function (f) {
+            if (design.inputs[f]) voices.push({ text: String(design.inputs[f]), source: 'input' });
+          });
+        }
+      }
+    } catch (e) {}
+    // 3) 模拟里的补充备注
+    try {
+      var sim = JSON.parse(localStorage.getItem('guan_sim') || 'null');
+      if (sim && Array.isArray(sim.picks)) {
+        sim.picks.forEach(function (p, i) {
+          if (p && p.note) voices.push({ text: String(p.note), source: 'input' });
+        });
+      }
+    } catch (e) {}
+    // 4) 用户写下的理想
+    try {
+      var ideal = JSON.parse(localStorage.getItem('guan_ideal') || 'null');
+      if (ideal && ideal.ideal) voices.push({ text: String(ideal.ideal), source: 'input' });
+    } catch (e) {}
+    return voices;
+  }
+
   // 汇总当前设备上的用户档案快照（供 /api/chat 装配 injectedContext）
   window.guanBuildUserContext = function (overrides) {
     var o = overrides || {};
@@ -46,7 +101,7 @@
       profile: o.profile || profile,
       history: o.history || history,
       growth: o.growth || growthArr,
-      recentInputs: o.recentInputs || [],
+      recentInputs: (o.recentInputs && o.recentInputs.length) ? o.recentInputs : collectUserVoices(),
       designSnapshot: o.designSnapshot || design,
       userId: o.userId || currentUserId(),
       pageType: o.pageType || ''

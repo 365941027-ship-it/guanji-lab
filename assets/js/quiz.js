@@ -703,6 +703,17 @@
     var core = mirrorAgentPart(fullText, '核心特质') || fullText;
     var conflict = mirrorAgentPart(fullText, '内在冲突');
     var growth = mirrorAgentPart(fullText, '成长方向');
+    // 若模型未按【核心特质/内在冲突/成长方向】标记输出，则按段落三等分降级，
+    // 保证三个板块都有内容、不会出现空白。
+    if (!conflict && !growth) {
+      var paras = fullText.split(/\n{2,}/).filter(function (x) { return x.trim(); });
+      if (paras.length >= 3) {
+        var per = Math.ceil(paras.length / 3);
+        core = paras.slice(0, per).join('\n\n');
+        conflict = paras.slice(per, per * 2).join('\n\n');
+        growth = paras.slice(per * 2).join('\n\n');
+      }
+    }
     var boxes = {
       core: core, conflict: conflict, growth: growth
     };
@@ -2480,6 +2491,30 @@
     window.guanTrack && window.guanTrack('quiz_finish', { quiz: QUIZ.key });
     buildResultView();
     saveTestHistory();
+    saveUserVoices();
+  }
+
+  // 持久化用户亲手写下的原话（题目「其他」），供四大 Agent 的「历史输入摘要」使用
+  function saveUserVoices() {
+    try {
+      var mine = [];
+      state.answers.forEach(function (a, qi) {
+        if (a && a.other && String(a.other).trim()) {
+          var q = QUIZ.questions[qi];
+          mine.push({
+            text: String(a.other).trim(),
+            quiz: QUIZ.key,
+            question: q ? q.q : '',
+            date: new Date().toISOString().slice(0, 10)
+          });
+        }
+      });
+      if (!mine.length) return;
+      var all = [];
+      try { all = JSON.parse(window.guanGet('guan_voices') || '[]'); } catch (e) { all = []; }
+      all = all.concat(mine).slice(-60);
+      window.guanSet('guan_voices', JSON.stringify(all));
+    } catch (e) {}
   }
 
   // 测试历史：每次完成测试后存档，供档案页回看与其他解读参考

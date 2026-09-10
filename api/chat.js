@@ -9,7 +9,7 @@
 // 以 “用户的实时档案数据：{...}。现在用户的问题是：...” 注入 user message。
 
 import { resolveAgent } from '../prompts/index.js';
-import { buildUserContext, buildInjectedText } from '../userContextBuilder.js';
+import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '../userContextBuilder.js';
 import { callModel } from '../lib/modelClient.js';
 import { getSelfCheck, touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
 
@@ -34,8 +34,9 @@ function countHits(text, words) {
   return n;
 }
 
-function detectStyle(userInput) {
-  const t = String(userInput || '');
+function detectStyle(userInput, historyText) {
+  // 风格判定依据：本次输入 + 历史输入摘要（用户历史里反复出现的情绪/行动词同样生效）
+  const t = String(userInput || '') + '\n' + String(historyText || '');
   if (countHits(t, EMOTION_WORDS) >= 2) {
     return { mode: 'emotional', instruction: '风格要求：高情绪价值模式，每段先给情绪认可再给建议。' };
   }
@@ -99,7 +100,7 @@ export default async function handler(req, res) {
     return jsonErr(res, 'empty_user_input', '没有收到用户输入内容');
   }
 
-  // ---- 1. 组装动态用户上下文 ----
+  // ---- 1. 组装动态用户上下文（档案 / 量化资源 / 测试历史 / 核心原话） ----
   const injectedContext = buildUserContext({
     profile: body.profile,
     history: body.history,
@@ -108,19 +109,30 @@ export default async function handler(req, res) {
     designSnapshot: body.designSnapshot,
     extra: body.extra
   });
-  const injectedText = buildInjectedText(injectedContext);
 
-  // ---- 2. 语言风格适配 ----
-  const style = detectStyle(userInput);
-  const userMessage = injectedText + '现在用户的问题是：' + userInput +
-    (style.instruction ? '\n\n' + style.instruction : '');
+  // ---- 2. 语言风格适配（本次输入 + 历史输入共同判定） ----
+  const historyText = (injectedContext.coreQuotes || []).map((q) => q.text).join(' ');
+  const style = detectStyle(userInput, historyText);
+
+  // ---- 3. 生成「用户核心档案」块（星座/八字关键词 可通过 GUAN_ASTRO_API_URL 接入外部轻量接口）----
+  const coreProfile = await buildCoreProfileBlock(injectedContext);
+
+  // ---- 4. 组装完整用户消息：核心档案 + 本次输入 + 交互规则 ----
+  const userMessage = buildAgentUserMessage({
+    coreProfileBlock: coreProfile.text,
+    userInput,
+    style
+  });
+
+  // 把结构化档案回写到 injectedContext，便于前端/排查看到实际拼进去的内容
+  injectedContext.coreProfile = coreProfile.meta;
 
   const messages = [
     { role: 'system', content: agent.system },
     { role: 'user', content: userMessage }
   ];
 
-  // ---- 3. “我的专属自查”刷新机制 ----
+  // ---- 5. “我的专属自查”刷新机制 ----
   const userId = String(body.userId || body.email || '').trim();
   let selfCheck = null;
   if (pageType === 'mirror') {
@@ -131,7 +143,7 @@ export default async function handler(req, res) {
     selfCheck = touchSelfCheck(userId, body.source || pageType);
   }
 
-  // ---- 4. 调用模型 ----
+  // ---- 6. 调用模型 ----
   try {
     const maxTokens = Math.min(Math.max(Number(body.max_tokens) || 8000, 200), 8000);
     const temperature = typeof body.temperature === 'number' ? body.temperature : 0.8;
@@ -146,7 +158,10 @@ export default async function handler(req, res) {
       pageType,
       agent: agent.name,
       styleMode: style.mode,
+      styleInstruction: style.instruction,
       injectedContext,
+      coreProfileBlock: coreProfile.text,
+      userMessagePreview: userMessage.slice(0, 1200),
       selfCheck,
       text
     });
