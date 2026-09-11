@@ -22,7 +22,7 @@ import { getCurrentUser } from './auth.js';
 import {
   savePrototypes, saveDefenseMap, getDefenseMap,
   appendAgent3History, getAgent3History,
-  saveIdealScenario, getIdealScenario, getUserRecord
+  saveIdealScenario, getUserRecord
 } from '../lib/userStore.js';
 
 const ALLOWED_ORIGINS = {
@@ -54,7 +54,7 @@ function extractJson(text) {
 
 // 组装 Agent 3 的上下文数据（对应需求二）
 async function assembleAgent3Context(userId, body) {
-  const rec = getUserRecord(userId);
+  const rec = await getUserRecord(userId);
   const injectedContext = buildUserContext({
     profile: body.profile,
     history: body.history,
@@ -70,7 +70,7 @@ async function assembleAgent3Context(userId, body) {
     coreProfileText: coreProfile.text,
     prototypesRaw: (rec.prototypes && rec.prototypes.raw) || '',
     idealScenario: rec.idealScenario || '',
-    agent3History: getAgent3History(userId, 3)
+    agent3History: await getAgent3History(userId, 3)
   };
 }
 
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
 
   // ---------- GET：进入模拟页时读取状态（不含防御机制映射） ----------
   if (req.method === 'GET') {
-    const rec = getUserRecord(userId);
+    const rec = await getUserRecord(userId);
     return res.status(200).json({
       ok: true,
       configured: true,
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
 
   // ---------- 1. 保存 Agent 2 的原型（设计页生成后调用） ----------
   if (action === 'save-prototypes') {
-    savePrototypes(userId, body.prototypesRaw || '', body.prototypes || []);
+    await savePrototypes(userId, body.prototypesRaw || '', body.prototypes || []);
     return res.status(200).json({ ok: true, saved: true });
   }
 
@@ -192,7 +192,7 @@ export default async function handler(req, res) {
           options: opts.map((o) => ({ key: String(o.key || ''), text: String(o.text || '') }))
         };
       });
-      if (userId) saveDefenseMap(userId, targetKey, map);
+      await saveDefenseMap(userId, targetKey, map);
       return res.status(200).json({
         ok: true,
         prototypeKey: targetKey,
@@ -210,7 +210,7 @@ export default async function handler(req, res) {
   if (action === 'interpret') {
     const targetKey = String(body.prototypeKey || 'A').replace(/^原型/, '');
     const ctx = await assembleAgent3Context(userId, body);
-    const defenseMap = userId ? getDefenseMap(userId, targetKey) : {};
+    const defenseMap = await getDefenseMap(userId, targetKey);
     const choices = Array.isArray(body.choices) ? body.choices : [];
     const choicesText = choices.map((c, i) =>
       (i + 1) + '. 场景「' + (c.title || '') + '」\n   题干：' + (c.question || '') +
@@ -245,14 +245,12 @@ export default async function handler(req, res) {
         maxTokens: 8000,
         temperature: 0.8
       });
-      if (userId) {
-        appendAgent3History(userId, {
-          type: 'simulation',
-          prototypeKey: targetKey,
-          choices: choices.map((c) => ({ id: c.id, chosenKey: c.chosenKey, chosenText: c.chosenText, note: c.note || '' })),
-          defenseUsed: choices.map((c) => defenseMap[String(c.chosenKey || '')] || '')
-        });
-      }
+      await appendAgent3History(userId, {
+        type: 'simulation',
+        prototypeKey: targetKey,
+        choices: choices.map((c) => ({ id: c.id, chosenKey: c.chosenKey, chosenText: c.chosenText, note: c.note || '' })),
+        defenseUsed: choices.map((c) => defenseMap[String(c.chosenKey || '')] || '')
+      });
       return res.status(200).json({ ok: true, prototypeKey: targetKey, text });
     } catch (e) {
       return jsonErr(res, (e && e.code) || 'proxy_error', (e && e.message) || '解读生成失败', 502);
@@ -262,7 +260,7 @@ export default async function handler(req, res) {
   // ---------- 4. 保存理想结局（user_ideal_scenario）+ 触发自查刷新 ----------
   if (action === 'ideal') {
     const targetKey = String(body.prototypeKey || '').replace(/^原型/, '');
-    const saved = saveIdealScenario(userId, targetKey, body.ideal || '');
+    const saved = await saveIdealScenario(userId, targetKey, body.ideal || '');
     return res.status(200).json({
       ok: true,
       idealScenario: saved.idealScenario,

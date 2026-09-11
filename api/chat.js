@@ -16,7 +16,7 @@
 import { resolveAgent } from '../prompts/index.js';
 import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '../userContextBuilder.js';
 import { callModel } from '../lib/modelClient.js';
-import { getSelfCheck, touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
+import { touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
 import { classifyStyle } from '../lib/styleClassifier.js';
 import { getIdealScenario } from '../lib/userStore.js';
 import { getCurrentUser } from './auth.js';
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
   if (pageType === 'mirror') {
     // 理想结局只从服务端存储读取；此前还允许 body.userIdealScenario 兜底，
     // 那等于让前端能往提示词里注入任意内容，一并去掉。
-    const ideal = getIdealScenario(userId) || '';
+    const ideal = (await getIdealScenario(userId)) || '';
     if (ideal) {
       finalUserMessage += '\n\n【用户在人生模拟中写下的理想结局 user_ideal_scenario】\n' + ideal.slice(0, 1500) +
         '\n（请在自查问题与解读中体现这个理想方向，并指出用户与它之间的距离。）';
@@ -157,11 +157,11 @@ export default async function handler(req, res) {
   // ---- 5. “我的专属自查”刷新机制 ----
   let selfCheck = null;
   if (pageType === 'mirror') {
-    selfCheck = shouldRegenerate(userId || null, body.lastSelfCheckUpdate || null);
-    if (userId) touchSelfCheck(userId, body.source || 'mirror');
-  } else if (userId && body.markSelfCheckUpdate === true) {
+    selfCheck = await shouldRegenerate(userId, body.lastSelfCheckUpdate || null);
+    await touchSelfCheck(userId, body.source || 'mirror');
+  } else if (body.markSelfCheckUpdate === true) {
     // 用户在测试/设计完成后可显式调用此标记；也可走 /api/selfcheck/update
-    selfCheck = touchSelfCheck(userId, body.source || pageType);
+    selfCheck = await touchSelfCheck(userId, body.source || pageType);
   }
 
   // ---- 6. 调用模型 ----
