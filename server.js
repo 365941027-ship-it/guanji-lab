@@ -205,6 +205,13 @@ function parseRequestUrl(req) {
 }
 
 function makeApiReq(req, url, bodyText) {
+  // 各个接口处理函数（api/*.js）会自己再解析一次 req.url 来判断路径，
+  // 所以这里必须把「规范化后的路径」写回去，否则像「//api/account/profile」
+  // 这种地址在接口里会被解析成主机名是 api、路径是 /account/profile，直接判成 404。
+  // 保留原始地址到 originalUrl，方便排查问题。
+  if (req.originalUrl === undefined) req.originalUrl = req.url;
+  req.url = url.pathname + url.search;
+
   req.query = Object.fromEntries(url.searchParams.entries());
   if (bodyText) {
     const ct = String(req.headers['content-type'] || '');
