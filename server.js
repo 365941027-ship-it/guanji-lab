@@ -184,6 +184,26 @@ const MIME = {
 
 // Vercel Function handler 兼容适配：把 Node IncomingMessage / ServerResponse
 // 包装成 api/*.js 期望的 req / res 形状。
+/**
+ * 把 req.url 解析成 URL 对象，并容忍以「//」开头的请求路径。
+ *
+ * 背景：new URL('//…', base) 会把开头的「//」当成“协议相对地址”，
+ * 于是「//」直接抛 Invalid URL（整个请求 500），
+ * 「//profile.html」则被理解成主机名是 profile.html、路径是「/」，
+ * 结果是静默地打开首页、接口也会路由错。
+ * 浏览器地址栏一般会把它规范成「/」，但手工拼的链接、旧书签、
+ * 爬虫和命令行工具仍会带「//」过来，所以这里统一收掉开头的多余斜杠。
+ */
+function parseRequestUrl(req) {
+  const raw = String(req.url || '/');
+  const collapsed = raw.replace(/^\/{2,}/, '/');
+  try {
+    return new URL(collapsed, 'http://localhost');
+  } catch (e) {
+    return new URL('/' + collapsed.replace(/^\/+/, ''), 'http://localhost');
+  }
+}
+
 function makeApiReq(req, url, bodyText) {
   req.query = Object.fromEntries(url.searchParams.entries());
   if (bodyText) {
@@ -343,7 +363,7 @@ async function serveStatic(res, urlPath) {
 
 const server = http.createServer(async (req, res) => {
   try {
-    const url = new URL(req.url || '/', 'http://localhost');
+    const url = parseRequestUrl(req);
     const pathname = url.pathname;
 
     // 解析 Cookie：把 req.cookies 与 req.sessionToken 备好，供所有接口复用
