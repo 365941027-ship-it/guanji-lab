@@ -40,22 +40,16 @@
       </div>
     </section>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabase-config.js"></script>
-  <script src="assets/js/auth.js"></script>
   <script>
+    // 内测期间改密码由我们人工处理：自助改密码需要邮件通道，等正式版再开。
     (function () {
       var btn = document.getElementById('resetConfirm');
       var input = document.getElementById('newPass');
       var msg = document.getElementById('resetMsg');
-      btn.addEventListener('click', async function () {
-        var pass = input.value;
-        if (pass.length < 6) { msg.textContent = '密码至少 6 位'; return; }
-        var sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-        var res = await sb.auth.updateUser({ password: pass });
-        if (res.error) { msg.textContent = res.error.message; return; }
-        msg.textContent = '密码已更新，请重新登录';
-        setTimeout(function () { window.location.href = 'login.html'; }, 1200);
+      btn.addEventListener('click', function () {
+        var pass = input.value || '';
+        if (pass.length < 8) { msg.textContent = '密码至少 8 位'; return; }
+        msg.textContent = '内测期间暂不支持自助改密码。请把注册邮箱发给我们，我们会帮你重置，然后重新登录。';
       });
     })();
   </script>

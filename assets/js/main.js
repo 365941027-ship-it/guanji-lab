@@ -86,28 +86,7 @@
       data: data || {},
       created_at: new Date().toISOString()
     };
-    try {
-      var supaUrl = localStorage.getItem('guan_supabase_url') || '';
-      var anonKey = localStorage.getItem('guan_supabase_anon') || '';
-      if (supaUrl && anonKey) {
-        fetch(supaUrl.replace(/\/$/, '') + '/rest/v1/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': anonKey,
-            'Authorization': 'Bearer ' + anonKey
-          },
-          body: JSON.stringify({
-            event: payload.event,
-            quiz_key: payload.quiz_key,
-            page: payload.page,
-            data: payload.data
-          })
-        }).catch(function () {});
-        return;
-      }
-    } catch (e) {}
-    // 本地兜底日志（最多保留 200 条，便于调试）
+    // 埋点只落本地日志（最多保留 200 条，便于调试）：不做任何第三方上报
     try {
       var log = JSON.parse(localStorage.getItem('guan_events_log') || '[]');
       log.push(payload);
@@ -265,7 +244,7 @@
   }
   window.guanRenderAccount = renderAccountChip;
 
-  // 初始化：优先 Supabase 会话，其次本地旧会话
+  // 初始化页头：先用本地旧会话占位，等 auth.js 向后端确认后会自动刷新。
   var legacySession = null;
   try {
     legacySession = JSON.parse(localStorage.getItem('guan_session') || 'null');
@@ -274,15 +253,6 @@
     renderAccountChip({ name: legacySession.name, avatar: legacySession.avatar });
   } else {
     renderAccountChip(null);
-  }
-  if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey) {
-    var sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
-      auth: { persistSession: true, autoRefreshToken: true }
-    });
-    sbClient.auth.getSession().then(function (res) {
-      var u = res.data && res.data.session && res.data.session.user;
-      if (u) renderAccountChip({ email: u.email });
-    }).catch(function () {});
   }
 
   // Toast helper
@@ -333,26 +303,9 @@
     if (cur.level === 'paid') return;
     all[quizKey] = { level: level, order: order || '', ts: Date.now() };
     saveEntitlements(all);
-    // 尽力同步到 Supabase（登录用户）
-    try {
-      var supaUrl = localStorage.getItem('guan_supabase_url') || '';
-      var anonKey = localStorage.getItem('guan_supabase_anon') || '';
-      if (!supaUrl || !anonKey) return;
-      // 通过 auth 会话拿不到 user id 时静默跳过，本地权益仍生效
-      if (!window.supabase || !window.SUPABASE_CONFIG) return;
-      var sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-      sb.auth.getSession().then(function (res) {
-        var uid = res.data && res.data.session && res.data.session.user && res.data.session.user.id;
-        if (!uid) return;
-        return sb.from('entitlements').upsert({
-          user_id: uid,
-          quiz_key: quizKey,
-          level: level,
-          order_no: order || '',
-          created_at: new Date().toISOString()
-        }, { onConflict: 'user_id,quiz_key' });
-      }).catch(function () {});
-    } catch (e) {}
+    // 权益目前只记在本机：新账号系统尚未开放权益表，先不做远端同步，
+    // 避免前端请求一个已经不存在的第三方服务。
+    return;
   };
 
   // ---------- 分享链接（带来源与随机 ref） ----------
@@ -547,13 +500,6 @@
     }
   };
 
-  // Account-aware storage helpers
-  function usingCloudAccount() {
-    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return false;
-    var ref = window.SUPABASE_CONFIG.url.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
-    return !!localStorage.getItem('sb-' + ref + '-auth-token');
-  }
-
   window.guanGet = function (key) {
     // 档案已迁到服务器：统一从缓存读取，避免各页面读到空的旧数据。
     // 缓存由 auth.js 在会话确认后写入（内存 + sessionStorage）。
@@ -561,8 +507,7 @@
       var cached = window.guanGetProfileCache();
       if (cached) return JSON.stringify(cached);
     }
-    // Supabase 云端账号已按用户隔离，直接读裸 key；本地旧账号仍走命名空间
-    if (usingCloudAccount()) return localStorage.getItem(key);
+    // 测试结果、成长记录等仍按本机账号（本地昵称）做命名空间隔离
     return localStorage.getItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
   window.guanSet = function (key, val) {
@@ -570,11 +515,9 @@
     if (key === 'guan_profile' && window.guanSetProfileCache) {
       try { window.guanSetProfileCache(JSON.parse(val)); } catch (e) {}
     }
-    if (usingCloudAccount()) { localStorage.setItem(key, val); return; }
     localStorage.setItem(window.guanDataKey ? window.guanDataKey(key) : key, val);
   };
   window.guanRemove = function (key) {
-    if (usingCloudAccount()) { localStorage.removeItem(key); return; }
     localStorage.removeItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
 

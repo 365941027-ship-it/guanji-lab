@@ -1049,19 +1049,7 @@
         result: (snapshot.routes[0] ? snapshot.routes[0].tag : '') + ' · 参考职业：' + (snapshot.routes[0] && snapshot.routes[0].careers ? snapshot.routes[0].careers.join('、') : ''),
         detail: snapshot
       });
-      // 同步到云端成长记录（如果已登录）
-      if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) {
-        (async function () {
-          try {
-            var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-            var sess = await c.auth.getSession();
-            var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
-            if (uid) {
-              await c.from('growth_records').upsert({ user_id: uid, kind: 'design', data: snapshot, updated_at: new Date().toISOString() }, { onConflict: 'user_id,kind' });
-            }
-          } catch (e) {}
-        })();
-      }
+      // 设计方案统一通过 guanSaveToArchive 存档；成长记录的跨设备同步等新后端开放对应接口后再接。
     } catch (e) {
       window.guanToast('保存失败，请重试');
     }

@@ -1,7 +1,7 @@
 // 观己实验室 · 单机版服务入口（腾讯云/任意 Node 服务器）
 // 同时提供静态页面与 /api/* 接口，替代 Vercel Serverless。
 // 用法：
-//   DEEPSEEK_API_KEY=xxx SUPABASE_URL=xxx SUPABASE_SERVICE_ROLE_KEY=xxx node server.js
+//   DEEPSEEK_API_KEY=xxx DB_HOST=xxx DB_USER=xxx DB_PASSWORD=xxx DB_NAME=xxx node server.js
 //   默认监听 8787；可通过 PORT 环境变量修改。
 import http from 'node:http';
 import { createHash } from 'node:crypto';
