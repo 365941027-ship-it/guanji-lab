@@ -117,7 +117,10 @@ export default async function handler(req, res) {
   const userMessage = buildAgentUserMessage({
     coreProfileBlock: coreProfile.text,
     userInput,
-    style
+    style,
+    // 首次使用的用户没有历史原话可引用，规则要区别对待，
+    // 否则模型会去「引用」占位说明，读起来很怪。
+    hasHistory: Array.isArray(injectedContext.coreQuotes) && injectedContext.coreQuotes.length > 0
   });
 
   // 把结构化档案回写到 injectedContext，便于前端/排查看到实际拼进去的内容

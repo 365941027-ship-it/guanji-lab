@@ -290,7 +290,7 @@ export async function buildCoreProfileBlock(injectedContext) {
   const quotes = ctx.coreQuotes || [];
   const quotesLine = quotes.length
     ? quotes.map((q, i) => (i + 1) + '. 「' + q.text + '」').join('\n    ')
-    : '（暂无历史输入）';
+    : '（这是 ta 第一次表达，还没有历史原话可引用）';
 
   return {
     text:
@@ -305,7 +305,7 @@ export async function buildCoreProfileBlock(injectedContext) {
 /**
  * 生成完整用户消息（核心档案 + 本次输入 + 交互规则）
  */
-export function buildAgentUserMessage({ coreProfileBlock, userInput, style }) {
+export function buildAgentUserMessage({ coreProfileBlock, userInput, style, hasHistory }) {
   // 优先使用系统级风格分类器给出的完整指令；缺失时回退到按 mode 生成的简版说明。
   const styleLine = (style && style.instruction)
     ? style.instruction
@@ -315,7 +315,9 @@ export function buildAgentUserMessage({ coreProfileBlock, userInput, style }) {
         ? '高行动力模式（多给具体步骤，少做情感铺垫，直接可执行）。'
         : '自然平衡模式（理性与共情兼顾）。');
   const rules = [
-    '1. 本次回答中，至少引用【历史输入摘要】中的 1 句话（引用时请用原话）；',
+    hasHistory
+      ? '1. 本次回答中，至少引用【历史输入摘要】中的 1 句话（引用时请用原话）；'
+      : '1. 这位用户还没有留下过历史原话：不要引用【历史输入摘要】里的占位说明，也不要假装 ta 说过什么；把力气放在本次输入的原话上。',
     '2. 本次回答中，至少引用【用户核心档案】中的 1 个数据；',
     '3. 结尾必须推荐另一个具体测试，或引导用户进入人生设计；',
     '4. ' + styleLine
