@@ -101,8 +101,8 @@ function publicUser(u) {
  * @returns {Promise<object|null>} 用户对象（不含密码哈希）；未登录返回 null
  */
 export async function getCurrentUser(req) {
-  const cookies = parseCookies(req);
-  const token = cookies[COOKIE_NAME];
+  // 优先用 server.js 统一解析好的 req.sessionToken，避免每个接口重复解析 Cookie
+  const token = req.sessionToken || parseCookies(req)[COOKIE_NAME];
   if (!token) return null;
   const session = await findValidSession(token);
   if (!session) return null;
@@ -115,9 +115,7 @@ export async function getCurrentUser(req) {
 
 /** 从请求里取 session token（登出用） */
 export function getSessionToken(req) {
-  if (req._sessionToken) return req._sessionToken;
-  const cookies = parseCookies(req);
-  return cookies[COOKIE_NAME] || '';
+  return req.sessionToken || parseCookies(req)[COOKIE_NAME] || '';
 }
 
 // ---------- 三个接口 ----------

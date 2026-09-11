@@ -20,6 +20,7 @@ import orderHandler from './api/order.js';
 import simulateHandler from './api/simulate.js';
 import authHandler from './api/auth.js';
 import accountHandler from './api/account.js';
+import { COOKIE_NAME as SESSION_COOKIE } from './api/auth.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url)).replace(/[\\/]$/, '');
 const ROOT = __dirname;
@@ -43,9 +44,20 @@ function parseCookies(req) {
   return out;
 }
 
+// 解析 Cookie 并挂到 req 上，供所有下游处理函数复用：
+//   req.cookies       —— 全部 Cookie 的键值对象
+//   req.sessionToken  —— 登录会话令牌（未登录时为空字符串）
+// 每个请求只解析一次，避免各接口重复 split 字符串。
+function attachCookies(req) {
+  req.cookies = parseCookies(req);
+  req.sessionToken = req.cookies[SESSION_COOKIE] || '';
+  return req;
+}
+
 function betaAllowed(req) {
   if (!BETA_MODE) return true;
-  const cookies = parseCookies(req);
+  // 复用已解析的结果，没解析过才现场解析
+  const cookies = req.cookies || parseCookies(req);
   return cookies[BETA_COOKIE] === betaHash();
 }
 
@@ -223,16 +235,27 @@ const API_ROUTES = [
   ['/api/order', orderHandler],
   ['/api/order/webhook', orderHandler],
   ['/api/order/status', orderHandler],
-  ['/api/simulate', simulateHandler],
-  ['/api/auth/register', authHandler],
-  ['/api/auth/login', authHandler],
-  ['/api/auth/logout', authHandler],
-  ['/api/account/profile', accountHandler]
+  ['/api/simulate', simulateHandler]
 ];
 
+// 前缀路由：以该前缀开头的所有路径交给同一个处理函数，
+// 由处理函数内部再按具体路径与方法分发（见 api/auth.js、api/account.js）。
+const API_PREFIX_ROUTES = [
+  ['/api/auth/', authHandler],
+  ['/api/account/', accountHandler]
+];
+
+/** 先精确匹配，再前缀匹配；都没命中返回 null */
+function matchRoute(pathname) {
+  const exact = API_ROUTES.find((r) => r[0] === pathname);
+  if (exact) return exact[1];
+  const prefix = API_PREFIX_ROUTES.find((r) => pathname.startsWith(r[0]));
+  return prefix ? prefix[1] : null;
+}
+
 async function handleApi(req, res, pathname, url) {
-  const route = API_ROUTES.find((r) => r[0] === pathname);
-  if (!route) return false;
+  const handler = matchRoute(pathname);
+  if (!handler) return false;
 
   // 读取请求体（限制 1MB，防止滥用）
   let bodyText = '';
@@ -262,7 +285,7 @@ async function handleApi(req, res, pathname, url) {
   const apiReq = makeApiReq(req, url, bodyText);
   const apiRes = makeApiRes(res);
   try {
-    await route[1](apiReq, apiRes);
+    await handler(apiReq, apiRes);
   } catch (e) {
     if (!apiRes.state.ended) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -322,6 +345,9 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
     const pathname = url.pathname;
+
+    // 解析 Cookie：把 req.cookies 与 req.sessionToken 备好，供所有接口复用
+    attachCookies(req);
 
     // 内测码入口（GET 显示 / POST 校验）
     if (pathname === '/beta') {
