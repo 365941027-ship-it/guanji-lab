@@ -18,6 +18,8 @@ import chatHandler from './api/chat.js';
 import selfcheckHandler from './api/selfcheck.js';
 import orderHandler from './api/order.js';
 import simulateHandler from './api/simulate.js';
+import authHandler from './api/auth.js';
+import accountHandler from './api/account.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url)).replace(/[\\/]$/, '');
 const ROOT = __dirname;
@@ -221,7 +223,11 @@ const API_ROUTES = [
   ['/api/order', orderHandler],
   ['/api/order/webhook', orderHandler],
   ['/api/order/status', orderHandler],
-  ['/api/simulate', simulateHandler]
+  ['/api/simulate', simulateHandler],
+  ['/api/auth/register', authHandler],
+  ['/api/auth/login', authHandler],
+  ['/api/auth/logout', authHandler],
+  ['/api/account/profile', accountHandler]
 ];
 
 async function handleApi(req, res, pathname, url) {

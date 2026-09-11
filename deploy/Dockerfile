@@ -4,7 +4,11 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# 纯 Node 内置模块 + 静态文件，无需 npm install
+# 先装依赖（单独一层，依赖没变时可复用缓存，加快构建）
+COPY package.json ./
+RUN npm install --omit=dev --no-audit --no-fund
+
+# 再复制其余文件
 COPY . .
 
 ENV NODE_ENV=production

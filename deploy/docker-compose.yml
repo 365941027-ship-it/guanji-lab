@@ -16,17 +16,13 @@ services:
     restart: unless-stopped
     ports:
       - "8787:8787"
+    # 直接读取项目根目录的 .env（相对本文件），所有密钥在容器内原样生效。
+    # 这样即使忘记加 --env-file，变量也不会丢失 —— 之前踩过这个坑。
+    env_file:
+      - ../.env
     environment:
+      # 只放不来自 .env 的固定值；此处若重复声明同名变量，会覆盖 env_file 的值。
       PORT: 8787
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      GUAN_PAY_ENABLED: ${GUAN_PAY_ENABLED:-0}
-      GUAN_PAY_PRICE: ${GUAN_PAY_PRICE:-9.9}
-      GUAN_PAY_GOODS_JSON: ${GUAN_PAY_GOODS_JSON:-}
-      GUAN_PAY_SUPPORT_EMAIL: ${GUAN_PAY_SUPPORT_EMAIL:-}
-      GUAN_BETA_MODE: ${GUAN_BETA_MODE:-0}
-      GUAN_BETA_CODE: ${GUAN_BETA_CODE:-}
-      GUAN_LOCAL_AUTH: ${GUAN_LOCAL_AUTH:-0}
+      TZ: Asia/Shanghai
     volumes:
       - ./data:/app/data
