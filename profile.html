@@ -54,7 +54,7 @@
         <div class="login-reminder hidden" id="loginReminder">
           <div>
             <h3>登录后，档案才会一直陪着你</h3>
-            <p>目前档案保存在这台设备上；登录后我们会在设备上为你建立专属空间，之后接上真实账户，你的记录就能跨设备跟随你。</p>
+            <p>你还没有登录，现在填写的内容只会留在这台设备上。登录后，档案会存进你的账号：换一台设备、换一个浏览器，它都还在，测试与人生设计也会一直以「你」为起点。</p>
           </div>
           <a class="btn btn-gold btn-sm" href="login.html">去登录 / 注册</a>
         </div>
@@ -90,7 +90,7 @@
                 <button type="button" data-avatar="🌄" class="avatar-btn">🌄</button>
                 <button type="button" data-avatar="🌱" class="avatar-btn">🌱</button>
               </div>
-              <div class="form-hint">也可以上传你自己的照片头像（只保存在这台设备上）</div>
+              <div class="form-hint">也可以上传你自己的照片头像（会自动压缩成小图；登录后随档案保存在你的账号里）</div>
               <input type="file" id="pAvatarFile" accept="image/*" style="margin-top:8px">
             </div>
             <div class="form-row">
@@ -217,7 +217,7 @@
             <button type="button" class="btn btn-block" id="exportProfile" style="margin-top:10px">导出我的档案</button>
             <p class="chart-note" id="profileLockNote"></p>
             <p class="chart-note">提醒：你的档案每月最多可以修改 3 次，保存后进入锁定状态。请认真填写，避免频繁改动。</p>
-            <p style="font-size:12px;color:var(--muted-2);margin-top:12px;text-align:center">所有信息只保存在这台设备的浏览器里，不会上传到任何服务器。</p>
+            <p style="font-size:12px;color:var(--muted-2);margin-top:12px;text-align:center">登录状态下，档案会保存到你的账号里，用于后续的测试解读与人生设计；未登录时只留在这台设备上。</p>
           </div>
 
           <div class="profile-preview" id="profilePreview">
@@ -291,8 +291,8 @@
       <div class="container">
         <div class="soft-band">
           <span class="kicker kicker-center">Your Data, Your Choice</span>
-          <h2>数据只在这台设备上</h2>
-          <p>测试结果、档案、成长记录与三十天旅程都保存在这台设备的浏览器里，不会上传到任何服务器。请留意：<strong>清除浏览器数据、更换设备或卸载浏览器会导致记录消失</strong>，建议定期把全部数据备份到自己的电脑或云端。</p>
+          <h2>你的数据，你说了算</h2>
+          <p>登录后，你的档案会保存在观己实验室的服务器上，只用来生成属于你的解读与设计，不会用于其他用途，也不会对外分享。请留意：<strong>未登录时填写的内容只留在这台设备，清除浏览器数据、更换设备或卸载浏览器会导致记录消失</strong>，建议定期把全部数据备份到自己的电脑或云端。</p>
           <div class="cta-actions">
             <button type="button" class="btn btn-gold" id="backupData">备份全部数据</button>
             <label class="btn" style="cursor:pointer">恢复备份<input type="file" id="restoreFile" accept="application/json,.json" style="display:none"></label>

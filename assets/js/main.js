@@ -219,7 +219,7 @@
   if (!localStorage.getItem('guan_privacy_ok')) {
     var bar = document.createElement('div');
     bar.className = 'privacy-bar';
-    bar.innerHTML = '<span><strong>关于你的数据：</strong>所有测试结果、档案与记录只保存在这台设备的浏览器里，不上传任何服务器。</span>' +
+    bar.innerHTML = '<span><strong>关于你的数据：</strong>登录后，你的档案与记录会保存在观己实验室的服务器上，只用来生成属于你的解读与设计；未登录时只留在这台设备。</span>' +
       '<button type="button">我知道了</button>';
     document.body.appendChild(bar);
     requestAnimationFrame(function () { bar.classList.add('show'); });
@@ -555,11 +555,21 @@
   }
 
   window.guanGet = function (key) {
+    // 档案已迁到服务器：统一从缓存读取，避免各页面读到空的旧数据。
+    // 缓存由 auth.js 在会话确认后写入（内存 + sessionStorage）。
+    if (key === 'guan_profile' && window.guanGetProfileCache) {
+      var cached = window.guanGetProfileCache();
+      if (cached) return JSON.stringify(cached);
+    }
     // Supabase 云端账号已按用户隔离，直接读裸 key；本地旧账号仍走命名空间
     if (usingCloudAccount()) return localStorage.getItem(key);
     return localStorage.getItem(window.guanDataKey ? window.guanDataKey(key) : key);
   };
   window.guanSet = function (key, val) {
+    // 档案写入时同步更新缓存，让当前页面的其他模块立刻读到新值
+    if (key === 'guan_profile' && window.guanSetProfileCache) {
+      try { window.guanSetProfileCache(JSON.parse(val)); } catch (e) {}
+    }
     if (usingCloudAccount()) { localStorage.setItem(key, val); return; }
     localStorage.setItem(window.guanDataKey ? window.guanDataKey(key) : key, val);
   };

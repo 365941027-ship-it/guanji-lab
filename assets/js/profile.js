@@ -58,37 +58,145 @@
     }
   }
 
-  // 云端档案：登录时从 Supabase 拉取，覆盖本地
-  async function loadCloudProfile() {
-    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return;
-    try {
-      var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
-        auth: { persistSession: true, autoRefreshToken: true }
+  // ---------- 档案读写：以服务器为准 ----------
+
+  /** 统一的请求封装：带上会话 Cookie，错误时抛出带 .status 的对象 */
+  function api(path, options) {
+    var opts = options || {};
+    opts.credentials = 'same-origin';
+    if (opts.body && typeof opts.body !== 'string') {
+      opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+      opts.body = JSON.stringify(opts.body);
+    }
+    return fetch(path, opts).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) {
+          var m = (data && data.error) || '请求失败';
+          if (m && typeof m === 'object') m = m.message || '请求失败';
+          var err = new Error(m);
+          err.status = res.status;
+          throw err;
+        }
+        return data;
       });
-      var sess = await c.auth.getSession();
-      var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
-      if (!uid) return;
-      var res = await c.from('profiles').select('data').eq('id', uid).maybeSingle();
-      if (res.data && res.data.data) {
-        window.guanSet(KEY, JSON.stringify(res.data.data));
-        fillForm(res.data.data);
-        renderPreview(res.data.data);
-      }
-    } catch (e) {}
+    });
   }
 
-  // 云端同步：保存档案后同步到 Supabase
-  async function syncProfileToCloud(p) {
-    if (!window.supabase || !window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url) return;
+  /**
+   * 找出本机上所有「旧版档案」的存放位置。
+   *
+   * 历史原因，旧档案可能落在两种 key 上：
+   *   1) 裸 key：guan_profile        —— 从未建过本地账号的用户
+   *   2) 命名空间 key：guan_data_<昵称>_guan_profile —— 建过本地账号的用户
+   * 只扫裸 key 会让第 2 类用户的旧数据永远同步不上来，所以这里两个都找。
+   */
+  function legacyProfileKeys() {
+    var keys = [];
     try {
-      var c = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey, {
-        auth: { persistSession: true, autoRefreshToken: true }
-      });
-      var sess = await c.auth.getSession();
-      var uid = sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
-      if (!uid) return;
-      await c.from('profiles').upsert({ id: uid, data: p, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      if (localStorage.getItem(KEY)) keys.push(KEY);
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || k === KEY) continue;
+        if (k.indexOf('guan_data_') === 0 && k.slice(-('_' + KEY).length) === '_' + KEY) {
+          if (keys.indexOf(k) < 0) keys.push(k);
+        }
+      }
     } catch (e) {}
+    return keys;
+  }
+
+  /** 本地是否还有「未上传过的旧档案」；多个来源时按字段合并，缺的字段不覆盖已有的 */
+  function localLegacyProfile() {
+    var merged = {};
+    legacyProfileKeys().forEach(function (k) {
+      try {
+        var p = JSON.parse(localStorage.getItem(k) || 'null');
+        if (!p || typeof p !== 'object') return;
+        Object.keys(p).forEach(function (field) {
+          var v = p[field];
+          if (v === undefined || v === null || v === '') return;
+          if (merged[field] === undefined || merged[field] === null || merged[field] === '') merged[field] = v;
+        });
+      } catch (e) {}
+    });
+    return Object.keys(merged).length ? merged : null;
+  }
+
+  /** 清掉本机上所有旧档案副本（上传成功后调用，避免下次重复上传） */
+  function clearLocalLegacyProfile() {
+    legacyProfileKeys().forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+  }
+
+  /**
+   * 旧档案迁移（方案A）：把本机遗留的旧档案上传到服务器。
+   * 只在「已登录」且「服务器档案为空」且「本机有旧数据」时才执行，
+   * 避免把用户已经更新过的云端档案覆盖回旧版本。
+   * @returns {Promise<{migrated:boolean, reason?:string}>}
+   */
+  async function migrateLocalProfile() {
+    var local = localLegacyProfile();
+    if (!local) return { migrated: false, reason: 'no_local' };
+
+    var user = window.guanCurrentUser ? window.guanCurrentUser() : null;
+    if (!user) return { migrated: false, reason: 'not_logged_in' };
+
+    // 先看服务器上有没有档案
+    var server = {};
+    try {
+      var data = await api('/api/account/profile', { method: 'GET' });
+      server = (data && data.profile) || {};
+    } catch (e) {
+      return { migrated: false, reason: 'load_failed' };
+    }
+    if (server && Object.keys(server).length) {
+      // 服务器已有档案：以服务器为准，清掉本机旧的，避免以后重复上传
+      clearLocalLegacyProfile();
+      return { migrated: false, reason: 'server_has_data' };
+    }
+
+    try {
+      await api('/api/account/profile', { method: 'POST', body: { profile: local } });
+    } catch (e) {
+      return { migrated: false, reason: 'upload_failed' };
+    }
+
+    clearLocalLegacyProfile();
+    if (window.guanSetProfileCache) window.guanSetProfileCache(local);
+    window.guanToast('已把本机档案同步到你的账号');
+    return { migrated: true };
+  }
+
+  // 暴露给 auth.js：登录成功后立即尝试迁移
+  window.guanMigrateLocalProfile = function () { return migrateLocalProfile(); };
+
+  /** 从服务器加载档案并渲染（页面打开时调用） */
+  async function loadProfileFromServer() {
+    var migrated = await migrateLocalProfile();
+    if (migrated.migrated) return;      // 迁移成功，页面上已经填好了
+
+    var data;
+    try {
+      data = await api('/api/account/profile', { method: 'GET' });
+    } catch (err) {
+      if (err && err.status === 401) return;   // 未登录：保持本地展示
+      console.warn('[profile] 加载档案失败：', err && err.message);
+      return;
+    }
+    var p = (data && data.profile) || {};
+    if (window.guanSetProfileCache) window.guanSetProfileCache(p);
+    if (!Object.keys(p).length) return;        // 服务器暂无档案：保留当前表单内容
+    fillForm(p);
+    renderPreview(p);
+    renderCharts();
+  }
+
+  /** 保存档案到服务器 */
+  async function saveProfileToServer(p) {
+    var data = await api('/api/account/profile', { method: 'POST', body: { profile: p } });
+    if (window.guanSetProfileCache) window.guanSetProfileCache((data && data.profile) || p);
+    return data;
   }
 
   function fillForm(p) {
@@ -353,15 +461,66 @@
     el.classList.add('show');
   }
 
-  document.getElementById('saveProfile').addEventListener('click', function () {
+  /**
+   * 把用户选的照片压成一张小方图，返回 dataURL。
+   * 思路：先按最长边缩到 256px，再从中间裁成正方形，最后输出 JPEG（质量 0.82）。
+   * 这样一张手机照片通常只有 20–60KB，既够清楚，又不会把档案撑大。
+   * @param {File} file
+   * @returns {Promise<string>}
+   */
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var SIDE = 256;
+          var canvas = document.createElement('canvas');
+          canvas.width = SIDE;
+          canvas.height = SIDE;
+          var ctx = canvas.getContext('2d');
+
+          // 居中裁成正方形，避免人脸被拉扁
+          var min = Math.min(img.width, img.height);
+          var sx = (img.width - min) / 2;
+          var sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, SIDE, SIDE);
+
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        } catch (e) {
+          URL.revokeObjectURL(url);
+          reject(e);
+        }
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('image_load_failed'));
+      };
+      img.src = url;
+    });
+  }
+
+  document.getElementById('saveProfile').addEventListener('click', async function () {
     var lock = lockState();
     if (lock.count >= EDIT_LIMIT) {
       window.guanToast('本月更新次数已用完，下月 1 日恢复');
       return;
     }
     var p = collect();
-    window.guanSet(KEY, JSON.stringify(p));
-    syncProfileToCloud(p);
+
+    // 先写服务器；失败就不消耗本月的修改次数，也不锁定表单
+    try {
+      await saveProfileToServer(p);
+    } catch (err) {
+      if (err && err.status === 401) {
+        window.guanToast('请先登录后再保存档案');
+      } else {
+        window.guanToast('保存失败：' + (err && err.message ? err.message : '请稍后重试'));
+      }
+      return;
+    }
+
     renderPreview(p);
     lock.count += 1;
     localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
@@ -383,13 +542,31 @@
   document.getElementById('pAvatarFile').addEventListener('change', function () {
     var file = this.files && this.files[0];
     if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      avatar = e.target.result;
+    if (!/^image\//.test(file.type)) {
+      window.guanToast('请选择一张图片文件');
+      return;
+    }
+    // 手机直出的照片动辄三五 MB，直接转 base64 会超出接口上限、也把档案撑得很大。
+    // 这里先在浏览器里压成 256×256 的小图（约 20–60KB）再上传，清晰度足够做头像。
+    shrinkImage(file).then(function (dataUrl) {
+      avatar = dataUrl;
       document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) { b.classList.remove('on'); });
       window.guanToast('照片头像已读取，保存档案后生效');
-    };
-    reader.readAsDataURL(file);
+    }).catch(function () {
+      // 压缩失败（极老的浏览器）时退回原图，至少不让用户卡住
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        avatar = e.target.result;
+        if (avatar.length > 700000) {
+          window.guanToast('这张照片太大了，请换一张较小（1MB 以内）的图片');
+          avatar = '🌙';
+          return;
+        }
+        document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) { b.classList.remove('on'); });
+        window.guanToast('照片头像已读取，保存档案后生效');
+      };
+      reader.readAsDataURL(file);
+    });
   });
 
   document.querySelectorAll('#pAvatarRow .avatar-btn').forEach(function (b) {
@@ -517,8 +694,5 @@
   renderDesignArchive();
   renderExploreArchive();
   renderGrowthArchive();
-  loadCloudProfile();
-  loadCloudTestHistory();
-  loadCloudExploreArchive();
-  loadCloudGrowthArchive();
+  loadProfileFromServer();
 })();

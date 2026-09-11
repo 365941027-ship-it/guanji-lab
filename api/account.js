@@ -46,6 +46,12 @@ async function handleGet(req, res) {
   return res.status(200).json({
     ok: true,
     userId: user.id,
+    // 一并返回基础身份信息，前端用来渲染页头（不包含密码等敏感字段）
+    user: {
+      id: user.id,
+      email: user.email || '',
+      nickname: user.nickname || ''
+    },
     profile: profile || {}
   });
 }
