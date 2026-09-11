@@ -6,13 +6,19 @@
 //   4. 用户提交理想结局，写入 user_ideal_scenario 并刷新 lastSelfCheckUpdate。
 //
 // 路由：
-//   GET  /api/simulate?userId=&action=state
+//   GET  /api/simulate?action=state
 //   POST /api/simulate  { action: 'save-prototypes' | 'scenario' | 'interpret' | 'ideal' }
+//
+// 【信任边界】本文件不再信任前端传入的 userId / email。
+//   用户身份一律来自会话：server.js 解析 Cookie 得到 token，
+//   这里通过 getCurrentUser 查 sessions 表校验有效性并取出用户 UUID。
+//   未登录或会话过期一律返回 401，前端无法通过伪造 userId 读写他人数据。
 
 import { AGENT_SIMULATOR, SIMULATE_PHASE_SCENARIO, SIMULATE_PHASE_INTERPRET } from '../prompts/agentSimulator.js';
 import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '../userContextBuilder.js';
 import { callModel } from '../lib/modelClient.js';
 import { classifyStyle } from '../lib/styleClassifier.js';
+import { getCurrentUser } from './auth.js';
 import {
   savePrototypes, saveDefenseMap, getDefenseMap,
   appendAgent3History, getAgent3History,
@@ -100,13 +106,25 @@ export default async function handler(req, res) {
 
   const url = new URL(req.url || '/', 'http://localhost');
 
+  // ---- 用户身份：只认会话，不认前端传参 ----
+  // 此前 GET 读 url.searchParams.userId、POST 读 body.userId，
+  // 等于把「我是谁」交给前端决定，任何人都能填别人的 ID 读写他人数据。
+  let currentUser;
+  try {
+    currentUser = await getCurrentUser(req);
+  } catch (e) {
+    console.error('[simulate] 会话校验失败：', e && e.message ? e.message : e);
+    return res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
+  }
+  if (!currentUser) return res.status(401).json({ error: '请先登录' });
+  const userId = currentUser.id;
+
   // ---------- GET：进入模拟页时读取状态（不含防御机制映射） ----------
   if (req.method === 'GET') {
-    const userId = String(url.searchParams.get('userId') || '').trim();
     const rec = getUserRecord(userId);
     return res.status(200).json({
       ok: true,
-      configured: !!userId,
+      configured: true,
       prototypesRaw: (rec.prototypes && rec.prototypes.raw) || '',
       prototypes: (rec.prototypes && rec.prototypes.list) || [],
       idealScenario: rec.idealScenario || '',
@@ -120,11 +138,9 @@ export default async function handler(req, res) {
   let body;
   try { body = parseBody(req.body); } catch (e) { return jsonErr(res, 'bad_request', '请求格式不正确'); }
   const action = String(body.action || '').trim();
-  const userId = String(body.userId || body.email || '').trim();
 
   // ---------- 1. 保存 Agent 2 的原型（设计页生成后调用） ----------
   if (action === 'save-prototypes') {
-    if (!userId) return jsonErr(res, 'missing_user', '缺少 userId');
     savePrototypes(userId, body.prototypesRaw || '', body.prototypes || []);
     return res.status(200).json({ ok: true, saved: true });
   }
@@ -245,7 +261,6 @@ export default async function handler(req, res) {
 
   // ---------- 4. 保存理想结局（user_ideal_scenario）+ 触发自查刷新 ----------
   if (action === 'ideal') {
-    if (!userId) return jsonErr(res, 'missing_user', '缺少 userId');
     const targetKey = String(body.prototypeKey || '').replace(/^原型/, '');
     const saved = saveIdealScenario(userId, targetKey, body.ideal || '');
     return res.status(200).json({

@@ -7,6 +7,11 @@
 //
 // 动态拼接：每次调用前调用 userContextBuilder 组装用户实时档案，
 // 以 “用户的实时档案数据：{...}。现在用户的问题是：...” 注入 user message。
+//
+// 【信任边界】本文件不再信任前端传入的 userId / email。
+//   用户身份一律来自会话：server.js 解析 Cookie 得到 token，
+//   这里通过 getCurrentUser 查 sessions 表校验有效性并取出用户 UUID。
+//   未登录或会话过期一律返回 401，前端无法通过伪造 userId 读写他人数据。
 
 import { resolveAgent } from '../prompts/index.js';
 import { buildUserContext, buildCoreProfileBlock, buildAgentUserMessage } from '../userContextBuilder.js';
@@ -14,6 +19,7 @@ import { callModel } from '../lib/modelClient.js';
 import { getSelfCheck, touchSelfCheck, shouldRegenerate } from '../lib/selfCheckStore.js';
 import { classifyStyle } from '../lib/styleClassifier.js';
 import { getIdealScenario } from '../lib/userStore.js';
+import { getCurrentUser } from './auth.js';
 
 const ALLOWED_ORIGINS = {
   'http://162.14.105.122:8787': true,
@@ -117,12 +123,25 @@ export default async function handler(req, res) {
   // 把结构化档案回写到 injectedContext，便于前端/排查看到实际拼进去的内容
   injectedContext.coreProfile = coreProfile.meta;
 
-  const userId = String(body.userId || body.email || '').trim();
+  // ---- 用户身份：只认会话，不认前端传参 ----
+  // 删除了原来的 String(body.userId || body.email) 写法：
+  // 那等于把「我是谁」交给前端决定，任何人都能填别人的 ID 来读写他人数据。
+  let currentUser;
+  try {
+    currentUser = await getCurrentUser(req);
+  } catch (e) {
+    console.error('[chat] 会话校验失败：', e && e.message ? e.message : e);
+    return res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
+  }
+  if (!currentUser) return res.status(401).json({ error: '请先登录' });
+  const userId = currentUser.id;
 
   // Agent 4（专属自查）需要融入用户在人生模拟里写下的理想结局（user_ideal_scenario）
   let finalUserMessage = userMessage;
   if (pageType === 'mirror') {
-    const ideal = (userId ? getIdealScenario(userId) : '') || String(body.userIdealScenario || '').trim();
+    // 理想结局只从服务端存储读取；此前还允许 body.userIdealScenario 兜底，
+    // 那等于让前端能往提示词里注入任意内容，一并去掉。
+    const ideal = getIdealScenario(userId) || '';
     if (ideal) {
       finalUserMessage += '\n\n【用户在人生模拟中写下的理想结局 user_ideal_scenario】\n' + ideal.slice(0, 1500) +
         '\n（请在自查问题与解读中体现这个理想方向，并指出用户与它之间的距离。）';
