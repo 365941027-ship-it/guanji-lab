@@ -28,7 +28,6 @@ import {
 const ALLOWED_ORIGINS = {
   'http://162.14.105.122:8787': true,
   'http://localhost:8787': true,
-  'https://guanji-lab.vercel.app': true,
   'http://localhost:8777': true,
   'http://127.0.0.1:8777': true,
   'null': true

@@ -1,13 +1,15 @@
 (function () {
   'use strict';
 
-  // 判断当前页面是否仍由静态托管（GitHub Pages / Vercel / 本地调试）提供：
-  // 是则继续调用远端 Vercel 代理；否则（腾讯云等自建服务器）自动改走同源 /api。
+  // 判断当前页面是不是由「自建服务器」提供（同源才能调 /api/*）。
+  //
+  // 现在只有自建服务器会真正提供页面：GitHub Pages 已被 assets/js/host-redirect.js
+  // 跳转到服务器；本地直接双击打开 HTML（file://）时没有后端，属于 false。
+  // 这个判断用来决定「要不要去拉 /api/config」等只存在于服务器上的接口。
   function guanSameOriginApi() {
     var host = String(location.hostname || '').toLowerCase();
     var knownStaticHosts = [
       '365941027-ship-it.github.io',
-      'guanji-lab.vercel.app',
       'localhost',
       '127.0.0.1',
       '0.0.0.0'
@@ -16,12 +18,9 @@
     return true;
   }
 
-  // 服务端解读代理（免用户 Key）
-  // 部署代理后，把 GUAN_PROXY_DEFAULT 改为完整 URL，例如 'https://your-app.vercel.app/api/interpret'
+  // 服务端解读代理（免用户 Key）：与页面同源，由自建服务器提供
   // 个人调试可用 localStorage.setItem('guan_proxy_url', '...') 覆盖
-  var GUAN_PROXY_DEFAULT = guanSameOriginApi()
-    ? location.origin + '/api/interpret'
-    : 'https://guanji-lab.vercel.app/api/interpret';
+  var GUAN_PROXY_DEFAULT = location.origin + '/api/interpret';
   window.GUAN_PROXY_URL = (function () {
     try {
       return localStorage.getItem('guan_proxy_url') || GUAN_PROXY_DEFAULT || '';
@@ -320,9 +319,7 @@
   };
 
   // ---------- 分享验证（V1）：记录朋友打开 / 查询是否已打开 ----------
-  var GUAN_CLAIM_DEFAULT = guanSameOriginApi()
-    ? location.origin + '/api/claim'
-    : 'https://guanji-lab.vercel.app/api/claim';
+  var GUAN_CLAIM_DEFAULT = location.origin + '/api/claim';
   window.GUAN_CLAIM_URL = (function () {
     try { return localStorage.getItem('guan_claim_url') || GUAN_CLAIM_DEFAULT || ''; } catch (e) { return GUAN_CLAIM_DEFAULT || ''; }
   })();

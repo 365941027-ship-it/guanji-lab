@@ -21,8 +21,9 @@ echo "== [2/4] 准备 .env =="
 if [ ! -f "$APP_DIR/.env" ]; then
   cp "$APP_DIR/deploy/.env.example" "$APP_DIR/.env"
   echo "  已生成 $APP_DIR/.env，请先填入真实密钥后重新运行本脚本"
-  echo "  必填：DEEPSEEK_API_KEY、SUPABASE_SERVICE_ROLE_KEY"
-  echo "  可选：GUAN_PAY_ENABLED / GUAN_PAY_GOODS_JSON（面包多商品）"
+  echo "  必填：DEEPSEEK_API_KEY（解读通道）、DB_PASSWORD（账号与档案数据库）"
+  echo "  建议：GUAN_BETA_MODE=1 与 GUAN_BETA_CODE=...（内测门禁）"
+  echo "  可选：GUAN_PAY_ENABLED / GUAN_PAY_GOODS_JSON（付费墙）"
   exit 0
 fi
 
@@ -42,3 +43,6 @@ echo ""
 echo "  后续更新："
 echo "  rsync -av --exclude .git /Users/yexiyan/Documents/塔罗玄学\ 心灵疗愈/ root@服务器IP:/opt/guanji-lab/"
 echo "  cd /opt/guanji-lab && sudo bash deploy/install_guanji_docker.sh"
+echo ""
+echo "  只改了页面、没改环境变量时，可以更快地更新："
+echo "  cd /opt/guanji-lab && sudo docker compose -f deploy/docker-compose.yml up -d --build"

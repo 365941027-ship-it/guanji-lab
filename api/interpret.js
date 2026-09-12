@@ -1,5 +1,5 @@
-// 观己实验室 · 服务端模型代理（Vercel Serverless Function）
-// 部署说明见 DEPLOY_PROXY.md
+// 观己实验室 · 服务端模型代理（自建服务器上的 /api/interpret）
+// 部署说明见 deploy/README.md
 // 环境变量：
 //   DEEPSEEK_API_KEY（主通道，必填）
 //   可选：OPENAI_API_KEY、GEMINI_API_KEY
@@ -56,7 +56,6 @@ export default async function handler(req, res) {
   var ALLOWED_ORIGINS = {
     'http://162.14.105.122:8787': true,
     'http://localhost:8787': true,
-    'https://guanji-lab.vercel.app': true,
     'http://localhost:8777': true,
     'http://127.0.0.1:8777': true,
   };
@@ -72,8 +71,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
 
-  // 简单内存限流：每 IP 每小时最多 30 次解读（Vercel 无状态实例，按实例内存计，
-  // 用于挡住最基础的滥用；正式运营建议升级为 Upstash/Vercel KV 限流）
+  // 简单内存限流：每 IP 每小时最多 30 次解读（按进程内存计，重启即清零，
+  // 用于挡住最基础的滥用；正式运营建议换成 Redis 之类可持久化的限流）
   var RATE_WINDOW_MS = 60 * 60 * 1000;
   var RATE_MAX = 30;
   var rateStore = globalThis.__GUAN_RATE__ || (globalThis.__GUAN_RATE__ = {});

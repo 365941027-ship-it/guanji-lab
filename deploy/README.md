@@ -2,14 +2,16 @@
 
 ## 为什么可以同机
 
-「观己」是纯静态站 + 4 个轻量 Node 接口：
+「观己」是静态页面 + 一组轻量 Node 接口：
 
 - `/api/interpret` 深度解读（转发 DeepSeek，需密钥）
-- `/api/claim` 分享解锁验证（写 Supabase）
-- `/api/keepalive` Supabase 保活（替代 GitHub runner 直连）
+- `/api/chat` 多角色调度（测试解读 / 人生设计 / 模拟 / 自查）
+- `/api/auth/*` 注册登录登出（写自建 PostgreSQL）
+- `/api/account/profile` 用户档案读写
 - `/api/config` 站点级付费配置
 
-A股盯盘服务占用 `8235`，观己容器默认占用 `8787`，CPU / 内存压力都很小，2 核 2G 足够。
+A股盯盘服务占用 `8235`，观己容器占用 `8787`，数据库容器 `guanji-postgres` 限制在 256MB。
+CPU / 内存压力都很小，2 核 2G 足够。
 
 ## 部署步骤
 
@@ -28,8 +30,11 @@ A股盯盘服务占用 `8235`，观己容器默认占用 `8787`，CPU / 内存�
 3. 编辑 `/opt/guanji-lab/.env`：
 
    - `DEEPSEEK_API_KEY`：DeepSeek Key（解读通道）
-   - `SUPABASE_SERVICE_ROLE_KEY`：Supabase 后台 service role（勿外泄）
-   - `GUAN_PAY_ENABLED=1` 并填入面包多商品 JSON 后，付费墙自动对所有访客生效
+   - `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`：自建 PostgreSQL 连接信息（账号与档案用）
+   - `GUAN_BETA_MODE=1` + `GUAN_BETA_CODE=...`：内测门禁
+   - `GUAN_PAY_ENABLED=1` 并填入收款链接 JSON 后，付费墙自动对所有访客生效
+
+   各变量的完整说明见 `deploy/.env.example`。
 
 4. 再次运行安装脚本构建并启动，然后在腾讯云轻量控制台 → 防火墙放行 TCP 8787。
 
@@ -37,7 +42,10 @@ A股盯盘服务占用 `8235`，观己容器默认占用 `8787`，CPU / 内存�
 
 ## 前端如何选择接口
 
-`assets/js/main.js` 会自动判断：在 GitHub Pages / Vercel / 本地调试访问时仍走原 Vercel 接口；在 IP 或自建域名访问时自动改走同源 `/api/*`，无需改代码。
+所有接口都走**同源** `/api/*`，由本容器提供，无需配置跨域。
+
+GitHub Pages 那份镜像已改为自动跳转到本服务器（`assets/js/host-redirect.js`），
+所以访客不会停留在没有后端的静态副本上。
 
 ## 关于 HTTPS / 域名
 
@@ -46,6 +54,35 @@ A股盯盘服务占用 `8235`，观己容器默认占用 `8787`，CPU / 内存�
 ## 更新
 
 ```bash
-rsync -av --exclude .git "/Users/yexiyan/Documents/塔罗玄学 心灵疗愈/" root@服务器IP:/opt/guanji-lab/
-cd /opt/guanji-lab && sudo bash deploy/install_guanji_docker.sh
+cd /opt/guanji-lab
+sudo docker compose -f deploy/docker-compose.yml up -d --build
 ```
+
+`.env` 不会被覆盖，密钥与数据库连接信息保持不变。
+
+## 数据库
+
+账号、会话与档案存放在独立的 PostgreSQL 容器里：
+
+```bash
+sudo docker exec -it guanji-postgres psql -U guanji -d guanji
+```
+
+表结构变更脚本在 `db/migrations/`，按序号执行。
+数据目录挂载在宿主机 `/root/guanji/data/postgres`，容器重建不会丢数据。
+
+## 验证部署是否正常
+
+```bash
+# 1) 站点能打开（会先看到内测码页面）
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8787/
+
+# 2) 解读通道的密钥已就位
+curl -s http://127.0.0.1:8787/api/chat
+# 期望：{"ok":true,"provider":"deepseek","ready":true,"agents":[...]}
+
+# 3) 未登录时账号接口应被拦住（401 = 正常）
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8787/api/account/profile
+```
+
+浏览器侧：输入内测码 → 注册一个账号 → 「我的档案」填写并保存 → 刷新页面，内容应仍在。

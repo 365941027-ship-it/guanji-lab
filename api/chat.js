@@ -24,7 +24,6 @@ import { getCurrentUser } from './auth.js';
 const ALLOWED_ORIGINS = {
   'http://162.14.105.122:8787': true,
   'http://localhost:8787': true,
-  'https://guanji-lab.vercel.app': true,
   'http://localhost:8777': true,
   'http://127.0.0.1:8777': true,
   'null': true // 允许同源/无来源（含本地调试与隐私模式），配合内测门禁使用

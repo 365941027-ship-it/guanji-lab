@@ -1,34 +1,52 @@
-# 免费公网部署指南
+# 部署说明（当前状态）
 
-这个网站是纯静态站点（HTML/CSS/JS），可以部署到任何免费静态托管。三选一：
+## 现在线上跑在哪里
 
-## 方式一：Vercel（推荐）
+「观己实验室」是**一套带后端的完整站点**，不是纯静态页：
 
-1. 打开 <https://vercel.com> 注册/登录（可用 GitHub 账号直接登录）
-2. 安装 CLI 或在网页上导入项目：
-   - CLI：`npm i -g vercel`，然后在项目目录运行 `vercel`
-   - 网页：New Project → 导入本目录 → Deploy
-3. 部署完成后会得到 `https://<项目名>.vercel.app`
+- 静态页面（HTML/CSS/JS）+ 接口（`/api/*`）+ 数据库，都在**腾讯云轻量服务器**上，用 Docker 跑。
+- 对外地址：`http://162.14.105.122:8787`（内测期为内测码进入制）。
+- 部署与更新步骤：见 [deploy/README.md](deploy/README.md)。
 
-## 方式二：Netlify
+> 注意：`http://IP:端口` 这种地址在微信里点开可能被拦，属于正常现象。正式对外分享建议先完成域名备案，再绑定域名。
 
-1. 打开 <https://app.netlify.com> 登录
-2. Sites → Add new site → Deploy manually → 拖入本目录文件夹
-3. 完成，得到 `https://<随机名>.netlify.app`
+## 为什么不再用免费静态托管
 
-## 方式三：GitHub Pages
+早期版本是纯静态站，可以放在 Vercel / Netlify / GitHub Pages 上。现在不行了，因为下面这些能力都需要服务端：
 
-1. 新建 GitHub 仓库，把本项目推上去（`git init && git add . && git commit -m "init"`，然后 `git remote add origin <repo>` + `git push`）
-2. 仓库 Settings → Pages → Source 选 `main` 分支
-3. 访问 `https://<用户名>.github.io/<仓库名>/`
+| 能力 | 需要什么 | 静态托管能做吗 |
+| --- | --- | --- |
+| 注册 / 登录 / 换设备找回档案 | 账号系统 + 数据库 | ❌ |
+| 测试解读、人生设计、模拟推演 | 服务端持有模型密钥并调用模型 | ❌ |
+| 内测门禁、付费墙、订单核验 | 服务端校验 | ❌ |
+| 只看页面、本地记录 | 静态文件即可 | ✅ |
 
-## 分享给朋友
+把模型密钥放在纯静态站里会直接暴露给任何人，所以「前端直连模型」这条路不可行。
 
-部署后把公网地址发给朋友即可，无需同一 Wi-Fi，任何设备可访问。
+## GitHub Pages 那份怎么处理
 
-## 关于账号系统
+仓库里仍然保留 GitHub Pages 部署，它现在只做一件事：**把访客跳转到服务器地址**。
 
-当前账号系统是纯本地演示（数据存浏览器）。要让朋友的数据真正独立且跨设备，需要后端：
-- 用 Vercel/Netlify 的 Serverless 函数 + 数据库（如 Supabase/Neon）
-- 或部署一个小型 Node 后端（Express + SQLite/Postgres）
-- 前端 `account.js` 已预留命名空间结构，接后端时只需把 `localStorage` 换成 API 调用
+实现是 `assets/js/host-redirect.js`，它在 `<head>` 里最先执行，并从路径里剥掉 `/guanji-lab` 前缀，所以：
+
+```
+https://<用户名>.github.io/guanji-lab/profile.html
+   → http://162.14.105.122:8787/profile.html
+```
+
+已删除的 Vercel 那份是更早期的副本（早于该脚本），所以它自己不会跳转，后台删除后老链接会直接失效——如果之前把 `guanji-lab.vercel.app` 的链接发给过别人，那些链接就不再可用。
+
+## 换域名 / 加 HTTPS
+
+1. 买域名并完成 ICP 备案（大陆服务器对外提供服务需要备案）。
+2. 用 Nginx 或 Caddy 把 80 / 443 反向代理到 `127.0.0.1:8787`。
+3. 改两处地址常量：
+   - `assets/js/host-redirect.js` 里的 `CANONICAL_ORIGIN`
+   - `api/chat.js`、`api/interpret.js`、`api/simulate.js` 的 `ALLOWED_ORIGINS` 白名单
+4. 重新构建并重启容器（见 [deploy/README.md](deploy/README.md)）。
+
+## 相关文档
+
+- 服务器部署与更新：[deploy/README.md](deploy/README.md)
+- 商业化与定价：[MONETIZATION_PLAN.md](MONETIZATION_PLAN.md)
+- 多 Agent 架构：[AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md)

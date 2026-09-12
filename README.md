@@ -104,4 +104,6 @@ python3 -m http.server 8777
 
 ## 部署
 
-见 [DEPLOY.md](DEPLOY.md)：Vercel / Netlify / GitHub Pages 三选一，均为免费。已预置 `vercel.json`、`netlify.toml`、`.nojekyll`、`404.html`。
+站点带后端（账号系统、模型解读、付费校验），跑在自建服务器上，见 [DEPLOY.md](DEPLOY.md) 与 [deploy/README.md](deploy/README.md)。
+
+GitHub Pages 那份镜像只用于跳转到服务器地址（`assets/js/host-redirect.js`）。

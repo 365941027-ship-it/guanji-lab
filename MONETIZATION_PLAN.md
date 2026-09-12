@@ -7,10 +7,10 @@
 
 | 能力 | 现状 | 文件 |
 | --- | --- | --- |
-| 深度解读通道 | 已部署 Vercel，DeepSeek 主通道 | `api/interpret.js` |
+| 深度解读通道 | 已部署自建服务器（同源 `/api/*`），DeepSeek 主通道 | `api/interpret.js` |
 | AI 深度解读 | 结果页自动生成 3000 字解读，当前**完全免费** | `assets/js/quiz.js:1215` |
 | 分享卡片 | 已有保存卡片 / 保存完整结果 | `assets/js/quiz.js:1096` |
-| 账号系统 | Supabase 邮箱登录已接入，本地→云端迁移 | `assets/js/auth.js` |
+| 账号系统 | 自建账号系统已接入（邮箱+密码，存于自建 PostgreSQL），本地档案→服务器迁移 | `assets/js/auth.js` |
 | 结果个性化 | 引用用户具体回答 + 档案 + 其他测试结果 | `assets/js/quiz.js:1000` |
 
 **核心结论**：产品能力已经超过变现能力。最值钱的「AI 深度解读」正在被免费送掉，下一步不是造新功能，而是**给已有能力加门槛、加支付、加数据**。
@@ -48,17 +48,17 @@
 
 **点击分享即解锁（信任制）**：
 
-- 分享按钮生成带参链接：`https://guanji-lab.vercel.app/test-who.html?from=guan_who&ref=<随机id>`
+- 分享按钮生成带参链接：`http://162.14.105.122:8787/test-who.html?from=guan_who&ref=<随机id>`（绑定域名后自动变成域名地址）
 - 点击分享 → localStorage 写入 `guan_share_<quizKey>=1` → 解锁 L1
 - `?from=` 参数仅用于追踪分享来源（朋友打开时上报）
 
 局限：无法真正验证「朋友是否打开」，会被薅。**初期可接受**——目标不是防薅，而是验证分享意愿和转化率。
 
-### V1（第二版，接 Supabase 后）
+### V1（第二版，等分享登记接口启用后）
 
 - 分享链接带 `ref`，朋友打开时调用新接口 `api/claim.js` 登记
 - 原用户登录状态下，打开结果页时查询 `share_claims` 表，确认解锁
-- 表结构（Supabase）：
+- 表结构（自建 PostgreSQL）：
   - `share_claims`: id, quiz_key, sharer_id, claimed_by, created_at
   - `entitlements`: user_id, quiz_key, level, expires_at
 
@@ -87,7 +87,7 @@
 
 ## 六、埋点与转化漏斗
 
-在 `main.js` 增加 `guanTrack(event, data)` 辅助函数，上报到 Supabase 表 `events`：
+在 `main.js` 增加 `guanTrack(event, data)` 辅助函数，先把事件记录在本机日志（最多 200 条）：
 
 | 事件 | 含义 | 目标参考 |
 | --- | --- | --- |
@@ -109,7 +109,7 @@
 | 结果页分层渲染 | `assets/js/quiz.js` | 0.5–1 天 |
 | 分享解锁（V0） | `assets/js/quiz.js` + `main.js` | 0.5 天 |
 | 面包多支付跳转 + 解锁 | `assets/js/quiz.js` + 新增 `pay.html` | 1–2 天 |
-| 埋点辅助 | `assets/js/main.js` + Supabase 表 | 0.5 天 |
+| 埋点辅助 | `assets/js/main.js`（本地事件日志） | 0.5 天 |
 | 分享登记接口（V1） | 新增 `api/claim.js` | 1 天 |
 | 商品创建与测试 | 面包多后台 + 真机走单 | 0.5–1 天 |
 
@@ -131,7 +131,7 @@
 | 分享信任制被薅 | V0 接受，数据达标后升级 V1 验证 |
 | 面包多跳转体验打折 | 支付后自动回跳 + 本地权益即时解锁 |
 | 深度解读质量不稳 | 固定 prompt + 温度 0.7；失败自动重试 |
-| 用户不登录无法跨设备 | V0 本地解锁；V1 依赖 Supabase 登录 |
+| 用户不登录无法跨设备 | V0 本地解锁；V1 依赖账号登录 |
 | 定价不匹配 | 三种测试分三档，A/B 测 9.9 vs 19.9 |
 
 ## 九、上线顺序（建议）
@@ -139,4 +139,4 @@
 1. **第 1 周**：结果页三层结构 + 分享解锁 V0 + 埋点
 2. **第 2 周**：面包多商品 + 支付解锁 + 真机走单
 3. **第 3 周**：A/B 测定价 + 看 2 周漏斗数据
-4. **数据达标后**：Supabase 权益表 + 分享验证 V1 → 决定是否升级微信支付
+4. **数据达标后**：自建数据库权益表 + 分享验证 V1 → 决定是否升级微信支付

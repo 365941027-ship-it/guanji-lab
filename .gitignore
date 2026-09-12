@@ -1,7 +1,7 @@
-.vercel/
 node_modules/
 npm-debug.log*
 .DS_Store
-.vercel
 .env*
+# 环境变量模板只有占位符，不含真实密钥，需要入库，方便换机器时照着填
+!deploy/.env.example
 data/
