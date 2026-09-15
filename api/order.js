@@ -2,6 +2,7 @@
 //   POST /api/order/webhook?token=…  ← 金数据「数据推送」付款成功回调
 //   GET  /api/order/webhook?token=…&email=…&quiz=…  ← 手动补记一笔（备用手段）
 //   GET  /api/order/status           ← 前端轮询，命中后自动解锁（需登录）
+//   GET  /api/order/list?token=…     ← 站长工具：看已记账订单与注册用户（需密钥）
 //
 // 【安全边界】这是「谁付了钱」的唯一入口，必须防住两件事：
 //
@@ -16,7 +17,8 @@
 //      并且只查当前登录账号自己的记录，URL 里的 email 不再被采信。
 import crypto from 'node:crypto';
 import { getCurrentUser } from './auth.js';
-import { recordOrder, queryOrder } from '../lib/orderStore.js';
+import { recordOrder, queryOrder, listOrders } from '../lib/orderStore.js';
+import { listUsers } from '../lib/repos/userRepo.js';
 
 /** 金数据推送地址里要带的共享密钥 */
 function expectedToken() {
@@ -85,7 +87,9 @@ export default async function handler(req, res) {
         email: url.searchParams.get('email') || '',
         quiz: url.searchParams.get('quiz') || '',
         order_no: url.searchParams.get('orderNo') || url.searchParams.get('order_no') || 'manual',
-        amount: url.searchParams.get('amount') || ''
+        amount: url.searchParams.get('amount') || '',
+        // 标记来源，站长工具里能一眼分清「手动补的」和「金数据自动回执的」
+        event: 'manual'
       };
     } else {
       body = req.body;
@@ -127,6 +131,34 @@ export default async function handler(req, res) {
     }
     const quiz = String(url.searchParams.get('quiz') || '').trim();
     return res.status(200).json({ ok: true, ...queryOrder(user.email, quiz) });
+  }
+
+  // ---------- 站长工具：查看已记账订单与最近注册的用户 ----------
+  // 需要同一串密钥；用于手动补记时挑对账号，以及确认补记有没有生效。
+  if (req.method === 'GET' && path === '/api/order/list') {
+    const want = expectedToken();
+    if (!want) {
+      return res.status(503).json({ error: { code: 'order_token_not_configured', message: '服务器尚未配置订单校验密钥' } });
+    }
+    if (!sameToken(tokenFromRequest(req, url), want)) {
+      return res.status(403).json({ error: { code: 'bad_token', message: '校验失败' } });
+    }
+    let users = [];
+    try {
+      users = await listUsers(200);
+    } catch (e) {
+      // 数据库暂时不可用时，订单列表仍应能看，不要让整个工具挂掉
+      console.warn('[order] 读取用户列表失败：', e && e.message);
+    }
+    return res.status(200).json({
+      ok: true,
+      orders: listOrders(200),
+      users: users.map((u) => ({
+        email: u.email || '',
+        nickname: u.nickname || '',
+        createdAt: u.created_at || null
+      }))
+    });
   }
 
   return res.status(405).json({ error: { code: 'method_not_allowed' } });

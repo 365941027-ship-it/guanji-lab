@@ -61,9 +61,38 @@ function betaAllowed(req) {
   return cookies[BETA_COOKIE] === betaHash();
 }
 
-function sendBetaPage(res, errorText) {
+/** 把要跳回去的路径安全地放进 HTML 属性里 */
+function escapeAttr(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/**
+ * 判断「进入后跳回哪里」是否是本站内的安全路径。
+ *
+ * 为什么需要：访客点朋友分享来的链接（比如 /test-who.html?from=guan_who）时，
+ * 内测门禁会先拦下 ta。如果输完内测码只把 ta 丢回首页，那条分享链接就白发了。
+ * 所以要把原始地址带过去。但「带过去的地址」绝不能是什么都行——否则会变成
+ * 开放重定向（被用来伪装成观己的钓鱼跳板）。
+ * 这里只接受以单个斜杠开头的站内路径。
+ */
+function safeNextPath(raw) {
+  // 先去控制字符：尤其是 \r\n，否则可能被用来注入响应头
+  const s = String(raw || '').replace(/[\u0000-\u001f\u007f]/g, '');
+  if (!s) return '';
+  if (s.charAt(0) !== '/') return '';        // 必须是站内相对路径
+  if (s.charAt(1) === '/') return '';        // 排除 //evil.com 这种协议相对地址
+  if (/^\/[^a-z0-9]/i.test(s)) return '';    // 只接受 /字母 或 /数字 开头的正常路径
+  return s;
+}
+
+function sendBetaPage(res, errorText, nextPath) {
   const errHtml = errorText
     ? '<p id="betaError" style="color:#d98a7a;margin:10px 0 0;font-size:.9rem">' + errorText + '</p>'
+    : '';
+  const nextHtml = safeNextPath(nextPath)
+    ? '<input type="hidden" name="next" value="' + escapeAttr(safeNextPath(nextPath)) + '">'
     : '';
   const html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta name="robots" content="noindex,nofollow"><title>观己实验室 · 内测版</title>' +
@@ -86,6 +115,7 @@ function sendBetaPage(res, errorText) {
     '<p style="font-size:.88rem;color:rgba(233,226,208,.7)">你此刻的状态，不是你这个人。<br>欢迎进来，慢慢看自己。</p>' +
     '<div class="steps"><div class="step">① 输入内测码</div><div class="step">② 选一面镜子</div><div class="step">③ 收到一封写给你的信</div></div>' +
     '<form method="POST" action="/beta"><input type="text" name="code" placeholder="请输入内测码" autocomplete="off" required autofocus>' +
+    nextHtml +
     errHtml +
     '<button type="submit">进入观己</button></form>' +
     '<div class="hint">内测版 · 尚未正式发布 · 内容持续打磨中</div>' +
@@ -147,16 +177,19 @@ async function handleBetaEntry(req, res, url) {
   }
   const form = urlDecodeForm(body);
   const code = String(form.code || '').trim();
+  const nextPath = safeNextPath(form.next);
   if (BETA_MODE && code === BETA_CODE && betaHash()) {
     const maxAge = 60 * 60 * 24 * 30; // 30 天
     res.writeHead(302, {
-      Location: '/',
+      // 输对内测码后回到 ta 原本要访问的那一页（分享链接才不会白费）
+      Location: nextPath || '/',
       'Set-Cookie': BETA_COOKIE + '=' + betaHash() + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + maxAge
     });
     res.end();
     return true;
   }
-  sendBetaPage(res, '内测码不正确，请再试一次');
+  // 输错时把目标页一起带回去，避免用户重输一次
+  sendBetaPage(res, '内测码不正确，请再试一次', nextPath);
   return true;
 }
 
@@ -262,6 +295,7 @@ const API_ROUTES = [
   ['/api/order', orderHandler],
   ['/api/order/webhook', orderHandler],
   ['/api/order/status', orderHandler],
+  ['/api/order/list', orderHandler],
   ['/api/simulate', simulateHandler]
 ];
 
@@ -390,7 +424,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       if (!pathname.startsWith('/api/')) {
-        sendBetaPage(res, '');
+        // 把原始地址带进内测页：访客输完码后回到 ta 本来要看的页面
+        sendBetaPage(res, '', pathname + (url.search || ''));
         return;
       }
     }

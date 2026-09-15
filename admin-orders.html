@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/host-redirect.js"></script>
+  <title>订单补记 · 观己实验室（站长工具）</title>
+  <!-- 站长内部工具：不在导航里出现，也不被搜索引擎收录 -->
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: rgba(15,22,40,.9);
+      --line: rgba(224,192,126,.28);
+      --gold: #e0c07e;
+      --text: #e9e2d0;
+      --muted: rgba(233,226,208,.6);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 24px 16px 60px;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.7;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    h1 { font-size: 1.35rem; color: var(--gold); margin: 0 0 6px; letter-spacing: .06em; }
+    .sub { color: var(--muted); font-size: .88rem; margin: 0 0 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 20px; margin-bottom: 18px;
+    }
+    h2 { font-size: 1rem; margin: 0 0 4px; color: var(--gold); font-weight: 600; }
+    .hint { color: var(--muted); font-size: .84rem; margin: 0 0 14px; }
+    label { display: block; font-size: .84rem; color: var(--muted); margin: 12px 0 5px; }
+    input, select {
+      width: 100%; padding: 11px 13px; border-radius: 9px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.05);
+      color: var(--text); font-size: .95rem; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--gold); }
+    option { background: #131a2b; color: var(--text); }
+    button {
+      margin-top: 16px; padding: 12px 20px; border: none; border-radius: 9px;
+      background: var(--gold); color: #0b1220; font-size: .95rem;
+      font-weight: 600; cursor: pointer; letter-spacing: .05em;
+    }
+    button:hover { background: #e8cd8f; }
+    button:disabled { opacity: .5; cursor: default; }
+    button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > button { margin-top: 0; }
+    .msg { margin-top: 12px; font-size: .88rem; min-height: 1.4em; }
+    .msg.ok { color: #8fd0a0; }
+    .msg.err { color: #d98f8f; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-top: 8px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(224,192,126,.12); }
+    th { color: var(--muted); font-weight: 500; font-size: .8rem; }
+    td { color: var(--text); word-break: break-all; }
+    .pick { color: var(--gold); cursor: pointer; text-decoration: underline; }
+    .empty { color: var(--muted); font-size: .86rem; padding: 8px 0; }
+    code {
+      display: block; padding: 10px 12px; border-radius: 8px; margin-top: 6px;
+      background: rgba(0,0,0,.35); border: 1px solid var(--line);
+      font-size: .8rem; word-break: break-all; color: #cfe3ff;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>订单补记</h1>
+    <p class="sub">观己实验室 · 站长内部工具。当用户付了款但没自动解锁时，用这里手动补一笔。</p>
+
+    <!-- 第一步：填校验密钥 -->
+    <div class="card" id="authCard">
+      <h2>先填校验密钥</h2>
+      <p class="hint">就是服务器 .env 里 GUAN_ORDER_TOKEN 那一串，和配置金数据推送地址时用的是同一串。填一次即可，关掉标签页后需要重填。</p>
+      <label for="tokenInput">校验密钥</label>
+      <input type="password" id="tokenInput" placeholder="粘贴 GUAN_ORDER_TOKEN 的值" autocomplete="off">
+      <button id="tokenBtn" type="button">进入</button>
+      <p class="msg" id="authMsg"></p>
+    </div>
+
+    <!-- 第二步：补记 -->
+    <div class="card hidden" id="mainCard">
+      <h2>补一笔已付款的订单</h2>
+      <p class="hint">补记成功后，让用户回到测试结果页点「我已付款，立即核对」，即可解锁深度解读。</p>
+
+      <label for="emailInput">用户邮箱（就是 ta 注册时的邮箱）</label>
+      <input type="text" id="emailInput" list="userList" placeholder="user@example.com" autocomplete="off">
+      <datalist id="userList"></datalist>
+
+      <label for="quizInput">解锁哪个测试的深度解读</label>
+      <select id="quizInput">
+        <option value="guan_who">我如何成为我</option>
+        <option value="guan_energy_map">我的能量地图</option>
+        <option value="guan_relation_map">我在关系里的位置</option>
+        <option value="guan_talent">我的天赋信号</option>
+        <option value="guan_pressure">我如何重新生长</option>
+        <option value="guan_life_want">我真正想要的生活</option>
+      </select>
+
+      <label for="amountInput">金额（可选，方便对账）</label>
+      <input type="text" id="amountInput" placeholder="例如 9.9" autocomplete="off">
+
+      <div class="row" style="margin-top:18px">
+        <button id="creditBtn" type="button">确认补记</button>
+        <button class="ghost" id="refreshBtn" type="button">刷新列表</button>
+        <button class="ghost" id="logoutBtn" type="button">换个密钥</button>
+      </div>
+      <p class="msg" id="creditMsg"></p>
+    </div>
+
+    <!-- 已记账订单 -->
+    <div class="card hidden" id="ordersCard">
+      <h2>已解锁记录</h2>
+      <p class="hint">最近 200 条。带「手动」的是补记的，带「金数据」的是自动回执的。</p>
+      <div id="ordersBox"><p class="empty">加载中…</p></div>
+    </div>
+
+    <!-- 注册用户 -->
+    <div class="card hidden" id="usersCard">
+      <h2>最近注册的用户</h2>
+      <p class="hint">点邮箱即可填入上面的输入框，避免手打错字。</p>
+      <div id="usersBox"><p class="empty">加载中…</p></div>
+    </div>
+
+    <!-- 金数据地址备忘 -->
+    <div class="card hidden" id="webhookCard">
+      <h2>金数据推送地址（备忘）</h2>
+      <p class="hint">表单 →「设置」→「提醒推送」→ 新建 → 触发条件「有新数据提交时」→ 推送方式「发 Webhook」→ 粘贴下面这行。</p>
+      <code id="webhookUrl"></code>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var TOKEN_KEY = 'guan_admin_order_token';
+      var token = '';
+
+      var $ = function (id) { return document.getElementById(id); };
+
+      /** 把用户可控的文本转义后再放进 HTML（邮箱/昵称都是用户自己填的，不能直接拼） */
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function setMsg(el, text, ok) {
+        el.textContent = text || '';
+        el.className = 'msg ' + (ok ? 'ok' : 'err');
+      }
+
+      function show(el, yes) {
+        el.classList.toggle('hidden', !yes);
+      }
+
+      function api(path) {
+        return fetch(path, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (data) {
+            if (!r.ok) {
+              var m = (data && data.error && (data.error.message || data.error)) || ('请求失败（' + r.status + '）');
+              var err = new Error(typeof m === 'string' ? m : '请求失败');
+              err.status = r.status;
+              err.data = data;
+              throw err;
+            }
+            return data;
+          });
+        });
+      }
+
+      function fmtTime(iso) {
+        if (!iso) return '';
+        try {
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return String(iso);
+          var p = function (n) { return String(n).padStart(2, '0'); };
+          return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+            ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+        } catch (e) { return String(iso); }
+      }
+
+      function renderOrders(orders) {
+        var box = $('ordersBox');
+        if (!orders || !orders.length) {
+          box.innerHTML = '<p class="empty">还没有任何解锁记录。</p>';
+          return;
+        }
+        var rows = orders.map(function (o) {
+          var src = (o.source === 'manual' || o.orderNo === 'manual')
+            ? '手动补记'
+            : (o.source === 'push' ? '金数据回执' : (o.source || '—'));
+          return '<tr>' +
+            '<td>' + esc(fmtTime(o.recordedAt)) + '</td>' +
+            '<td>' + esc(o.email) + '</td>' +
+            '<td>' + esc(o.quiz) + '</td>' +
+            '<td>' + esc(o.amount || '—') + '</td>' +
+            '<td>' + esc(src) + '</td>' +
+            '</tr>';
+        }).join('');
+        box.innerHTML = '<table><thead><tr>' +
+          '<th>时间</th><th>邮箱</th><th>测试</th><th>金额</th><th>来源</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table>';
+      }
+
+      function renderUsers(users) {
+        var box = $('usersBox');
+        var dl = $('userList');
+        if (!users || !users.length) {
+          box.innerHTML = '<p class="empty">还没有注册用户。</p>';
+          dl.innerHTML = '';
+          return;
+        }
+        // datalist 让输入框支持下拉选择
+        dl.innerHTML = users.map(function (u) {
+          return '<option value="' + esc(u.email) + '">' + esc(u.nickname || '') + '</option>';
+        }).join('');
+
+        var rows = users.map(function (u) {
+          return '<tr>' +
+            '<td><span class="pick" data-email="' + esc(u.email) + '">' + esc(u.email) + '</span></td>' +
+            '<td>' + esc(u.nickname || '—') + '</td>' +
+            '<td>' + esc(fmtTime(u.createdAt)) + '</td>' +
+            '</tr>';
+        }).join('');
+        box.innerHTML = '<table><thead><tr>' +
+          '<th>邮箱（点击填入）</th><th>昵称</th><th>注册时间</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+        box.querySelectorAll('.pick').forEach(function (el) {
+          el.addEventListener('click', function () {
+            $('emailInput').value = el.getAttribute('data-email') || '';
+            $('emailInput').focus();
+          });
+        });
+      }
+
+      function loadList() {
+        return api('/api/order/list?token=' + encodeURIComponent(token)).then(function (data) {
+          renderOrders(data.orders || []);
+          renderUsers(data.users || []);
+          return true;
+        });
+      }
+
+      function enterTool(t) {
+        token = t;
+        try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+        $('webhookUrl').textContent = location.origin + '/api/order/webhook?token=' + token;
+        ['mainCard', 'ordersCard', 'usersCard', 'webhookCard'].forEach(function (id) { show($(id), true); });
+        show($('authCard'), false);
+        loadList().catch(function (err) {
+          if (err && err.status === 403) {
+            setMsg($('creditMsg'), '密钥不对，请点「换个密钥」重填。', false);
+          } else if (err && err.status === 503) {
+            setMsg($('creditMsg'), '服务器还没配置订单密钥，请联系开发。', false);
+          } else {
+            setMsg($('creditMsg'), '列表加载失败：' + (err && err.message ? err.message : '请稍后重试'), false);
+          }
+        });
+      }
+
+      $('tokenBtn').addEventListener('click', function () {
+        var t = ($('tokenInput').value || '').trim();
+        if (!t) { setMsg($('authMsg'), '请先填入校验密钥', false); return; }
+        token = t;
+        api('/api/order/list?token=' + encodeURIComponent(t))
+          .then(function () { setMsg($('authMsg'), '', true); enterTool(t); })
+          .catch(function (err) {
+            if (err && err.status === 403) setMsg($('authMsg'), '密钥不对，请检查后重试', false);
+            else if (err && err.status === 503) setMsg($('authMsg'), '服务器还没配置订单密钥，请联系开发', false);
+            else setMsg($('authMsg'), '连接失败：' + (err && err.message ? err.message : '请稍后重试'), false);
+          });
+      });
+
+      $('tokenInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('tokenBtn').click(); }
+      });
+
+      $('creditBtn').addEventListener('click', function () {
+        var email = ($('emailInput').value || '').trim();
+        var quiz = $('quizInput').value;
+        var amount = ($('amountInput').value || '').trim();
+        if (!email || email.indexOf('@') < 1) { setMsg($('creditMsg'), '请填写正确的用户邮箱', false); return; }
+
+        var url = '/api/order/webhook?token=' + encodeURIComponent(token) +
+          '&email=' + encodeURIComponent(email) +
+          '&quiz=' + encodeURIComponent(quiz);
+        if (amount) url += '&amount=' + encodeURIComponent(amount);
+
+        var btn = $('creditBtn');
+        btn.disabled = true;
+        setMsg($('creditMsg'), '正在补记…', true);
+        api(url)
+          .then(function (data) {
+            if (data && data.recorded) {
+              setMsg($('creditMsg'), '已补记：' + email + ' → ' + quiz + '。请让 ta 回页面点「我已付款，立即核对」。', true);
+              $('amountInput').value = '';
+              return loadList();
+            }
+            setMsg($('creditMsg'), '没能补记：' + ((data && data.reason) || '邮箱或测试不对'), false);
+          })
+          .catch(function (err) {
+            if (err && err.status === 403) setMsg($('creditMsg'), '密钥失效，请点「换个密钥」重填', false);
+            else setMsg($('creditMsg'), '补记失败：' + (err && err.message ? err.message : '请稍后重试'), false);
+          })
+          .then(function () { btn.disabled = false; });
+      });
+
+      $('refreshBtn').addEventListener('click', function () {
+        loadList().then(function () { setMsg($('creditMsg'), '列表已刷新', true); })
+          .catch(function (err) { setMsg($('creditMsg'), '刷新失败：' + (err && err.message ? err.message : ''), false); });
+      });
+
+      $('logoutBtn').addEventListener('click', function () {
+        token = '';
+        try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+        ['mainCard', 'ordersCard', 'usersCard', 'webhookCard'].forEach(function (id) { show($(id), false); });
+        show($('authCard'), true);
+        $('tokenInput').value = '';
+        setMsg($('authMsg'), '', true);
+      });
+
+      // 本标签页内已经填过密钥就直接进入
+      try {
+        var saved = sessionStorage.getItem(TOKEN_KEY);
+        if (saved) enterTool(saved);
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>
