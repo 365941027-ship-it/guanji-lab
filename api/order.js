@@ -109,9 +109,12 @@ export default async function handler(req, res) {
     } else {
       // 解析不到邮箱或测试名时，把原始字段结构打到日志里。
       // 金数据不同表单的字段命名差别很大，首次接线基本都要靠这条日志来对齐；
-      // 日志只存在你自己的服务器上。
-      console.warn('[order] 已拒绝：推送里没认出邮箱或测试名。收到的字段结构：',
-        JSON.stringify(body || {}).slice(0, 800));
+      // 日志只存在你自己的服务器上。顶层键名单独列一份，便于快速看出字段标识。
+      const raw = JSON.stringify(body || {});
+      const topKeys = Object.keys(body || {}).join(', ');
+      console.warn('[order] 已拒绝：推送里没认出邮箱或测试名。');
+      console.warn('[order]   顶层字段：' + (topKeys || '(空)'));
+      console.warn('[order]   完整内容：' + raw.slice(0, 2000));
     }
     return res.status(200).json({ ok: true, ...result });
   }
