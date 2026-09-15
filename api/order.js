@@ -1,5 +1,6 @@
 // 观己实验室 · 订单核对路由
 //   POST /api/order/webhook?token=…  ← 金数据「数据推送」付款成功回调
+//   GET  /api/order/webhook?token=…&email=…&quiz=…  ← 手动补记一笔（备用手段）
 //   GET  /api/order/status           ← 前端轮询，命中后自动解锁（需登录）
 //
 // 【安全边界】这是「谁付了钱」的唯一入口，必须防住两件事：
@@ -58,8 +59,8 @@ export default async function handler(req, res) {
   // 容忍结尾斜杠，但要求路径完全匹配——这是安全相关接口，不做模糊匹配
   const path = url.pathname.replace(/\/+$/, '');
 
-  // ---------- 金数据推送：记账 ----------
-  if (req.method === 'POST' && path === '/api/order/webhook') {
+  // ---------- 记账入口（金数据推送 / 手动补记）----------
+  if ((req.method === 'POST' || req.method === 'GET') && path === '/api/order/webhook') {
     const want = expectedToken();
     if (!want) {
       console.error('[order] 拒绝记入：服务器没有配置 GUAN_ORDER_TOKEN。请在 .env 里设置后重启容器。');
@@ -75,9 +76,22 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: { code: 'bad_token', message: '校验失败' } });
     }
 
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) { body = {}; }
+    // GET 是给站长留的「手动补一笔」后路：万一金数据推送没配上，
+    // 用户在页面上解锁不了，可以直接用浏览器打开带参数的网址补记，
+    // 不必等开发处理。同样受 token 保护。
+    let body;
+    if (req.method === 'GET') {
+      body = {
+        email: url.searchParams.get('email') || '',
+        quiz: url.searchParams.get('quiz') || '',
+        order_no: url.searchParams.get('orderNo') || url.searchParams.get('order_no') || 'manual',
+        amount: url.searchParams.get('amount') || ''
+      };
+    } else {
+      body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (e) { body = {}; }
+      }
     }
     const result = recordOrder(body || {});
 
@@ -92,6 +106,12 @@ export default async function handler(req, res) {
         console.warn(`[order] 已记账，但金额 ${paid} 低于标价 ${price}，请留意：`, result.key);
       }
       console.log('[order] 已记账：', result.key, '金额=' + (paid || '未知'));
+    } else {
+      // 解析不到邮箱或测试名时，把原始字段结构打到日志里。
+      // 金数据不同表单的字段命名差别很大，首次接线基本都要靠这条日志来对齐；
+      // 日志只存在你自己的服务器上。
+      console.warn('[order] 已拒绝：推送里没认出邮箱或测试名。收到的字段结构：',
+        JSON.stringify(body || {}).slice(0, 800));
     }
     return res.status(200).json({ ok: true, ...result });
   }
