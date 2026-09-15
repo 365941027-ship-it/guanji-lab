@@ -24,6 +24,8 @@
   }
 
   function currentUserId() {
+    // 身份由服务端从会话 Cookie 里取，这里传的值只作兼容保留
+    if (window.guanCurrentEmail) return window.guanCurrentEmail() || '';
     try {
       var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
       return (s && s.email) || '';
@@ -250,11 +252,8 @@
       window.guanToast('付费通道正在准备中，很快开放');
       return;
     }
-    var email = '';
-    try {
-      var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
-      email = (s && s.email) || '';
-    } catch (e) {}
+    // 付款链接要带上邮箱，金数据回执才能跟这个账号对上
+    var email = window.guanCurrentEmail ? (window.guanCurrentEmail() || '') : '';
     var win;
     if (url.indexOf('jsform.com') > -1) {
       var sep = url.indexOf('?') > -1 ? '&' : '?';
@@ -281,12 +280,12 @@
   };
 
   window.guanAgentStartPaidPoll = function (unlockKey, done) {
-    var email = '';
-    try {
-      var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
-      email = (s && s.email) || '';
-    } catch (e) {}
-    if (!email) return;
+    var email = window.guanCurrentEmail ? (window.guanCurrentEmail() || '') : '';
+    if (!email) {
+      // 没登录就没法把支付记录归到某个账号上，提前让用户知道，别让人白等
+      window.guanToast('请先登录后再解锁，付款记录需要绑定到你的账号');
+      return;
+    }
     var key = unlockKey || 'agent';
     var tries = 0;
     var timer = setInterval(function () {

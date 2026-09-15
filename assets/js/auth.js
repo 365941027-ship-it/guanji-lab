@@ -61,6 +61,7 @@
         if (!currentUser && data && data.userId) currentUser = { id: data.userId, email: '', nickname: '' };
         // 顺手把档案缓存好，供其他页面同步读取
         if (data && data.profile) window.guanSetProfileCache(data.profile);
+        window.guanCacheEmail(currentUser && currentUser.email);
         if (window.guanRenderAccount) window.guanRenderAccount(currentUser);
         return currentUser;
       })
@@ -68,6 +69,7 @@
         // 401 = 未登录，属正常情况；其他错误也按未登录处理，但不影响页面
         currentUser = null;
         window.guanSetProfileCache(null);
+        window.guanCacheEmail('');
         if (err && err.status !== 401) {
           console.warn('[auth] 会话检查失败：', err.message);
         }
@@ -84,6 +86,42 @@
   /** 同步读取内存中的当前用户（可能为 null，仅在 guanRefreshSession 之后可靠） */
   window.guanCurrentUser = function () {
     return currentUser;
+  };
+
+  /**
+   * 同步读取当前用户的邮箱。
+   *
+   * 为什么要单独做这个：账号系统改造后，用户信息只存在内存里（不落 localStorage），
+   * 但付款流程需要把邮箱拼进付款链接、并在付款后用它去核对订单——
+   * 这些地方是同步调用的，等不到异步的会话确认，于是到处读一个早就没人写的
+   * localStorage['guan_session']，结果永远拿到空字符串，付款后无法自动解锁。
+   *
+   * 取值的优先级：
+   *   1) 内存里的当前用户（正常情况）
+   *   2) sessionStorage 里的邮箱缓存（本标签页内，防止内存被重置）
+   *   3) 极老的本地账号（guan_session），只做兼容兜底
+   */
+  var EMAIL_CACHE_KEY = 'guan_email_cache';
+
+  /** 把邮箱写进/清出本标签页的缓存（只存邮箱，不含密码等敏感信息） */
+  window.guanCacheEmail = function (email) {
+    try {
+      if (email) sessionStorage.setItem(EMAIL_CACHE_KEY, String(email));
+      else sessionStorage.removeItem(EMAIL_CACHE_KEY);
+    } catch (e) {}
+  };
+
+  window.guanCurrentEmail = function () {
+    if (currentUser && currentUser.email) return currentUser.email;
+    try {
+      var cached = sessionStorage.getItem(EMAIL_CACHE_KEY);
+      if (cached) return cached;
+    } catch (e) {}
+    try {
+      var legacy = JSON.parse(localStorage.getItem('guan_session') || 'null');
+      if (legacy && legacy.email) return legacy.email;
+    } catch (e) {}
+    return '';
   };
 
   // ---------- 档案缓存 ----------
@@ -137,6 +175,7 @@
         body: { email: email, password: password, nickname: nickname || '' }
       });
       currentUser = data.user || null;
+      window.guanCacheEmail(currentUser && currentUser.email);
       if (window.guanRenderAccount) window.guanRenderAccount(currentUser);
       toast('注册成功，欢迎来到观己');
       await migrateLocalProfile();
@@ -154,6 +193,7 @@
         body: { email: email, password: password }
       });
       currentUser = data.user || null;
+      window.guanCacheEmail(currentUser && currentUser.email);
       if (window.guanRenderAccount) window.guanRenderAccount(currentUser);
       toast('欢迎回来');
       await migrateLocalProfile();
@@ -172,6 +212,7 @@
       console.warn('[auth] 登出请求失败：', e && e.message);
     }
     currentUser = null;
+    window.guanCacheEmail('');
     if (window.guanRenderAccount) window.guanRenderAccount(null);
     if (window.location.pathname.indexOf('login.html') < 0) window.location.href = 'login.html';
   };

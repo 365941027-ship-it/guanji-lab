@@ -1791,6 +1791,9 @@
   }
 
   function currentEmail() {
+    // 账号系统改造后，用户信息只在内存里；统一走 auth.js 提供的取值接口，
+    // 否则这里会永远拿到空字符串，付款后无法自动核对、也无法解锁。
+    if (window.guanCurrentEmail) return window.guanCurrentEmail() || '';
     try {
       var s = JSON.parse(localStorage.getItem('guan_session') || 'null');
       return (s && s.email) || '';

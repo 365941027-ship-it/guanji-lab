@@ -351,7 +351,18 @@
     });
   }
 
+  /**
+   * 读取当前登录账号（昵称用于预填、判断要不要显示登录提醒）。
+   *
+   * 原来读的是 localStorage['guan_session']，但账号系统改造后没有任何地方再写它，
+   * 于是已登录用户也会一直看到「登录后档案才会一直陪着你」的提醒。这里改走
+   * auth.js 的内存用户；为兼容极老的本地账号，保留 guan_session 兜底。
+   */
   function session() {
+    var user = window.guanCurrentUser ? window.guanCurrentUser() : null;
+    if (user && (user.nickname || user.email)) {
+      return { name: user.nickname || String(user.email || '').split('@')[0], email: user.email || '' };
+    }
     try {
       return JSON.parse(localStorage.getItem('guan_session') || 'null');
     } catch (e) {
@@ -359,7 +370,7 @@
     }
   }
 
-  (function checkLogin() {
+  function applyLoginState() {
     var s = session();
     var reminder = document.getElementById('loginReminder');
     if (reminder) {
@@ -372,7 +383,14 @@
         }
       }
     }
-  })();
+  }
+
+  // 先按当前已知状态渲染一次，等会话确认回来后再校正一次
+  // （会话确认是异步的，否则已登录用户会先闪一下登录提醒）。
+  applyLoginState();
+  if (window.guanRefreshSession) {
+    window.guanRefreshSession().then(function () { applyLoginState(); }).catch(function () {});
+  }
 
   function collect() {
     var birthText = document.getElementById('pBirth').value.trim();
