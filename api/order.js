@@ -19,6 +19,7 @@ import crypto from 'node:crypto';
 import { getCurrentUser } from './auth.js';
 import { recordOrder, queryOrder, listOrders } from '../lib/orderStore.js';
 import { listUsers } from '../lib/repos/userRepo.js';
+import { findEntriesByEmail, pickUsableEntry, isConfigured as jinshujuReady } from '../lib/jinshujuClient.js';
 
 /** 金数据推送地址里要带的共享密钥 */
 function expectedToken() {
@@ -130,7 +131,41 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: { code: 'login_required', message: '请先登录' } });
     }
     const quiz = String(url.searchParams.get('quiz') || '').trim();
-    return res.status(200).json({ ok: true, ...queryOrder(user.email, quiz) });
+
+    // 先看本地账本（自动回执 + 手动补记都在这里）
+    const local = queryOrder(user.email, quiz);
+    if (local.paid) return res.status(200).json({ ok: true, ...local, source: 'local' });
+
+    // 本地没有 → 主动去金数据查一次（免费版 API，替代付费的 Webhook 推送）
+    if (jinshujuReady()) {
+      const found = await findEntriesByEmail(user.email);
+      if (found.ok) {
+        // 已经被别的测试消费过的记录号，不能重复解锁别的测试
+        const used = new Set(
+          listOrders(500)
+            .filter((o) => o.source === 'jinshuju' && o.orderNo)
+            .map((o) => String(o.orderNo))
+        );
+        const pick = pickUsableEntry(found.entries, quiz, used);
+        if (pick) {
+          recordOrder({
+            email: user.email,
+            quiz: pick.quiz || quiz,
+            order_no: String(pick.entry.serial_number || ''),
+            amount: pick.entry.paid_amount || pick.entry.amount || '',
+            event: 'jinshuju'
+          });
+          console.log('[order] 金数据核对成功并自动解锁：', user.email, '→', pick.quiz || quiz);
+          const after = queryOrder(user.email, pick.quiz || quiz);
+          return res.status(200).json({ ok: true, ...after, source: 'jinshuju' });
+        }
+      } else if (found.reason === 'bad_token') {
+        // 密钥/表单不对时必须让你知道，否则会表现为“用户付了钱却永远解不开”
+        console.warn('[order] 金数据接口拒绝了请求（Token 或表单编号可能不对）');
+      }
+    }
+
+    return res.status(200).json({ ok: true, paid: false, order: null, source: 'none' });
   }
 
   // ---------- 站长工具：查看已记账订单与最近注册的用户 ----------
@@ -152,6 +187,8 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({
       ok: true,
+      // 前端据此显示「自动核对已开启 / 未配置」，站长一眼能看出当前是否还需要手动补记
+      jinshujuReady: jinshujuReady(),
       orders: listOrders(200),
       users: users.map((u) => ({
         email: u.email || '',

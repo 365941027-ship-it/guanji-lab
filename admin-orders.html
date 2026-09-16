@@ -128,9 +128,13 @@
 
     <!-- 金数据地址备忘 -->
     <div class="card hidden" id="webhookCard">
-      <h2>金数据推送地址（备忘）</h2>
-      <p class="hint">表单 →「设置」→「提醒推送」→ 新建 → 触发条件「有新数据提交时」→ 推送方式「发 Webhook」→ 粘贴下面这行。</p>
-      <code id="webhookUrl"></code>
+      <h2>自动核对状态</h2>
+      <p class="hint" id="autoStatus">检查中…</p>
+      <div id="webhookBox" class="hidden">
+        <p class="hint">金数据的「Webhook 推送」要专业版（599 元/年），但「API」免费版就能用。填上下面两个值就能自动核对，用户付完款自己点一下就能解锁，不需要你手动补记：</p>
+        <p class="hint">Access Token 在：金数据 → 右上角头像 →「个人中心」→「API」→「个人 Access Token」→ 创建 Token（只在创建时显示一次，记得先复制）。</p>
+        <code id="webhookUrl"></code>
+      </div>
     </div>
   </div>
 
@@ -244,8 +248,21 @@
         return api('/api/order/list?token=' + encodeURIComponent(token)).then(function (data) {
           renderOrders(data.orders || []);
           renderUsers(data.users || []);
+          renderAutoStatus(!!data.jinshujuReady);
           return true;
         });
+      }
+
+      /** 显示「自动核对」是否已开启：开启后用户付款能自己解锁，你不必手动补记 */
+      function renderAutoStatus(ready) {
+        var el = $('autoStatus');
+        if (ready) {
+          el.innerHTML = '<b style="color:#8fd0a0">✓ 已开启</b>：用户付完款后点「我已付款，立即核对」会自动解锁，下面这个工具只在异常时兜底用。';
+          show($('webhookBox'), false);
+        } else {
+          el.innerHTML = '<b style="color:#e0c07e">未配置</b>：现在每一笔都需要你在下面手动补记。';
+          show($('webhookBox'), true);
+        }
       }
 
       function enterTool(t) {
